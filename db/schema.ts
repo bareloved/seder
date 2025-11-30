@@ -8,6 +8,7 @@ import {
   varchar,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // Invoice status enum values
@@ -26,7 +27,7 @@ export const incomeEntries = pgTable("income_entries", {
   clientName: text("client_name").notNull(),
   amountGross: numeric("amount_gross", { precision: 12, scale: 2 }).notNull(),
   amountPaid: numeric("amount_paid", { precision: 12, scale: 2 }).default("0").notNull(),
-  vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).default("17").notNull(),
+  vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).default("18").notNull(),
   includesVat: boolean("includes_vat").default(true).notNull(),
   invoiceStatus: varchar("invoice_status", { length: 20 })
     .$type<InvoiceStatus>()
@@ -49,6 +50,9 @@ export const incomeEntries = pgTable("income_entries", {
     invoiceStatusIdx: index("invoice_status_idx").on(table.invoiceStatus),
     paymentStatusIdx: index("payment_status_idx").on(table.paymentStatus),
     clientNameIdx: index("client_name_idx").on(table.clientName),
+    // Unique index on calendarEventId to prevent duplicate imports
+    // NULL values are allowed (manual entries), only non-null values must be unique
+    calendarEventUnique: uniqueIndex("income_calendar_event_id_key").on(table.calendarEventId),
   };
 });
 

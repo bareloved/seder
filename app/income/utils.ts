@@ -1,4 +1,4 @@
-import { IncomeEntry, KPIData } from "./types";
+import { IncomeEntry, KPIData, DisplayStatus } from "./types";
 import { Currency } from "./currency";
 
 // Re-export Currency for convenience if needed, or just use it internally
@@ -43,9 +43,10 @@ export function getWeekday(date: Date): string {
 // Date Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Get today's date as ISO string (YYYY-MM-DD)
+// Get today's date as ISO string (YYYY-MM-DD) in local timezone
 export function getTodayDateString(): string {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 // Check if a date is in the past (before today)
@@ -80,9 +81,12 @@ export function getMonthYear(dateStr: string): { month: number; year: number } {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Get the effective display status for an entry
-export function getDisplayStatus(entry: IncomeEntry): IncomeEntry["status"] | null {
-  if (entry.status === "נשלחה" || entry.status === "שולם") {
-    return entry.status;
+export function getDisplayStatus(entry: IncomeEntry): DisplayStatus | null {
+  if (entry.paymentStatus === "paid" || entry.invoiceStatus === "paid") {
+    return "שולם";
+  }
+  if (entry.invoiceStatus === "sent") {
+    return "נשלחה";
   }
   if (!isPastDate(entry.date)) {
     return null;
@@ -92,7 +96,7 @@ export function getDisplayStatus(entry: IncomeEntry): IncomeEntry["status"] | nu
 
 // Check if entry is overdue (invoice sent > 30 days ago, not paid)
 export function isOverdue(entry: IncomeEntry, daysThreshold = 30): boolean {
-  if (entry.status !== "נשלחה" || !entry.invoiceSentDate) return false;
+  if (entry.invoiceStatus !== "sent" || !entry.invoiceSentDate) return false;
   return daysSince(entry.invoiceSentDate) > daysThreshold;
 }
 
@@ -119,12 +123,12 @@ export function calculateKPIs(
 
   // Outstanding: invoiced but not paid
   const outstanding = entries
-    .filter((e) => e.status === "נשלחה")
+    .filter((e) => e.invoiceStatus === "sent" && e.paymentStatus !== "paid")
     .reduce((acc, e) => Currency.add(acc, Currency.subtract(e.amountGross, e.amountPaid)), 0);
 
   // Ready to invoice: past gigs that haven't been invoiced or paid
   const readyToInvoiceEntries = entries.filter(
-    (e) => isPastDate(e.date) && e.status !== "נשלחה" && e.status !== "שולם"
+    (e) => isPastDate(e.date) && e.invoiceStatus === "draft" && e.paymentStatus !== "paid"
   );
   const readyToInvoice = readyToInvoiceEntries.reduce(
     (acc, e) => Currency.add(acc, e.amountGross),
@@ -136,7 +140,7 @@ export function calculateKPIs(
 
   // Total paid this month
   const totalPaid = monthEntries
-    .filter((e) => e.status === "שולם")
+    .filter((e) => e.paymentStatus === "paid")
     .reduce((acc, e) => Currency.add(acc, e.amountPaid), 0);
 
   // Trend vs previous month
@@ -149,7 +153,7 @@ export function calculateKPIs(
   const overdueCount = entries.filter((e) => isOverdue(e)).length;
 
   // Invoiced count (waiting for payment)
-  const invoicedCount = entries.filter((e) => e.status === "נשלחה").length;
+  const invoicedCount = entries.filter((e) => e.invoiceStatus === "sent" && e.paymentStatus !== "paid").length;
 
   return {
     outstanding,
@@ -162,20 +166,6 @@ export function calculateKPIs(
     overdueCount,
     invoicedCount,
   };
-}
-
-// Generate unique ID (for numeric IDs only, not used with UUID from database)
-export function generateId(entries: IncomeEntry[]): number {
-  const numericIds = entries
-    .map((e) => (typeof e.id === "number" ? e.id : 0))
-    .filter((id) => id > 0);
-  return Math.max(...numericIds, 0) + 1;
-}
-
-// Get unique clients from entries
-export function getUniqueClients(entries: IncomeEntry[]): string[] {
-  const clients = new Set(entries.map((e) => e.client));
-  return Array.from(clients).sort();
 }
 
 // Hebrew month names
@@ -210,12 +200,12 @@ export function exportToCSV(entries: IncomeEntry[], filename?: string): void {
 
   const rows = entries.map((e) => [
     e.date,
-    e.weekday,
+    getWeekday(new Date(e.date)),
     e.description,
     e.amountGross.toString(),
     e.amountPaid.toString(),
-    e.client,
-    e.status,
+    e.clientName,
+    getDisplayStatus(e) || "",
     e.invoiceSentDate || "",
     e.category || "",
   ]);

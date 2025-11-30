@@ -2,29 +2,28 @@
 
 import * as React from "react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { IncomeEntry, IncomeStatus, STATUS_CONFIG } from "../types";
+import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../types";
 import { getDisplayStatus } from "../utils";
-import { IncomeDetailView } from "./income-drawer/IncomeDetailView";
 import { IncomeDetailEdit } from "./income-drawer/IncomeDetailEdit";
 
-interface IncomeDetailDrawerProps {
+interface IncomeDetailDialogProps {
   entry: IncomeEntry | null;
   isOpen: boolean;
   onClose: () => void;
-  onMarkAsPaid: (id: number | string) => void;
-  onMarkInvoiceSent: (id: number | string) => void;
+  onMarkAsPaid: (id: string) => void;
+  onMarkInvoiceSent: (id: string) => void;
   onUpdate: (entry: IncomeEntry) => void;
-  onStatusChange: (id: number | string, status: IncomeStatus) => void;
+  onStatusChange: (id: string, status: DisplayStatus) => void;
 }
 
-export function IncomeDetailDrawer({
+export function IncomeDetailDialog({
   entry,
   isOpen,
   onClose,
@@ -32,30 +31,23 @@ export function IncomeDetailDrawer({
   onMarkInvoiceSent,
   onUpdate,
   onStatusChange,
-}: IncomeDetailDrawerProps) {
-  const [isEditing, setIsEditing] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsEditing(false);
-  }, [entry, isOpen]);
-
+}: IncomeDetailDialogProps) {
   if (!entry) return null;
 
   const displayStatus = getDisplayStatus(entry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-md overflow-y-auto"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
         dir="rtl"
       >
-        <SheetHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+        <DialogHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
               פרטי עבודה
-            </SheetTitle>
+            </DialogTitle>
             {statusConfig && (
               <Badge
                 className={cn(
@@ -69,28 +61,20 @@ export function IncomeDetailDrawer({
               </Badge>
             )}
           </div>
-        </SheetHeader>
+        </DialogHeader>
 
-        {isEditing ? (
           <IncomeDetailEdit
             entry={entry}
             onSave={(updatedEntry) => {
               onUpdate(updatedEntry);
-              setIsEditing(false);
+            onClose();
             }}
-            onCancel={() => setIsEditing(false)}
+          onClose={onClose}
             onStatusChange={onStatusChange}
-          />
-        ) : (
-          <IncomeDetailView
-            entry={entry}
-            onEdit={() => setIsEditing(true)}
-            onClose={onClose}
             onMarkAsPaid={onMarkAsPaid}
             onMarkInvoiceSent={onMarkInvoiceSent}
           />
-        )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

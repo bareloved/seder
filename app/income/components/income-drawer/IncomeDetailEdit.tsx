@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
@@ -18,270 +23,237 @@ import {
   Receipt,
   FileText,
   CreditCard,
-  Pencil,
   Tag,
+  Check,
 } from "lucide-react";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
 import {
   IncomeEntry,
-  IncomeStatus,
+  DisplayStatus,
   STATUS_CONFIG,
   CATEGORIES,
   VatType,
 } from "../../types";
-import { formatFullDate } from "../../utils";
+import { formatFullDate, getDisplayStatus } from "../../utils";
 
 interface IncomeDetailEditProps {
   entry: IncomeEntry;
-  onSave: (entry: IncomeEntry) => void;
-  onCancel: () => void;
-  onStatusChange: (id: number | string, status: IncomeStatus) => void;
+  onSave: (entry: IncomeEntry & { status?: DisplayStatus; vatType?: VatType }) => void;
+  onClose: () => void;
+  onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMarkAsPaid: (id: string) => void;
+  onMarkInvoiceSent: (id: string) => void;
 }
+
+type EditableIncomeEntry = IncomeEntry & {
+  status?: DisplayStatus;
+  vatType: VatType;
+};
 
 export function IncomeDetailEdit({
   entry,
   onSave,
-  onCancel,
+  onClose,
   onStatusChange,
+  onMarkAsPaid,
+  onMarkInvoiceSent,
 }: IncomeDetailEditProps) {
-  const [editedEntry, setEditedEntry] = React.useState<IncomeEntry>({ ...entry });
+  // Initialize state with derived fields
+  const [editedEntry, setEditedEntry] = React.useState<EditableIncomeEntry>(() => {
+    const status = getDisplayStatus(entry) || undefined;
+    const vatType = entry.includesVat ? "כולל מע״מ" : entry.vatRate === 0 ? "ללא מע״מ" : "חייב מע״מ";
+    return { ...entry, status, vatType };
+  });
+
+  const [isDirty, setIsDirty] = React.useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   const handleSave = () => {
     onSave(editedEntry);
+    setIsDirty(false);
   };
 
+  const handleChange = (updates: Partial<EditableIncomeEntry>) => {
+    setEditedEntry((prev) => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
+
+  const displayStatus = getDisplayStatus(editedEntry);
+
+  // Common input style for "editable text" feel
+  const inputClassName = "h-auto py-1 px-2 -mx-2 text-base font-semibold text-slate-900 dark:text-slate-100 bg-transparent border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:ring-0 focus:border-slate-300 dark:focus:border-slate-600 focus-visible:ring-0 focus-visible:ring-offset-0 rounded transition-all shadow-none text-right";
+  const labelClassName = "text-xs font-medium text-slate-400 dark:text-slate-500 mb-1 flex items-center gap-1.5";
+
   return (
-    <div className="space-y-6 py-6">
-      {/* Work Details Section */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <FileText className="h-4 w-4 text-slate-400" />
-          פרטי עבודה
-        </h3>
+    <div className="space-y-6 py-4">
+      
+      {/* Top Section: Main Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Client */}
+        <div>
+          <label className={labelClassName}>
+            <User className="h-3.5 w-3.5" />
+            לקוח
+          </label>
+          <Input
+            value={editedEntry.clientName}
+            onChange={(e) => handleChange({ clientName: e.target.value })}
+            className={inputClassName}
+          />
+        </div>
 
-        <div className="space-y-3 pr-6">
-          {/* Date */}
-          <div className="flex items-start gap-3">
-            <CalendarDays className="h-4 w-4 text-slate-400 mt-0.5" />
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                תאריך ביצוע
-              </p>
-              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                {formatFullDate(entry.date)}
-              </p>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="flex items-start gap-3">
-            <Pencil className="h-4 w-4 text-slate-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                תיאור
-              </p>
-              <Input
-                value={editedEntry.description}
-                onChange={(e) =>
-                  setEditedEntry({
-                    ...editedEntry,
-                    description: e.target.value,
-                  })
-                }
-                className="h-8 text-sm mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Client */}
-          <div className="flex items-start gap-3">
-            <User className="h-4 w-4 text-slate-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                לקוח
-              </p>
-              <Input
-                value={editedEntry.client}
-                onChange={(e) =>
-                  setEditedEntry({
-                    ...editedEntry,
-                    client: e.target.value,
-                  })
-                }
-                className="h-8 text-sm mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Category */}
-          <div className="flex items-start gap-3">
-            <Tag className="h-4 w-4 text-slate-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                קטגוריה
-              </p>
-              <Select
-                value={editedEntry.category || ""}
-                onValueChange={(v) =>
-                  setEditedEntry({ ...editedEntry, category: v })
-                }
+        {/* Date */}
+        <div>
+          <label className={labelClassName}>
+            <CalendarDays className="h-3.5 w-3.5" />
+            תאריך
+          </label>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  inputClassName,
+                  "w-full justify-start text-right",
+                  !editedEntry.date && "text-slate-400"
+                )}
               >
-                <SelectTrigger className="h-8 text-sm mt-1">
-                  <SelectValue placeholder="בחר קטגוריה" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                {editedEntry.date ? formatFullDate(editedEntry.date) : <span>בחר תאריך</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={editedEntry.date ? new Date(editedEntry.date) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    handleChange({ date: format(date, "yyyy-MM-dd") });
+                    setIsCalendarOpen(false);
+                  }
+                }}
+                initialFocus
+                locale={he}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
-      {/* Payment Details Section */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-slate-400" />
-          פרטי תשלום
-        </h3>
+      {/* Description - Full Width */}
+      <div>
+        <label className={labelClassName}>
+          <FileText className="h-3.5 w-3.5" />
+          תיאור עבודה
+        </label>
+        <Input
+          value={editedEntry.description}
+          onChange={(e) => handleChange({ description: e.target.value })}
+          className={inputClassName}
+        />
+      </div>
 
-        <div className="space-y-3 pr-6">
-          {/* Amount Gross */}
-          <div className="flex items-center justify-between py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
-            <span className="text-sm text-slate-600 dark:text-slate-400">
-              סכום
-            </span>
-            <Input
-              value={editedEntry.amountGross}
-              onChange={(e) =>
-                setEditedEntry({
-                  ...editedEntry,
-                  amountGross: parseFloat(e.target.value) || 0,
-                })
-              }
-              className="h-8 w-24 text-sm text-left"
-              dir="ltr"
-            />
-          </div>
+      {/* Middle Section: Payment & Category */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Amount */}
+        <div>
+          <label className={labelClassName}>
+            <CreditCard className="h-3.5 w-3.5" />
+            סכום
+          </label>
+          <Input
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9]*"
+            value={editedEntry.amountGross}
+            onChange={(e) => handleChange({ amountGross: parseFloat(e.target.value) || 0 })}
+            onFocus={(e) => e.target.select()}
+            className={cn(inputClassName, "text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none")}
+            dir="rtl"
+          />
+        </div>
 
-          {/* VAT */}
-          <div className="flex items-center justify-between py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
-            <span className="text-sm text-slate-600 dark:text-slate-400">
-              מע״מ
-            </span>
-            <div className="flex items-center gap-2">
-              <Select
-                value={editedEntry.vatType}
-                onValueChange={(v) =>
-                  setEditedEntry({
-                    ...editedEntry,
-                    vatType: v as VatType,
-                  })
-                }
-              >
-                <SelectTrigger className="h-8 w-32 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="חייב מע״מ">חייב מע״מ</SelectItem>
-                  <SelectItem value="ללא מע״מ">ללא מע״מ</SelectItem>
-                  <SelectItem value="כולל מע״מ">כולל מע״מ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Status */}
-          <div className="flex items-center justify-between py-2 border-b border-dashed border-slate-200 dark:border-slate-700">
-            <span className="text-sm text-slate-600 dark:text-slate-400">
-              סטטוס
-            </span>
-            <Select
-              value={editedEntry.status || ""}
-              onValueChange={(v) =>
-                onStatusChange(entry.id, v as IncomeStatus)
-              }
-            >
-              <SelectTrigger className="h-8 w-28 text-xs border-0 bg-transparent p-0 justify-end">
-                {editedEntry.status && STATUS_CONFIG[editedEntry.status] ? (
-                  <Badge
-                    className={cn(
-                      "text-[10px] px-2.5 py-0.5 rounded-full font-medium border",
-                      STATUS_CONFIG[editedEntry.status].bgClass,
-                      STATUS_CONFIG[editedEntry.status].textClass,
-                      STATUS_CONFIG[editedEntry.status].borderClass
-                    )}
-                  >
-                    {STATUS_CONFIG[editedEntry.status].label}
-                  </Badge>
-                ) : (
-                  <span className="text-xs text-slate-300">—</span>
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {(["נשלחה", "שולם"] as IncomeStatus[]).map((status) => {
-                  const config = STATUS_CONFIG[status];
-                  return (
-                    <SelectItem key={status} value={status}>
-                      <Badge
-                        className={cn(
-                          "text-[10px] px-2 py-0.5 rounded-full font-medium border",
-                          config.bgClass,
-                          config.textClass,
-                          config.borderClass
-                        )}
-                      >
-                        {config.label}
-                      </Badge>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Category */}
+        <div>
+          <label className={labelClassName}>
+            <Tag className="h-3.5 w-3.5" />
+            קטגוריה
+          </label>
+          <Select
+            value={editedEntry.category || ""}
+            onValueChange={(v) => handleChange({ category: v })}
+          >
+            <SelectTrigger className={cn(inputClassName, "w-full [&>span]:text-right [&>span]:flex-1")}>
+              <SelectValue placeholder="בחר קטגוריה" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Notes Section */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <Receipt className="h-4 w-4 text-slate-400" />
+      <div>
+        <label className={labelClassName}>
+          <Receipt className="h-3.5 w-3.5" />
           הערות
-        </h3>
-        <div className="pr-6">
-          <textarea
-            value={editedEntry.notes || ""}
-            onChange={(e) =>
-              setEditedEntry({ ...editedEntry, notes: e.target.value })
-            }
-            placeholder="הוסף הערות..."
-            className="w-full h-20 text-sm p-2 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
+        </label>
+        <textarea
+          value={editedEntry.notes || ""}
+          onChange={(e) => handleChange({ notes: e.target.value })}
+          placeholder="הוסף הערות..."
+          className="w-full h-20 text-base p-3 border-transparent bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md resize-none focus:outline-none focus:ring-0 transition-colors"
+        />
       </div>
 
       {/* Footer Actions */}
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
-        <div className="flex gap-2">
+      <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+        
+        {/* Primary Status Actions */}
+        {displayStatus === "בוצע" && (
+          <Button
+            onClick={() => onMarkInvoiceSent(entry.id)}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <FileText className="h-4 w-4 ml-2" />
+            שלחתי חשבונית
+          </Button>
+        )}
+
+        {displayStatus === "נשלחה" && (
+          <Button
+            onClick={() => onMarkAsPaid(entry.id)}
+            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+          >
+            <Check className="h-4 w-4 ml-2" />
+            התקבל תשלום
+          </Button>
+        )}
+
+        {/* Save Changes (only if dirty) */}
+        {isDirty && (
           <Button
             onClick={handleSave}
-            className="flex-1 bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="flex-1 bg-slate-900 text-white hover:bg-slate-800"
           >
             שמור שינויים
           </Button>
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="flex-1"
-          >
-            ביטול
-          </Button>
-        </div>
+        )}
+
+        {/* Close Button */}
+        <Button
+          variant="ghost"
+          onClick={onClose}
+          className="text-slate-500 hover:text-slate-700"
+        >
+          סגור
+        </Button>
       </div>
     </div>
   );
 }
-

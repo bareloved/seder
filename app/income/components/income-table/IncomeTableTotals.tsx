@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { formatCurrency, Currency } from "../../utils";
+import { formatCurrency, Currency, getDisplayStatus } from "../../utils";
 import { IncomeEntry } from "../../types";
 
 interface IncomeTableTotalsProps {
@@ -14,10 +14,10 @@ export function IncomeTableTotals({ entries }: IncomeTableTotalsProps) {
   const totals = React.useMemo(() => {
     const totalGross = entries.reduce((acc, e) => Currency.add(acc, e.amountGross), 0);
     const totalPaid = entries
-      .filter((e) => e.status === "שולם")
+      .filter((e) => getDisplayStatus(e) === "שולם")
       .reduce((acc, e) => Currency.add(acc, e.amountPaid), 0);
     const totalPending = entries
-      .filter((e) => e.status !== "שולם")
+      .filter((e) => getDisplayStatus(e) !== "שולם")
       .reduce((acc, e) => Currency.add(acc, e.amountGross), 0);
     return { totalGross, totalPaid, totalPending };
   }, [entries]);

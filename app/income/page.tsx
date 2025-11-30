@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients } from "./data";
+import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses } from "./data";
 import IncomePageClient from "./IncomePageClient";
 
 // Force dynamic rendering - don't pre-render during build
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // Loading component for Suspense
 function IncomePageSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950" dir="rtl">
+    <div className="min-h-screen paper-texture" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Header skeleton */}
         <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 px-4 py-3 shadow-sm h-16 animate-pulse" />
@@ -40,10 +40,11 @@ async function IncomePageContent({
   month: number;
 }) {
   // Fetch data in parallel
-  const [entries, aggregates, clients] = await Promise.all([
+  const [entries, aggregates, clients, monthStatuses] = await Promise.all([
     getIncomeEntriesForMonth({ year, month }),
     getIncomeAggregatesForMonth({ year, month }),
     getUniqueClients(),
+    getMonthPaymentStatuses(year),
   ]);
 
   return (
@@ -53,6 +54,7 @@ async function IncomePageContent({
       dbEntries={entries}
       aggregates={aggregates}
       clients={clients}
+      monthPaymentStatuses={monthStatuses}
     />
   );
 }

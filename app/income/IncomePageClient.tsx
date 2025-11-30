@@ -6,8 +6,9 @@ import { IncomeHeader } from "./components/IncomeHeader";
 import { KPICards } from "./components/KPICards";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeTable } from "./components/IncomeTable";
-import { IncomeDetailDrawer } from "./components/IncomeDetailDrawer";
-import { exportToCSV, isOverdue, isPastDate, getDisplayStatus, calculateKPIs, getWeekday, filterByMonth } from "./utils";
+import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
+import { CalendarImportDialog } from "./components/CalendarImportDialog";
+import { exportToCSV, isOverdue, getDisplayStatus, calculateKPIs } from "./utils";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -15,9 +16,10 @@ import {
   markInvoiceSentAction,
   updateEntryStatusAction,
   deleteIncomeEntryAction,
+  importFromCalendarAction,
 } from "./actions";
-import type { IncomeEntry, IncomeStatus, FilterType, KPIData } from "./types";
-import type { IncomeAggregates } from "./data";
+import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
+import type { IncomeAggregates, MonthPaymentStatus } from "./data";
 import type { IncomeEntry as DBIncomeEntry } from "@/db/schema";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,6 +32,7 @@ interface IncomePageClientProps {
   dbEntries: DBIncomeEntry[];
   aggregates: IncomeAggregates;
   clients: string[];
+  monthPaymentStatuses: Record<number, MonthPaymentStatus>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,36 +40,24 @@ interface IncomePageClientProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function dbEntryToUIEntry(dbEntry: DBIncomeEntry): IncomeEntry {
-  // Map DB status to Hebrew status
-  let status: IncomeStatus = "בוצע";
-  if (dbEntry.paymentStatus === "paid" || dbEntry.invoiceStatus === "paid") {
-    status = "שולם";
-  } else if (dbEntry.invoiceStatus === "sent") {
-    status = "נשלחה";
-  }
-
-  // Map VAT type
-  let vatType: "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ" = "חייב מע״מ";
-  if (parseFloat(dbEntry.vatRate) === 0) {
-    vatType = "ללא מע״מ";
-  } else if (dbEntry.includesVat) {
-    vatType = "כולל מע״מ";
-  }
-
   return {
     id: dbEntry.id,
     date: dbEntry.date,
-    weekday: getWeekday(new Date(dbEntry.date)),
     description: dbEntry.description,
+    clientName: dbEntry.clientName,
     amountGross: parseFloat(dbEntry.amountGross),
     amountPaid: parseFloat(dbEntry.amountPaid),
-    client: dbEntry.clientName,
-    status,
-    vatType,
-    notes: dbEntry.notes ?? undefined,
-    invoiceSentDate: dbEntry.invoiceSentDate ?? undefined,
-    paidDate: dbEntry.paidDate ?? undefined,
-    category: dbEntry.category ?? undefined,
+    vatRate: parseFloat(dbEntry.vatRate),
+    includesVat: dbEntry.includesVat,
+    invoiceStatus: dbEntry.invoiceStatus,
+    paymentStatus: dbEntry.paymentStatus,
+    category: dbEntry.category,
+    notes: dbEntry.notes,
+    invoiceSentDate: dbEntry.invoiceSentDate,
+    paidDate: dbEntry.paidDate,
+    calendarEventId: dbEntry.calendarEventId,
+    createdAt: dbEntry.createdAt,
+    updatedAt: dbEntry.updatedAt,
   };
 }
 
@@ -80,6 +71,7 @@ export default function IncomePageClient({
   dbEntries,
   aggregates,
   clients: initialClients,
+  monthPaymentStatuses,
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,37 +88,53 @@ export default function IncomePageClient({
   // Update entries when props change (e.g., month/year navigation)
   React.useEffect(() => {
     setEntries(dbEntries.map(dbEntryToUIEntry));
+    // Reset client filter when month changes (selected client may not exist in new month)
+    setSelectedClient("all");
   }, [dbEntries]);
 
   // Dark mode state
   const [isDarkMode, setIsDarkMode] = React.useState(false);
 
+  // Calendar import dialog state
+  const [isCalendarDialogOpen, setIsCalendarDialogOpen] = React.useState(false);
+
   // Filter state
   const [activeFilter, setActiveFilter] = React.useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedClient, setSelectedClient] = React.useState<string>("all");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc");
 
-  // Drawer state
+  // Dialog state
   const [selectedEntry, setSelectedEntry] = React.useState<IncomeEntry | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  // Selected month/year (controlled by URL)
-  const selectedMonth = month;
-  const selectedYear = year;
+  // Dialog handlers (defined early for use in effects)
+  const closeDialog = React.useCallback(() => {
+    setIsDialogOpen(false);
+    setSelectedEntry(null);
+  }, []);
 
-  // Get unique clients (combine initial with any new ones)
-  const clients = React.useMemo(() => {
+  // Get unique clients from current month's entries only
+  const monthClients = React.useMemo(() => {
+    const uniqueClients = new Set(
+      entries.map((e) => e.clientName).filter((name) => name && name.trim() !== "")
+    );
+    return Array.from(uniqueClients).sort();
+  }, [entries]);
+
+  // All clients (for autocomplete in quick add)
+  const allClients = React.useMemo(() => {
     const uniqueClients = new Set([
       ...initialClients,
-      ...entries.map((e) => e.client),
+      ...entries.map((e) => e.clientName),
     ]);
-    return Array.from(uniqueClients).sort();
+    return Array.from(uniqueClients).filter((name) => name && name.trim() !== "").sort();
   }, [initialClients, entries]);
 
   // Calculate KPIs using aggregates from server
   const kpis: KPIData = React.useMemo(() => {
     // Recalculate some values locally for accurate filtered display
-    const localKPIs = calculateKPIs(entries, selectedMonth, selectedYear, aggregates.previousMonthPaid);
+    const localKPIs = calculateKPIs(entries, month, year, aggregates.previousMonthPaid);
     
     return {
       outstanding: aggregates.outstanding,
@@ -139,7 +147,7 @@ export default function IncomePageClient({
       overdueCount: aggregates.overdueCount,
       invoicedCount: aggregates.invoicedCount,
     };
-  }, [entries, selectedMonth, selectedYear, aggregates]);
+  }, [entries, month, year, aggregates]);
 
   // Filter entries based on all criteria
   const filteredEntries = React.useMemo(() => {
@@ -161,13 +169,18 @@ export default function IncomePageClient({
         break;
     }
 
+    // Client filter
+    if (selectedClient !== "all") {
+      result = result.filter((e) => e.clientName === selectedClient);
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (e) =>
           e.description.toLowerCase().includes(query) ||
-          e.client.toLowerCase().includes(query) ||
+          e.clientName.toLowerCase().includes(query) ||
           (e.category && e.category.toLowerCase().includes(query))
       );
     }
@@ -178,7 +191,7 @@ export default function IncomePageClient({
       const dateB = new Date(b.date).getTime();
       return sortDirection === "desc" ? dateB - dateA : dateA - dateB;
     });
-  }, [entries, activeFilter, searchQuery, sortDirection]);
+  }, [entries, activeFilter, selectedClient, searchQuery, sortDirection]);
 
   // Dark mode effect
   React.useEffect(() => {
@@ -192,14 +205,14 @@ export default function IncomePageClient({
   // Keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isDrawerOpen) {
-        closeDrawer();
+      if (e.key === "Escape" && isDialogOpen) {
+        closeDialog();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDrawerOpen]);
+  }, [isDialogOpen, closeDialog]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Navigation handlers
@@ -208,14 +221,14 @@ export default function IncomePageClient({
   const handleMonthChange = (newMonth: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("month", newMonth.toString());
-    params.set("year", selectedYear.toString());
+    params.set("year", year.toString());
     router.push(`/income?${params.toString()}`);
   };
 
   const handleYearChange = (newYear: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("year", newYear.toString());
-    params.set("month", selectedMonth.toString());
+    params.set("month", month.toString());
     router.push(`/income?${params.toString()}`);
   };
 
@@ -223,11 +236,11 @@ export default function IncomePageClient({
   // CRUD handlers with server actions
   // ─────────────────────────────────────────────────────────────────────────────
 
-  const addEntry = async (entry: Omit<IncomeEntry, "id" | "weekday">) => {
+  const addEntry = async (entry: Omit<IncomeEntry, "id" | "weekday" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ" }) => {
     const formData = new FormData();
     formData.append("date", entry.date);
     formData.append("description", entry.description);
-    formData.append("clientName", entry.client);
+    formData.append("clientName", entry.clientName);
     formData.append("amountGross", entry.amountGross.toString());
     formData.append("amountPaid", entry.amountPaid.toString());
     if (entry.category) formData.append("category", entry.category);
@@ -262,143 +275,187 @@ export default function IncomePageClient({
     }
   };
 
-  const updateEntry = async (updatedEntry: IncomeEntry) => {
+  const updateEntry = async (updatedEntry: IncomeEntry & { status?: DisplayStatus, vatType?: "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ" }) => {
     const formData = new FormData();
     formData.append("id", updatedEntry.id.toString());
     formData.append("date", updatedEntry.date);
     formData.append("description", updatedEntry.description);
-    formData.append("clientName", updatedEntry.client);
+    formData.append("clientName", updatedEntry.clientName);
     formData.append("amountGross", updatedEntry.amountGross.toString());
     formData.append("amountPaid", updatedEntry.amountPaid.toString());
     formData.append("category", updatedEntry.category || "");
+    
+    // Keep notes as-is (calendar draft badge now only depends on amountGross and calendarEventId)
     formData.append("notes", updatedEntry.notes || "");
 
     // Map Hebrew status to DB status
-    if (updatedEntry.status === "שולם") {
-      formData.append("invoiceStatus", "paid");
-      formData.append("paymentStatus", "paid");
-    } else if (updatedEntry.status === "נשלחה") {
-      formData.append("invoiceStatus", "sent");
+    // Use the display status if provided, otherwise fall back to existing DB status logic?
+    // Actually the drawer usually provides the display status
+    if (updatedEntry.status) {
+      if (updatedEntry.status === "שולם") {
+        formData.append("invoiceStatus", "paid");
+        formData.append("paymentStatus", "paid");
+      } else if (updatedEntry.status === "נשלחה") {
+        formData.append("invoiceStatus", "sent");
+      } else {
+        formData.append("invoiceStatus", "draft");
+      }
     } else {
-      formData.append("invoiceStatus", "draft");
+      // Fallback if status not explicitly changed in UI but exists in object
+      formData.append("invoiceStatus", updatedEntry.invoiceStatus);
+      formData.append("paymentStatus", updatedEntry.paymentStatus);
     }
 
     // Map VAT type
-    if (updatedEntry.vatType === "ללא מע״מ") {
-      formData.append("vatRate", "0");
-      formData.append("includesVat", "false");
-    } else if (updatedEntry.vatType === "כולל מע״מ") {
-      formData.append("includesVat", "true");
+    if (updatedEntry.vatType) {
+      if (updatedEntry.vatType === "ללא מע״מ") {
+        formData.append("vatRate", "0");
+        formData.append("includesVat", "false");
+      } else if (updatedEntry.vatType === "כולל מע״מ") {
+        formData.append("includesVat", "true");
+      } else {
+        formData.append("includesVat", "false");
+      }
     } else {
-      formData.append("includesVat", "false");
+        formData.append("vatRate", updatedEntry.vatRate.toString());
+        formData.append("includesVat", String(updatedEntry.includesVat));
     }
 
     // Optimistically update local state
+    const optimisticEntry: IncomeEntry = {
+        ...updatedEntry,
+        // If status was updated, reflect it in DB fields for local state
+        invoiceStatus: updatedEntry.status === "שולם" ? "paid" : updatedEntry.status === "נשלחה" ? "sent" : updatedEntry.status === "בוצע" ? "draft" : updatedEntry.invoiceStatus,
+        paymentStatus: updatedEntry.status === "שולם" ? "paid" : updatedEntry.paymentStatus
+    };
+
     setEntries((prev) =>
-      prev.map((e) => (e.id === updatedEntry.id ? updatedEntry : e))
+      prev.map((e) => (e.id === updatedEntry.id ? optimisticEntry : e))
     );
     setSelectedEntry((prev) =>
-      prev?.id === updatedEntry.id ? updatedEntry : prev
+      prev?.id === updatedEntry.id ? optimisticEntry : prev
     );
 
     await updateIncomeEntryAction(formData);
   };
 
-  const deleteEntry = async (id: number | string) => {
+  const deleteEntry = async (id: string) => {
     // Optimistically update local state
     setEntries((prev) => prev.filter((e) => e.id !== id));
     setSelectedEntry((prev) => (prev?.id === id ? null : prev));
     if (selectedEntry?.id === id) {
-      setIsDrawerOpen(false);
+      setIsDialogOpen(false);
     }
 
-    await deleteIncomeEntryAction(id.toString());
+    await deleteIncomeEntryAction(id);
   };
 
-  const updateStatus = async (id: number | string, status: IncomeStatus) => {
+  const updateStatus = async (id: string, status: DisplayStatus) => {
     // Optimistically update local state
     const today = new Date().toISOString().split("T")[0];
+    
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
-        const updates: Partial<IncomeEntry> = { status };
-        if (status === "נשלחה" && !e.invoiceSentDate) {
-          updates.invoiceSentDate = today;
-        }
+        
+        const updates: Partial<IncomeEntry> = {};
+        
         if (status === "שולם") {
-          updates.paidDate = today;
-          updates.amountPaid = e.amountGross;
+            updates.invoiceStatus = "paid";
+            updates.paymentStatus = "paid";
+            updates.paidDate = today;
+            updates.amountPaid = e.amountGross;
+        } else if (status === "נשלחה") {
+            updates.invoiceStatus = "sent";
+            updates.paymentStatus = "unpaid";
+            updates.paidDate = undefined;
+            updates.amountPaid = 0;
+            if (!e.invoiceSentDate) {
+                updates.invoiceSentDate = today;
+            }
+        } else if (status === "בוצע") {
+            updates.invoiceStatus = "draft";
+            updates.paymentStatus = "unpaid";
+            updates.invoiceSentDate = undefined;
+            updates.paidDate = undefined;
+            updates.amountPaid = 0;
         }
+
         return { ...e, ...updates };
       })
     );
 
-    // Only call server action for "נשלחה" or "שולם" status changes
-    if (status === "נשלחה" || status === "שולם") {
-      await updateEntryStatusAction(id.toString(), status);
-    }
+    // Call server action for all status changes
+    await updateEntryStatusAction(id, status);
   };
 
-  const markAsPaid = async (id: number | string) => {
-    // Optimistically update local state
-    const today = new Date().toISOString().split("T")[0];
-    setEntries((prev) =>
-      prev.map((e) => {
-        if (e.id !== id) return e;
-        return {
-          ...e,
-          status: "שולם" as IncomeStatus,
-          paidDate: today,
-          amountPaid: e.amountGross,
-        };
-      })
-    );
-
-    await markIncomeEntryAsPaidAction(id.toString());
+  const markAsPaid = async (id: string) => {
+    updateStatus(id, "שולם");
   };
 
-  const markInvoiceSent = async (id: number | string) => {
-    // Optimistically update local state
-    const today = new Date().toISOString().split("T")[0];
-    setEntries((prev) =>
-      prev.map((e) => {
-        if (e.id !== id) return e;
-        return {
-          ...e,
-          status: "נשלחה" as IncomeStatus,
-          invoiceSentDate: today,
-        };
-      })
-    );
-
-    await markInvoiceSentAction(id.toString());
+  const markInvoiceSent = async (id: string) => {
+    updateStatus(id, "נשלחה");
   };
 
   const duplicateEntry = async (entry: IncomeEntry) => {
     const today = new Date();
-    const newEntry: Omit<IncomeEntry, "id" | "weekday"> = {
-      ...entry,
+    // Construct a new entry for duplication
+    // We need to match the expected structure for `addEntry`
+    const newEntry = {
       date: today.toISOString().split("T")[0],
-      status: "בוצע",
+      description: entry.description,
+      clientName: entry.clientName,
+      amountGross: entry.amountGross,
       amountPaid: 0,
-      invoiceSentDate: undefined,
-      paidDate: undefined,
+      category: entry.category,
+      notes: entry.notes,
+      status: "בוצע" as DisplayStatus,
+      vatType: entry.includesVat ? "כולל מע״מ" : entry.vatRate === 0 ? "ללא מע״מ" : "חייב מע״מ" as any
     };
     await addEntry(newEntry);
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Drawer handlers
-  // ─────────────────────────────────────────────────────────────────────────────
+  const inlineEditEntry = async (id: string, field: string, value: string | number) => {
+    // Find the entry
+    const entry = entries.find((e) => e.id === id);
+    if (!entry) return;
 
-  const openDrawer = (entry: IncomeEntry) => {
-    setSelectedEntry(entry);
-    setIsDrawerOpen(true);
+    // Build form data for update
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("date", field === "date" ? String(value) : entry.date);
+    formData.append("description", field === "description" ? String(value) : entry.description);
+    formData.append("clientName", field === "clientName" ? String(value) : entry.clientName);
+    formData.append("amountGross", field === "amountGross" ? String(value) : entry.amountGross.toString());
+    formData.append("amountPaid", entry.amountPaid.toString());
+    formData.append("category", entry.category || "");
+    formData.append("notes", entry.notes || "");
+    formData.append("invoiceStatus", entry.invoiceStatus);
+    formData.append("paymentStatus", entry.paymentStatus);
+    formData.append("vatRate", entry.vatRate.toString());
+    formData.append("includesVat", String(entry.includesVat));
+
+    // Optimistically update local state
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.id !== id) return e;
+        return {
+          ...e,
+          [field]: value,
+        };
+      })
+    );
+
+    await updateIncomeEntryAction(formData);
   };
 
-  const closeDrawer = () => {
-    setIsDrawerOpen(false);
-    setSelectedEntry(null);
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Dialog handlers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const openDialog = (entry: IncomeEntry) => {
+    setSelectedEntry(entry);
+    setIsDialogOpen(true);
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -408,7 +465,7 @@ export default function IncomePageClient({
   const handleExportCSV = () => {
     exportToCSV(
       filteredEntries,
-      `income-${selectedYear}-${String(selectedMonth).padStart(2, "0")}.csv`
+      `income-${year}-${String(month).padStart(2, "0")}.csv`
     );
   };
 
@@ -417,31 +474,54 @@ export default function IncomePageClient({
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // Calendar Import handlers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const openCalendarImportDialog = () => {
+    setIsCalendarDialogOpen(true);
+  };
+
+  const handleCalendarImport = async (importYear: number, importMonth: number) => {
+    try {
+      const result = await importFromCalendarAction(importYear, importMonth);
+      if (result.success) {
+        console.log(`Imported ${result.count} entries from calendar`);
+      } else {
+        console.error("Failed to import from calendar:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to import from calendar:", error);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <div
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 print:bg-white"
+      className="min-h-screen paper-texture print:bg-white"
       dir="rtl"
     >
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4 md:space-y-6">
         {/* Header */}
         <IncomeHeader
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
+          selectedMonth={month}
+          selectedYear={year}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           onExportCSV={handleExportCSV}
           onPrint={handlePrint}
+          onImportFromCalendar={openCalendarImportDialog}
+          monthPaymentStatuses={monthPaymentStatuses}
         />
 
         {/* KPI Cards */}
         <KPICards
           kpis={kpis}
-          selectedMonth={selectedMonth}
+          selectedMonth={month}
           onFilterClick={setActiveFilter}
           activeFilter={activeFilter}
         />
@@ -452,7 +532,9 @@ export default function IncomePageClient({
           onFilterChange={setActiveFilter}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          clients={clients}
+          clients={monthClients}
+          selectedClient={selectedClient}
+          onClientChange={setSelectedClient}
           readyToInvoiceCount={kpis.readyToInvoiceCount}
           overdueCount={kpis.overdueCount}
         />
@@ -460,22 +542,27 @@ export default function IncomePageClient({
         {/* Main Table */}
         <IncomeTable
           entries={filteredEntries}
-          clients={clients}
-          onRowClick={openDrawer}
+          clients={allClients}
+          onRowClick={openDialog}
           onStatusChange={updateStatus}
           onMarkAsPaid={markAsPaid}
           onMarkInvoiceSent={markInvoiceSent}
           onDuplicate={duplicateEntry}
           onDelete={deleteEntry}
           onAddEntry={addEntry}
-          onClearFilter={() => setActiveFilter("all")}
-          hasActiveFilter={activeFilter !== "all" || searchQuery !== ""}
+          onInlineEdit={inlineEditEntry}
+          onClearFilter={() => {
+            setActiveFilter("all");
+            setSelectedClient("all");
+            setSearchQuery("");
+          }}
+          hasActiveFilter={activeFilter !== "all" || searchQuery !== "" || selectedClient !== "all"}
           sortDirection={sortDirection}
           onSortToggle={() => setSortDirection(sortDirection === "desc" ? "asc" : "desc")}
         />
 
-        {/* Keyboard shortcuts hint */}
-        <div className="text-center text-xs text-slate-400 dark:text-slate-500 print:hidden">
+        {/* Keyboard shortcuts hint - hidden on mobile */}
+        <div className="hidden sm:block text-center text-xs text-slate-400 dark:text-slate-500 print:hidden">
           <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[10px] font-mono">
             N
           </span>{" "}
@@ -493,17 +580,25 @@ export default function IncomePageClient({
         </div>
       </div>
 
-      {/* Detail Drawer */}
-      <IncomeDetailDrawer
+      {/* Detail Dialog */}
+      <IncomeDetailDialog
         entry={selectedEntry}
-        isOpen={isDrawerOpen}
-        onClose={closeDrawer}
+        isOpen={isDialogOpen}
+        onClose={closeDialog}
         onMarkAsPaid={markAsPaid}
         onMarkInvoiceSent={markInvoiceSent}
         onUpdate={updateEntry}
         onStatusChange={updateStatus}
       />
+
+      {/* Calendar Import Dialog */}
+      <CalendarImportDialog
+        isOpen={isCalendarDialogOpen}
+        onClose={() => setIsCalendarDialogOpen(false)}
+        onImport={handleCalendarImport}
+        defaultYear={year}
+        defaultMonth={month}
+      />
     </div>
   );
 }
-

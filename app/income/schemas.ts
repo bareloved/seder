@@ -16,7 +16,7 @@ export const createIncomeEntrySchema = zfd.formData({
   amountPaid: optionalAmountSchema,
   category: zfd.text(z.string().optional()),
   notes: zfd.text(z.string().optional()),
-  vatRate: zfd.numeric(z.number().min(0).default(17)),
+  vatRate: zfd.numeric(z.number().min(0).default(18)),
   includesVat: zfd.checkbox({ trueValue: "true" }), // "true" -> true, undefined/other -> false
   invoiceStatus: zfd.text(z.enum(invoiceStatusValues).default("draft")),
   paymentStatus: zfd.text(z.enum(paymentStatusValues).default("unpaid")),

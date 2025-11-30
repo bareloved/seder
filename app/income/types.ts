@@ -1,23 +1,32 @@
-// Income Entry Types
+import { type InvoiceStatus, type PaymentStatus } from "@/db/schema";
 
-export type IncomeStatus = "בוצע" | "נשלחה" | "שולם";
+// Re-export DB types
+export { type InvoiceStatus, type PaymentStatus };
+
+// Display Status (Hebrew) - Purely for UI/Display
+export type DisplayStatus = "בוצע" | "נשלחה" | "שולם";
 export type VatType = "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ";
 
+// The frontend representation of an Income Entry
+// This aligns with the DB schema but uses 'number' for amounts instead of 'string'
 export interface IncomeEntry {
-  id: number | string; // Support both numeric and UUID
-  date: string; // When the work was done
-  weekday: string;
+  id: string;
+  date: string;
   description: string;
+  clientName: string; // Aligned with DB column
   amountGross: number;
   amountPaid: number;
-  client: string;
-  status: IncomeStatus;
-  vatType: VatType;
-  notes?: string;
-  // New fields for invoice tracking
-  invoiceSentDate?: string; // When invoice was sent
-  paidDate?: string; // When payment was received
-  category?: string; // הופעות, הפקה, הקלטות, etc.
+  vatRate: number;
+  includesVat: boolean;
+  invoiceStatus: InvoiceStatus;
+  paymentStatus: PaymentStatus;
+  category?: string | null;
+  notes?: string | null;
+  invoiceSentDate?: string | null;
+  paidDate?: string | null;
+  calendarEventId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Filter types
@@ -44,7 +53,7 @@ export interface KPIData {
 }
 
 // Status config for UI
-export const STATUS_CONFIG: Record<IncomeStatus, { 
+export const STATUS_CONFIG: Record<DisplayStatus, { 
   label: string; 
   bgClass: string; 
   textClass: string; 
@@ -81,4 +90,3 @@ export const CATEGORIES = [
 ] as const;
 
 export type Category = typeof CATEGORIES[number];
-

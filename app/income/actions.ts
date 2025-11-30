@@ -6,7 +6,10 @@ import {
   updateIncomeEntry,
   markIncomeEntryAsPaid,
   markInvoiceSent,
+  revertToDraft,
+  revertToSent,
   deleteIncomeEntry,
+  importIncomeEntriesFromCalendarForMonth,
   type CreateIncomeEntryInput,
   type UpdateIncomeEntryInput,
 } from "./data";
@@ -133,10 +136,11 @@ export async function markInvoiceSentAction(id: string) {
 
 /**
  * Update entry status (invoice status or payment status)
+ * Supports both forward progression and reverting to previous statuses
  */
 export async function updateEntryStatusAction(
   id: string,
-  status: "נשלחה" | "שולם"
+  status: "בוצע" | "נשלחה" | "שולם"
 ) {
   if (!id) {
     return { success: false, error: "Missing entry ID" };
@@ -147,7 +151,9 @@ export async function updateEntryStatusAction(
     if (status === "שולם") {
       entry = await markIncomeEntryAsPaid(id);
     } else if (status === "נשלחה") {
-      entry = await markInvoiceSent(id);
+      entry = await revertToSent(id);
+    } else if (status === "בוצע") {
+      entry = await revertToDraft(id);
     }
     
     revalidatePath("/income");
@@ -174,4 +180,46 @@ export async function deleteIncomeEntryAction(id: string) {
     console.error("Failed to delete income entry:", error);
     return { success: false, error: "Failed to delete entry" };
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Calendar Import Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Import income entries from Google Calendar for a specific month.
+ * Can be called directly with year and month parameters.
+ */
+export async function importFromCalendarAction(year: number, month: number) {
+  // Validate inputs
+  if (!year || !month || month < 1 || month > 12) {
+    return { success: false, error: "Invalid year or month", count: 0 };
+  }
+
+  try {
+    const count = await importIncomeEntriesFromCalendarForMonth({ year, month });
+    revalidatePath("/income");
+    return { success: true, count };
+  } catch (error) {
+    console.error("Failed to import from calendar:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to import from calendar",
+      count: 0,
+    };
+  }
+}
+
+/**
+ * Import income entries from Google Calendar - Form action variant.
+ * Accepts FormData with hidden year and month fields.
+ */
+export async function importFromCalendarFormAction(formData: FormData) {
+  const yearStr = formData.get("year");
+  const monthStr = formData.get("month");
+
+  const year = yearStr ? parseInt(yearStr.toString(), 10) : 0;
+  const month = monthStr ? parseInt(monthStr.toString(), 10) : 0;
+
+  return importFromCalendarAction(year, month);
 }

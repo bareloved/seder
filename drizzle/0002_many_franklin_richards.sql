@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "income_calendar_event_id_key" ON "income_entries" USING btree ("calendar_event_id");

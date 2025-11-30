@@ -15,10 +15,10 @@ import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry } from "../../types";
+import { IncomeEntry, DisplayStatus, VatType } from "../../types";
 
 interface IncomeTableQuickAddProps {
-  onAddEntry: (entry: Omit<IncomeEntry, "id" | "weekday">) => void;
+  onAddEntry: (entry: Omit<IncomeEntry, "id" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: VatType }) => void;
   clients: string[];
 }
 
@@ -78,7 +78,7 @@ export function IncomeTableQuickAdd({
       description: quickAddDescription || "עבודה חדשה",
       amountGross: parseFloat(quickAddAmount) || 0,
       amountPaid: 0,
-      client: quickAddClient || "לא צוין",
+      clientName: quickAddClient || "לא צוין",
       status: "בוצע",
       vatType: "חייב מע״מ",
     });
@@ -204,4 +204,3 @@ export function IncomeTableQuickAdd({
     </TableRow>
   );
 }
-
