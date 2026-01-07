@@ -184,22 +184,6 @@ export const MONTH_NAMES: Record<number, string> = {
   12: "דצמבר",
 };
 
-// Short month names for compact display (3 letters)
-export const MONTH_NAMES_SHORT: Record<number, string> = {
-  1: "ינו׳",
-  2: "פבר׳",
-  3: "מרץ",
-  4: "אפר׳",
-  5: "מאי",
-  6: "יוני",
-  7: "יולי",
-  8: "אוג׳",
-  9: "ספט׳",
-  10: "אוק׳",
-  11: "נוב׳",
-  12: "דצמ׳",
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Data Mapping Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -272,47 +256,4 @@ export function exportToCSV(entries: IncomeEntry[], filename?: string): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// KPI Scope Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-import type { KPIScope } from "./types";
-
-/**
- * Format KPI scope as a display label
- * @param scope - The KPI scope object
- * @param year - Current year (for month mode)
- * @param month - Current month 1-12 (for month mode)
- * @returns Hebrew label for the scope
- */
-export function formatScopeLabel(scope: KPIScope, year?: number, month?: number): string {
-  if (scope.mode === "month" && year && month) {
-    return `${MONTH_NAMES[month]} ${year}`;
-  }
-
-  if (scope.mode === "all") {
-    return "כל הזמן";
-  }
-
-  if (scope.mode === "range" && scope.start && scope.end) {
-    const startDate = new Date(scope.start);
-    const endDate = new Date(scope.end);
-
-    const startDay = startDate.getDate();
-    const startMonth = startDate.getMonth() + 1;
-    const endDay = endDate.getDate();
-    const endMonth = endDate.getMonth() + 1;
-
-    // Same month: "1-15 ינואר"
-    if (startMonth === endMonth) {
-      return `${startDay}-${endDay} ${MONTH_NAMES_SHORT[startMonth]}`;
-    }
-
-    // Different months: "1 ינו׳ – 15 פבר׳"
-    return `${startDay} ${MONTH_NAMES_SHORT[startMonth]} – ${endDay} ${MONTH_NAMES_SHORT[endMonth]}`;
-  }
-
-  return "—";
 }

@@ -4,14 +4,12 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IncomeHeader } from "./components/IncomeHeader";
 import { KPICards } from "./components/KPICards";
-import { ScopeToggle } from "./components/ScopeToggle";
 import { IncomeTable } from "./components/IncomeTable";
 import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
 import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import type { ViewMode } from "./components/ViewModeToggle";
-import { exportToCSV, isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, formatCurrency, formatFullDate, getTodayDateString, formatScopeLabel } from "./utils";
-import { useScopeState } from "./hooks/useScopeState";
+import { exportToCSV, isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, formatCurrency, formatFullDate, getTodayDateString } from "./utils";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -139,13 +137,6 @@ export default function IncomePageClient({
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // KPI Scope state management
-  const { scope, setScope } = useScopeState();
-  const scopeLabel = React.useMemo(
-    () => formatScopeLabel(scope, year, month),
-    [scope, year, month]
-  );
 
   // Convert DB entries to UI format
   const initialEntries = React.useMemo(
@@ -717,18 +708,10 @@ export default function IncomePageClient({
           user={user}
         />
 
-        {/* KPI Scope Toggle */}
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            מדדי ביצועים
-          </h2>
-          <ScopeToggle scope={scope} onScopeChange={setScope} />
-        </div>
-
         {/* KPI Cards */}
         <KPICards
           kpis={kpis}
-          scopeLabel={scopeLabel}
+          selectedMonth={month}
           onFilterClick={setActiveFilter}
           activeFilter={activeFilter}
         />

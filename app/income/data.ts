@@ -3,7 +3,7 @@ import { incomeEntries, account, categories, type IncomeEntry, type NewIncomeEnt
 import { eq, and, gte, lte, asc, desc, sql, count, lt } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { Currency } from "./currency";
-import { DEFAULT_VAT_RATE, type KPIScope } from "./types";
+import { DEFAULT_VAT_RATE } from "./types";
 import { GoogleCalendarAuthError } from "@/lib/googleCalendar";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,31 +59,6 @@ function getMonthBounds(year: number, month: number): { startDate: string; endDa
 
 function getTodayString(): string {
   return new Date().toISOString().split("T")[0];
-}
-
-/**
- * Convert KPIScope to date filter boundaries
- * Returns undefined for "all" mode (no filtering)
- *
- * DATE FIELD DECISION:
- * All KPI scope filtering uses the `date` field (work/gig date) from incomeEntries table.
- * This is the primary business logic date representing when the work was performed.
- */
-function getScopeDateFilter(scope: KPIScope, year?: number, month?: number): { startDate?: string; endDate?: string } {
-  if (scope.mode === "all") {
-    return {}; // No date filtering
-  }
-
-  if (scope.mode === "month" && year && month) {
-    return getMonthBounds(year, month);
-  }
-
-  if (scope.mode === "range" && scope.start && scope.end) {
-    return { startDate: scope.start, endDate: scope.end };
-  }
-
-  // Fallback: no filtering
-  return {};
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -235,185 +210,7 @@ export const getMonthPaymentStatuses = unstable_cache(
 );
 
 /**
- * Calculate aggregates for a given scope and user
- * Supports month, all-time, and custom range scopes
- */
-export const getIncomeAggregates = unstable_cache(
-  async ({
-    scope,
-    userId,
-    year,
-    month
-  }: {
-    scope: KPIScope;
-    userId: string;
-    year?: number;
-    month?: number;
-  }): Promise<IncomeAggregates> => {
-    const { startDate, endDate } = getScopeDateFilter(scope, year, month);
-    const today = getTodayString();
-
-    // Build base WHERE clause for scope
-    const baseScopeConditions = [eq(incomeEntries.userId, userId)];
-    if (startDate) baseScopeConditions.push(gte(incomeEntries.date, startDate));
-    if (endDate) baseScopeConditions.push(lte(incomeEntries.date, endDate));
-
-    // For trend calculation:
-    // - Month mode: compare to previous month
-    // - All/range modes: trend is 0 (not applicable)
-    let prevStart: string | undefined;
-    let prevEnd: string | undefined;
-
-    if (scope.mode === "month" && year && month) {
-      const prevMonth = month === 1 ? 12 : month - 1;
-      const prevYear = month === 1 ? year - 1 : year;
-      const bounds = getMonthBounds(prevYear, prevMonth);
-      prevStart = bounds.startDate;
-      prevEnd = bounds.endDate;
-    }
-
-    const [
-      monthStatsResult,
-      vatTotalResult,
-      outstandingStatsResult,
-      readyToInvoiceStatsResult,
-      overdueStatsResult,
-      prevMonthStatsResult
-    ] = await Promise.all([
-      // 1. Current Scope Aggregates
-      db
-        .select({
-          totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-          jobsCount: count(),
-        })
-        .from(incomeEntries)
-        .where(and(...baseScopeConditions)),
-
-      // 2. VAT Total
-      db
-        .select({
-          vatTotal: sql<string>`sum(
-            CASE
-              WHEN ${incomeEntries.includesVat} THEN
-                (${incomeEntries.amountGross} - (${incomeEntries.amountGross} / (1 + ${incomeEntries.vatRate} / 100)))
-              ELSE
-                (${incomeEntries.amountGross} * (${incomeEntries.vatRate} / 100))
-            END
-          )`.mapWith(Number)
-        })
-        .from(incomeEntries)
-        .where(and(...baseScopeConditions)),
-
-      // 3. Outstanding (filtered by scope)
-      db
-        .select({
-          totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-          count: count(),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            ...baseScopeConditions,
-            eq(incomeEntries.invoiceStatus, "sent"),
-            sql`${incomeEntries.paymentStatus} != 'paid'`
-          )
-        ),
-
-      // 4. Ready to Invoice (filtered by scope)
-      db
-        .select({
-          total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          count: count(),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            ...baseScopeConditions,
-            eq(incomeEntries.invoiceStatus, "draft"),
-            lt(incomeEntries.date, today)
-          )
-        ),
-
-      // 5. Overdue Count (filtered by scope)
-      db
-        .select({ count: count() })
-        .from(incomeEntries)
-        .where(
-          and(
-            ...baseScopeConditions,
-            eq(incomeEntries.invoiceStatus, "sent"),
-            sql`${incomeEntries.paymentStatus} != 'paid'`,
-            sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
-          )
-        ),
-
-      // 6. Previous Period Paid (for trend - only in month mode)
-      prevStart && prevEnd
-        ? db
-            .select({
-              totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-            })
-            .from(incomeEntries)
-            .where(
-              and(
-                eq(incomeEntries.userId, userId),
-                gte(incomeEntries.date, prevStart),
-                lte(incomeEntries.date, prevEnd),
-                eq(incomeEntries.paymentStatus, "paid")
-              )
-            )
-        : Promise.resolve([{ totalPaid: 0 }])
-    ]);
-
-    const monthStats = monthStatsResult[0];
-    const outstandingStats = outstandingStatsResult[0];
-    const readyToInvoiceStats = readyToInvoiceStatsResult[0];
-    const overdueStats = overdueStatsResult[0];
-    const prevMonthStats = prevMonthStatsResult[0];
-    const vatTotal = vatTotalResult[0]?.vatTotal || 0;
-
-    const outstanding = Currency.subtract(
-      outstandingStats?.totalGross || 0,
-      outstandingStats?.totalPaid || 0
-    );
-    const invoicedCount = outstandingStats?.count || 0;
-    const totalGross = monthStats?.totalGross || 0;
-    const totalPaid = monthStats?.totalPaid || 0;
-    const totalUnpaid = Currency.subtract(totalGross, totalPaid);
-    const previousMonthPaid = prevMonthStats?.totalPaid || 0;
-
-    // Calculate trend only for month mode
-    const trend = scope.mode === "month" && previousMonthPaid > 0
-      ? Currency.multiply(Currency.divide(Currency.subtract(totalPaid, previousMonthPaid), previousMonthPaid), 100)
-      : 0;
-
-    return {
-      totalGross,
-      totalPaid,
-      totalUnpaid,
-      vatTotal,
-      jobsCount: monthStats?.jobsCount || 0,
-      outstanding,
-      readyToInvoice: readyToInvoiceStats?.total || 0,
-      readyToInvoiceCount: readyToInvoiceStats?.count || 0,
-      invoicedCount,
-      overdueCount: overdueStats?.count || 0,
-      previousMonthPaid,
-      trend,
-    };
-  },
-  ["income-aggregates"],
-  {
-    tags: ["income-data"],
-    revalidate: 60, // Cache for 60 seconds
-  }
-);
-
-/**
  * Calculate aggregates for a given month and user
- * @deprecated Use getIncomeAggregates with scope instead
  */
 export const getIncomeAggregatesForMonth = unstable_cache(
   async ({ year, month, userId }: MonthFilter): Promise<IncomeAggregates> => {
@@ -469,7 +266,7 @@ export const getIncomeAggregatesForMonth = unstable_cache(
           )
         ),
 
-      // 3. Outstanding (filtered by current month)
+      // 3. Outstanding
       db
         .select({
           totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
@@ -481,13 +278,11 @@ export const getIncomeAggregatesForMonth = unstable_cache(
           and(
             eq(incomeEntries.userId, userId),
             eq(incomeEntries.invoiceStatus, "sent"),
-            sql`${incomeEntries.paymentStatus} != 'paid'`,
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate)
+            sql`${incomeEntries.paymentStatus} != 'paid'`
           )
         ),
 
-      // 4. Ready to Invoice (filtered by current month)
+      // 4. Ready to Invoice
       db
         .select({
           total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
@@ -498,13 +293,11 @@ export const getIncomeAggregatesForMonth = unstable_cache(
           and(
             eq(incomeEntries.userId, userId),
             eq(incomeEntries.invoiceStatus, "draft"),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate),
             lt(incomeEntries.date, today)
           )
         ),
 
-      // 5. Overdue Count (filtered by current month)
+      // 5. Overdue Count
       db
         .select({ count: count() })
         .from(incomeEntries)
@@ -513,9 +306,7 @@ export const getIncomeAggregatesForMonth = unstable_cache(
             eq(incomeEntries.userId, userId),
             eq(incomeEntries.invoiceStatus, "sent"),
             sql`${incomeEntries.paymentStatus} != 'paid'`,
-            sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`,
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate)
+            sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
           )
         ),
 

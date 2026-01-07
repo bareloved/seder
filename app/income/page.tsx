@@ -1,11 +1,10 @@
 import { Suspense } from "react";
-import { getIncomeEntriesForMonth, getIncomeAggregates, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
+import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
 import { getUserCategories } from "@/app/categories/data";
 import IncomePageClient from "./IncomePageClient";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import type { KPIScope, ScopeMode } from "./types";
 
 // Force dynamic rendering - don't pre-render during build
 // This avoids needing DATABASE_URL at build time
@@ -42,7 +41,6 @@ async function IncomePageContent({
   month,
   userId,
   user,
-  scope,
   limit,
   offset,
 }: {
@@ -50,14 +48,13 @@ async function IncomePageContent({
   month: number;
   userId: string;
   user: { name: string | null; email: string; image: string | null };
-  scope: KPIScope;
   limit?: number;
   offset?: number;
 }) {
   // Fetch data in parallel
   const [entries, aggregates, clients, categories, monthStatuses, isGoogleConnected] = await Promise.all([
     getIncomeEntriesForMonth({ year, month, userId, limit, offset }),
-    getIncomeAggregates({ scope, userId, year, month }),
+    getIncomeAggregatesForMonth({ year, month, userId }),
     getUniqueClients(userId),
     getUserCategories(userId),
     getMonthPaymentStatuses(year, userId),
@@ -87,9 +84,6 @@ export default async function IncomePage({
     year?: string;
     month?: string;
     page?: string;
-    kpiScope?: string;
-    kpiFrom?: string;
-    kpiTo?: string;
   }>;
 }) {
   const session = await auth.api.getSession({
@@ -120,19 +114,6 @@ export default async function IncomePage({
   const pageSize = 500; // keep current behaviour (effectively first page)
   const offset = (page - 1) * pageSize;
 
-  // Parse KPI scope from URL params (defaults to "month")
-  const scopeMode = (params.kpiScope as ScopeMode) || "month";
-  const scope: KPIScope = (() => {
-    if (scopeMode === "all") {
-      return { mode: "all" };
-    }
-    if (scopeMode === "range" && params.kpiFrom && params.kpiTo) {
-      return { mode: "range", start: params.kpiFrom, end: params.kpiTo };
-    }
-    // Default to month mode
-    return { mode: "month" };
-  })();
-
   return (
     <Suspense fallback={<IncomePageSkeleton />}>
       <IncomePageContent
@@ -144,7 +125,6 @@ export default async function IncomePage({
           email: session.user.email,
           image: session.user.image ?? null,
         }}
-        scope={scope}
         limit={pageSize}
         offset={offset}
       />

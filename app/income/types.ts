@@ -45,15 +45,6 @@ export interface Client {
   category?: string;
 }
 
-// KPI scope configuration
-export type ScopeMode = "month" | "all" | "range";
-
-export interface KPIScope {
-  mode: ScopeMode;
-  start?: string;  // ISO date YYYY-MM-DD (required when mode is "range")
-  end?: string;    // ISO date YYYY-MM-DD (required when mode is "range")
-}
-
 // KPI data structure
 export interface KPIData {
   outstanding: number; // מחכה לתשלום - invoiced but not paid
