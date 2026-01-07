@@ -266,7 +266,7 @@ export const getIncomeAggregatesForMonth = unstable_cache(
           )
         ),
 
-      // 3. Outstanding
+      // 3. Outstanding (scoped to current month)
       db
         .select({
           totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
@@ -277,12 +277,14 @@ export const getIncomeAggregatesForMonth = unstable_cache(
         .where(
           and(
             eq(incomeEntries.userId, userId),
+            gte(incomeEntries.date, startDate),
+            lte(incomeEntries.date, endDate),
             eq(incomeEntries.invoiceStatus, "sent"),
             sql`${incomeEntries.paymentStatus} != 'paid'`
           )
         ),
 
-      // 4. Ready to Invoice
+      // 4. Ready to Invoice (scoped to current month)
       db
         .select({
           total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
@@ -292,18 +294,22 @@ export const getIncomeAggregatesForMonth = unstable_cache(
         .where(
           and(
             eq(incomeEntries.userId, userId),
+            gte(incomeEntries.date, startDate),
+            lte(incomeEntries.date, endDate),
             eq(incomeEntries.invoiceStatus, "draft"),
             lt(incomeEntries.date, today)
           )
         ),
 
-      // 5. Overdue Count
+      // 5. Overdue Count (scoped to current month)
       db
         .select({ count: count() })
         .from(incomeEntries)
         .where(
           and(
             eq(incomeEntries.userId, userId),
+            gte(incomeEntries.date, startDate),
+            lte(incomeEntries.date, endDate),
             eq(incomeEntries.invoiceStatus, "sent"),
             sql`${incomeEntries.paymentStatus} != 'paid'`,
             sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`

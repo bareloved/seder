@@ -13,7 +13,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Moon, Sun, CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Moon, Sun, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { MONTH_NAMES } from "../utils";
 import type { MonthPaymentStatus } from "../data";
 import { cn } from "@/lib/utils";
@@ -194,8 +195,24 @@ export function IncomeHeader({
             </DropdownMenu>
           </div>
 
-          {/* Controls: Calendar, Dark mode, User */}
+          {/* Controls: Analytics, Calendar, Dark mode, User */}
           <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/analytics">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>אנליטיקה</p>
+              </TooltipContent>
+            </Tooltip>
             {onImportFromCalendar && (
               <Tooltip>
                 <TooltipTrigger asChild>
