@@ -435,7 +435,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
             )}
             onClick={() => onInlineEdit && startEditing("category", entry.category || "")}
           >
-            <CategoryChip category={entry.category || undefined} size="sm" />
+            <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
           </div>
         )}
       </TableCell>

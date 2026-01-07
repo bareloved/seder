@@ -397,7 +397,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   <DropdownMenu open={isCategoryDropdownOpen} onOpenChange={setIsCategoryDropdownOpen}>
                     <DropdownMenuTrigger asChild>
                       <button className="w-full text-right hover:opacity-80 transition-opacity">
-                        <CategoryChip category={entry.category || undefined} size="sm" />
+                        <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[130px]">
@@ -430,7 +430,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <CategoryChip category={entry.category || undefined} size="sm" />
+                  <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
                 )}
               </div>
             ),
@@ -683,8 +683,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
               {entry.clientName}
-              {entry.category && (
-                <><span className="mx-1">·</span><CategoryChip category={entry.category} size="sm" withIcon={false} className="inline" /></>
+              {(entry.categoryData || entry.category) && (
+                <><span className="mx-1">·</span><CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={false} className="inline" /></>
               )}
             </p>
           </div>

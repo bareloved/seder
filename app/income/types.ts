@@ -1,7 +1,10 @@
-import { type InvoiceStatus, type PaymentStatus } from "@/db/schema";
+import { type InvoiceStatus, type PaymentStatus, type Category as DBCategory } from "@/db/schema";
 
 // Re-export DB types
 export { type InvoiceStatus, type PaymentStatus };
+
+// Re-export Category type from DB schema
+export type { DBCategory as Category };
 
 // Display Status (Hebrew) - Purely for UI/Display
 export type DisplayStatus = "בוצע" | "נשלחה" | "שולם";
@@ -21,7 +24,9 @@ export interface IncomeEntry {
   includesVat: boolean;
   invoiceStatus: InvoiceStatus;
   paymentStatus: PaymentStatus;
-  category?: string | null;
+  category?: string | null; // Legacy - kept for migration compatibility
+  categoryId?: string | null; // New FK to categories table
+  categoryData?: DBCategory | null; // Joined category object
   notes?: string | null;
   invoiceSentDate?: string | null;
   paidDate?: string | null;
@@ -80,16 +85,19 @@ export const STATUS_CONFIG: Record<DisplayStatus, {
   },
 };
 
-// Categories for musician workflow
+// Legacy categories - kept for backward compatibility during migration
+// New code should use categories from the database via getUserCategories()
+/** @deprecated Use dynamic categories from database instead */
 export const CATEGORIES = [
   "הופעות",
   "הפקה",
-  "הקלטות", 
+  "הקלטות",
   "הוראה",
   "עיבודים",
   "אחר",
 ] as const;
 
-export type Category = typeof CATEGORIES[number];
+/** @deprecated Use Category type from @/db/schema instead */
+export type LegacyCategory = typeof CATEGORIES[number];
 
 export const DEFAULT_VAT_RATE = 18;

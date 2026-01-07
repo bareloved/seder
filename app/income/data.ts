@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { incomeEntries, account, type IncomeEntry, type NewIncomeEntry } from "@/db/schema";
+import { incomeEntries, account, categories, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
 import { eq, and, gte, lte, asc, desc, sql, count, lt } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { Currency } from "./currency";
@@ -65,6 +65,11 @@ function getTodayString(): string {
 // Query functions
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Extended type for entries with joined category data
+export type IncomeEntryWithCategory = IncomeEntry & {
+  categoryData: Category | null;
+};
+
 /**
  * Get all income entries for a specific month and user
  */
@@ -74,12 +79,34 @@ export async function getIncomeEntriesForMonth({
   userId,
   limit = 500,
   offset = 0,
-}: MonthFilter): Promise<IncomeEntry[]> {
+}: MonthFilter): Promise<IncomeEntryWithCategory[]> {
   const { startDate, endDate } = getMonthBounds(year, month);
-  
+
   const entries = await db
-    .select()
+    .select({
+      id: incomeEntries.id,
+      date: incomeEntries.date,
+      description: incomeEntries.description,
+      clientName: incomeEntries.clientName,
+      amountGross: incomeEntries.amountGross,
+      amountPaid: incomeEntries.amountPaid,
+      vatRate: incomeEntries.vatRate,
+      includesVat: incomeEntries.includesVat,
+      invoiceStatus: incomeEntries.invoiceStatus,
+      paymentStatus: incomeEntries.paymentStatus,
+      calendarEventId: incomeEntries.calendarEventId,
+      notes: incomeEntries.notes,
+      category: incomeEntries.category,
+      categoryId: incomeEntries.categoryId,
+      invoiceSentDate: incomeEntries.invoiceSentDate,
+      paidDate: incomeEntries.paidDate,
+      userId: incomeEntries.userId,
+      createdAt: incomeEntries.createdAt,
+      updatedAt: incomeEntries.updatedAt,
+      categoryData: categories,
+    })
     .from(incomeEntries)
+    .leftJoin(categories, eq(incomeEntries.categoryId, categories.id))
     .where(
       and(
         eq(incomeEntries.userId, userId),
@@ -90,20 +117,42 @@ export async function getIncomeEntriesForMonth({
     .orderBy(asc(incomeEntries.date), asc(incomeEntries.createdAt))
     .limit(limit)
     .offset(offset);
-  
+
   return entries;
 }
 
 /**
  * Get all income entries for a user (for cross-month calculations)
  */
-export async function getAllIncomeEntries(userId: string): Promise<IncomeEntry[]> {
+export async function getAllIncomeEntries(userId: string): Promise<IncomeEntryWithCategory[]> {
   const entries = await db
-    .select()
+    .select({
+      id: incomeEntries.id,
+      date: incomeEntries.date,
+      description: incomeEntries.description,
+      clientName: incomeEntries.clientName,
+      amountGross: incomeEntries.amountGross,
+      amountPaid: incomeEntries.amountPaid,
+      vatRate: incomeEntries.vatRate,
+      includesVat: incomeEntries.includesVat,
+      invoiceStatus: incomeEntries.invoiceStatus,
+      paymentStatus: incomeEntries.paymentStatus,
+      calendarEventId: incomeEntries.calendarEventId,
+      notes: incomeEntries.notes,
+      category: incomeEntries.category,
+      categoryId: incomeEntries.categoryId,
+      invoiceSentDate: incomeEntries.invoiceSentDate,
+      paidDate: incomeEntries.paidDate,
+      userId: incomeEntries.userId,
+      createdAt: incomeEntries.createdAt,
+      updatedAt: incomeEntries.updatedAt,
+      categoryData: categories,
+    })
     .from(incomeEntries)
+    .leftJoin(categories, eq(incomeEntries.categoryId, categories.id))
     .where(eq(incomeEntries.userId, userId))
     .orderBy(desc(incomeEntries.date));
-  
+
   return entries;
 }
 
@@ -331,7 +380,8 @@ export interface CreateIncomeEntryInput {
   includesVat?: boolean;
   invoiceStatus?: "draft" | "sent" | "paid" | "cancelled";
   paymentStatus?: "unpaid" | "partial" | "paid";
-  category?: string;
+  category?: string; // Legacy - kept for backward compatibility
+  categoryId?: string; // New FK to categories table
   notes?: string;
   invoiceSentDate?: string;
   paidDate?: string;
@@ -351,14 +401,15 @@ export async function createIncomeEntry(input: CreateIncomeEntryInput): Promise<
       includesVat: input.includesVat ?? true,
       invoiceStatus: input.invoiceStatus ?? "draft",
       paymentStatus: input.paymentStatus ?? "unpaid",
-      category: input.category,
+      category: input.category, // Legacy
+      categoryId: input.categoryId, // New FK
       notes: input.notes,
       invoiceSentDate: input.invoiceSentDate,
       paidDate: input.paidDate,
       userId: input.userId,
     })
     .returning();
-  
+
   if (!entry) throw new Error("Failed to create income entry");
   return entry;
 }
@@ -375,7 +426,8 @@ export interface UpdateIncomeEntryInput {
   includesVat?: boolean;
   invoiceStatus?: "draft" | "sent" | "paid" | "cancelled";
   paymentStatus?: "unpaid" | "partial" | "paid";
-  category?: string;
+  category?: string; // Legacy
+  categoryId?: string | null; // New FK
   notes?: string;
   invoiceSentDate?: string | null;
   paidDate?: string | null;
@@ -383,7 +435,7 @@ export interface UpdateIncomeEntryInput {
 
 export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<IncomeEntry> {
   const { id, userId, ...updates } = input;
-  
+
   const updateData: Partial<NewIncomeEntry> = {};
   if (updates.date !== undefined) updateData.date = updates.date;
   if (updates.description !== undefined) updateData.description = updates.description;
@@ -395,10 +447,11 @@ export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<
   if (updates.invoiceStatus !== undefined) updateData.invoiceStatus = updates.invoiceStatus;
   if (updates.paymentStatus !== undefined) updateData.paymentStatus = updates.paymentStatus;
   if (updates.category !== undefined) updateData.category = updates.category;
+  if (updates.categoryId !== undefined) updateData.categoryId = updates.categoryId ?? undefined;
   if (updates.notes !== undefined) updateData.notes = updates.notes;
   if (updates.invoiceSentDate !== undefined) updateData.invoiceSentDate = updates.invoiceSentDate ?? undefined;
   if (updates.paidDate !== undefined) updateData.paidDate = updates.paidDate ?? undefined;
-  
+
   updateData.updatedAt = new Date();
   
   const [entry] = await db

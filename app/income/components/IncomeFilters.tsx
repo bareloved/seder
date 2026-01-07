@@ -82,7 +82,7 @@ export function IncomeFilters({
             )}
           >
             <CategoryChip
-              category={category}
+              legacyCategory={category}
               size="sm"
               className={cn(
                 "cursor-pointer",
@@ -336,7 +336,7 @@ export function IncomeFilters({
                     )}
                   >
                     <CategoryChip
-                      category={category}
+                      legacyCategory={category}
                       size="sm"
                       className={cn(
                         "cursor-pointer",

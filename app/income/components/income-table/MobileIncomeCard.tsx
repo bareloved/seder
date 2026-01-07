@@ -197,10 +197,10 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
           {/* Client + Category + Notes indicator */}
           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
             <span className="font-medium truncate max-w-[120px]">{entry.clientName}</span>
-            {entry.category && (
+            {(entry.categoryData || entry.category) && (
               <>
                 <span className="text-slate-300 dark:text-slate-600">•</span>
-                <CategoryChip category={entry.category} size="sm" />
+                <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
               </>
             )}
             {hasNotes && (

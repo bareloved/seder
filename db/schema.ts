@@ -67,6 +67,26 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Categories table - user-customizable income categories
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id),
+  name: varchar("name", { length: 50 }).notNull(),
+  color: varchar("color", { length: 30 }).notNull(),
+  icon: varchar("icon", { length: 30 }).notNull(),
+  displayOrder: numeric("display_order", { precision: 10, scale: 0 }).notNull(),
+  isArchived: boolean("is_archived").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("categories_user_id_idx").on(table.userId),
+  userOrderIdx: index("categories_user_order_idx").on(table.userId, table.displayOrder),
+  userNameUnique: uniqueIndex("categories_user_name_key").on(table.userId, table.name),
+}));
+
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+
 // Income entries table
 export const incomeEntries = pgTable("income_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -87,7 +107,8 @@ export const incomeEntries = pgTable("income_entries", {
     .notNull(),
   calendarEventId: varchar("calendar_event_id", { length: 255 }),
   notes: text("notes"),
-  category: varchar("category", { length: 50 }),
+  category: varchar("category", { length: 50 }), // Legacy - kept for migration
+  categoryId: uuid("category_id").references(() => categories.id), // New FK
   invoiceSentDate: date("invoice_sent_date"),
   paidDate: date("paid_date"),
   // Enforce NOT NULL now that migration is complete
@@ -102,6 +123,7 @@ export const incomeEntries = pgTable("income_entries", {
     clientNameIdx: index("client_name_idx").on(table.clientName),
     userIdIdx: index("user_id_idx").on(table.userId),
     userDateIdx: index("income_user_date_idx").on(table.userId, table.date),
+    categoryIdIdx: index("income_category_id_idx").on(table.categoryId),
     // Scope calendar event uniqueness per user to allow shared calendars
     calendarEventUnique: uniqueIndex("income_calendar_event_user_key").on(
       table.userId,

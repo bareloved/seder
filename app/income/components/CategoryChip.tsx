@@ -2,99 +2,89 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import {
-  Sparkles,
-  SlidersHorizontal,
-  Mic2,
-  BookOpen,
-  Layers,
-  Circle,
-} from "lucide-react";
-import type { Category } from "../types";
+import * as LucideIcons from "lucide-react";
+import type { Category } from "@/db/schema";
+import { getCategoryColorScheme, colorSchemes, type CategoryColor } from "@/app/categories/schemas";
 
-// Visual mapping for income categories used across table, filters, and dialogs
-const CATEGORY_META: Record<
-  Category | "אולפן" | "default",
+// Legacy visual mapping for backward compatibility during migration
+const LEGACY_CATEGORY_META: Record<
+  string,
   {
-    bg: string;
-    text: string;
-    border: string;
-    icon: React.ComponentType<{ className?: string }>;
+    color: CategoryColor;
+    icon: keyof typeof LucideIcons;
   }
 > = {
-  הופעות: {
-    bg: "bg-emerald-50 dark:bg-emerald-900/20",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-100 dark:border-emerald-800",
-    icon: Sparkles,
-  },
-  הפקה: {
-    bg: "bg-indigo-50 dark:bg-indigo-900/20",
-    text: "text-indigo-700 dark:text-indigo-300",
-    border: "border-indigo-100 dark:border-indigo-800",
-    icon: SlidersHorizontal,
-  },
-  הקלטות: {
-    bg: "bg-sky-50 dark:bg-sky-900/20",
-    text: "text-sky-700 dark:text-sky-300",
-    border: "border-sky-100 dark:border-sky-800",
-    icon: Mic2,
-  },
-  הוראה: {
-    bg: "bg-amber-50 dark:bg-amber-900/20",
-    text: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-100 dark:border-amber-800",
-    icon: BookOpen,
-  },
-  עיבודים: {
-    bg: "bg-purple-50 dark:bg-purple-900/20",
-    text: "text-purple-700 dark:text-purple-300",
-    border: "border-purple-100 dark:border-purple-800",
-    icon: Layers,
-  },
-  אחר: {
-    bg: "bg-slate-50 dark:bg-slate-800/40",
-    text: "text-slate-700 dark:text-slate-200",
-    border: "border-slate-200 dark:border-slate-700",
-    icon: Circle,
-  },
-  // Some users use "אולפן" even if not in the core list
-  אולפן: {
-    bg: "bg-blue-50 dark:bg-blue-900/20",
-    text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-100 dark:border-blue-800",
-    icon: SlidersHorizontal,
-  },
-  default: {
-    bg: "bg-slate-100 dark:bg-slate-800/40",
-    text: "text-slate-600 dark:text-slate-200",
-    border: "border-slate-200 dark:border-slate-700",
-    icon: Circle,
-  },
+  הופעות: { color: "emerald", icon: "Sparkles" },
+  הפקה: { color: "indigo", icon: "SlidersHorizontal" },
+  הקלטות: { color: "sky", icon: "Mic2" },
+  הוראה: { color: "amber", icon: "BookOpen" },
+  עיבודים: { color: "purple", icon: "Layers" },
+  אחר: { color: "slate", icon: "Circle" },
+  אולפן: { color: "blue", icon: "SlidersHorizontal" },
 };
 
 interface CategoryChipProps {
-  category?: string | null;
+  /** New: Full category object from database */
+  category?: Category | null;
+  /** Legacy: String category name (for backward compatibility) */
+  legacyCategory?: string | null;
   size?: "sm" | "md";
   withIcon?: boolean;
   className?: string;
 }
 
+// Helper to get icon component by name
+function getIconComponent(iconName?: string | null): React.ComponentType<{ className?: string }> {
+  if (!iconName) return LucideIcons.Circle;
+  const Icon = LucideIcons[iconName as keyof typeof LucideIcons];
+  if (Icon && typeof Icon === "function") {
+    return Icon as React.ComponentType<{ className?: string }>;
+  }
+  return LucideIcons.Circle;
+}
+
 export function CategoryChip({
   category,
+  legacyCategory,
   size = "md",
   withIcon = true,
   className,
 }: CategoryChipProps) {
-  const meta =
-    (category && CATEGORY_META[category as Category]) ||
-    CATEGORY_META.default;
-  const Icon = meta.icon;
+  // Determine display values based on whether we have a category object or legacy string
+  let displayName: string;
+  let colorScheme: { bg: string; text: string; border: string };
+  let IconComponent: React.ComponentType<{ className?: string }>;
+  let isArchived = false;
 
+  if (category) {
+    // New: Using category object from database
+    displayName = category.name;
+    colorScheme = getCategoryColorScheme(category.color);
+    IconComponent = getIconComponent(category.icon);
+    isArchived = category.isArchived;
+  } else if (legacyCategory) {
+    // Legacy: Using string category name
+    displayName = legacyCategory;
+    const legacyMeta = LEGACY_CATEGORY_META[legacyCategory];
+    if (legacyMeta) {
+      colorScheme = colorSchemes[legacyMeta.color];
+      IconComponent = getIconComponent(legacyMeta.icon);
+    } else {
+      colorScheme = getCategoryColorScheme(null);
+      IconComponent = LucideIcons.Circle;
+    }
+  } else {
+    // No category
+    displayName = "ללא קטגוריה";
+    colorScheme = getCategoryColorScheme(null);
+    IconComponent = LucideIcons.Circle;
+  }
+
+  const hasCategory = category || legacyCategory;
   const padding = size === "sm" ? "text-[11px]" : "text-xs";
   const iconSize = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";
-  const showIcon = withIcon && Boolean(category);
-  const textClass = category ? meta.text : "text-slate-400 dark:text-slate-500";
+  const showIcon = withIcon && hasCategory;
+  const textClass = hasCategory ? colorScheme.text : "text-slate-400 dark:text-slate-500";
 
   return (
     <span
@@ -102,20 +92,51 @@ export function CategoryChip({
         "inline-flex items-center gap-1 font-medium whitespace-nowrap",
         textClass,
         padding,
+        isArchived && "opacity-60",
         className
       )}
     >
       {showIcon && (
-        <Icon className={cn(iconSize, "shrink-0 opacity-80")} />
+        <IconComponent className={cn(iconSize, "shrink-0 opacity-80")} />
       )}
       <span className="truncate max-w-[120px]">
-        {category || "ללא קטגוריה"}
+        {displayName}
+        {isArchived && " (ארכיון)"}
       </span>
     </span>
   );
 }
 
-export function getCategoryMeta(category?: string | null) {
-  return (category && CATEGORY_META[category as Category]) || CATEGORY_META.default;
+// Helper to get category metadata (for use in other components)
+export function getCategoryMeta(category?: Category | null, legacyCategory?: string | null) {
+  if (category) {
+    return {
+      colorScheme: getCategoryColorScheme(category.color),
+      icon: getIconComponent(category.icon),
+      name: category.name,
+      isArchived: category.isArchived,
+    };
+  }
+
+  if (legacyCategory) {
+    const legacyMeta = LEGACY_CATEGORY_META[legacyCategory];
+    if (legacyMeta) {
+      return {
+        colorScheme: colorSchemes[legacyMeta.color],
+        icon: getIconComponent(legacyMeta.icon),
+        name: legacyCategory,
+        isArchived: false,
+      };
+    }
+  }
+
+  return {
+    colorScheme: getCategoryColorScheme(null),
+    icon: LucideIcons.Circle,
+    name: "ללא קטגוריה",
+    isArchived: false,
+  };
 }
 
+// Re-export color scheme helper for convenience
+export { getCategoryColorScheme };

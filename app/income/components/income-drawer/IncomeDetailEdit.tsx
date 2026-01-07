@@ -212,7 +212,7 @@ export function IncomeDetailEdit({
               >
                 <span className="flex-1 text-right">
                   {editedEntry.category ? (
-                    <CategoryChip category={editedEntry.category} size="sm" className="mr-1" />
+                    <CategoryChip legacyCategory={editedEntry.category} size="sm" className="mr-1" />
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500">בחר קטגוריה</span>
                   )}
@@ -227,7 +227,7 @@ export function IncomeDetailEdit({
                   onClick={() => handleChange({ category: cat })}
                   className="justify-end"
                 >
-                  <CategoryChip category={cat} size="sm" />
+                  <CategoryChip legacyCategory={cat} size="sm" />
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

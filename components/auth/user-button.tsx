@@ -16,7 +16,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, Download } from "lucide-react";
+import { LogOut, Download, Tags } from "lucide-react";
+import Link from "next/link";
 
 interface UserButtonProps {
   onExportCSV?: () => void;
@@ -78,6 +79,12 @@ export default function UserButton({ onExportCSV }: UserButtonProps) {
             <span>ייצוא ל-CSV</span>
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+          <Link href="/categories" className="flex items-center">
+            <Tags className="mr-2 h-4 w-4" />
+            <span>ניהול קטגוריות</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
