@@ -4,7 +4,6 @@ import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import * as LucideIcons from "lucide-react";
 import { GripVertical, Pencil, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { Category } from "@/db/schema";
-import { getCategoryColorScheme } from "../schemas";
+import { getCategoryColorScheme, getIconByName } from "../schemas";
 
 interface SortableCategoryProps {
   category: Category;
@@ -28,16 +27,6 @@ interface SortableCategoryProps {
   onUnarchive: (id: string) => void;
   onDelete?: (id: string) => void;
   disabled?: boolean;
-}
-
-// Helper to get icon component by name
-function getIconComponent(iconName?: string | null): React.ComponentType<{ className?: string }> {
-  if (!iconName) return LucideIcons.Circle;
-  const Icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  if (Icon && typeof Icon === "function") {
-    return Icon as React.ComponentType<{ className?: string }>;
-  }
-  return LucideIcons.Circle;
 }
 
 export function SortableCategory({
@@ -66,7 +55,7 @@ export function SortableCategory({
   };
 
   const colorScheme = getCategoryColorScheme(category.color);
-  const IconComponent = getIconComponent(category.icon);
+  const IconComponent = getIconByName(category.icon);
 
   return (
     <div

@@ -13,7 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Moon, Sun, CalendarDays, ChevronDown } from "lucide-react";
+import { Moon, Sun, CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { MONTH_NAMES } from "../utils";
 import type { MonthPaymentStatus } from "../data";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ interface IncomeHeaderProps {
   onImportFromCalendar?: () => void;
   monthPaymentStatuses?: Record<number, MonthPaymentStatus>;
   isGoogleConnected?: boolean;
+  user: { name: string | null; email: string; image: string | null };
 }
 
 export function IncomeHeader({
@@ -44,9 +45,30 @@ export function IncomeHeader({
   onImportFromCalendar,
   monthPaymentStatuses,
   isGoogleConnected,
+  user,
 }: IncomeHeaderProps) {
   const currentYear = new Date().getFullYear();
-  const years = [currentYear - 1, currentYear, currentYear + 1];
+  // Show 5 years: 2 years before and 2 years after current year
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+
+  // Month navigation handlers
+  const handlePreviousMonth = () => {
+    if (selectedMonth === 1) {
+      onYearChange(selectedYear - 1);
+      onMonthChange(12);
+    } else {
+      onMonthChange(selectedMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (selectedMonth === 12) {
+      onYearChange(selectedYear + 1);
+      onMonthChange(1);
+    } else {
+      onMonthChange(selectedMonth + 1);
+    }
+  };
 
   return (
     <header className="rounded-2xl bg-white/80 dark:bg-slate-900/80 px-3 sm:px-4 py-3 shadow-sm backdrop-blur border border-slate-100 dark:border-slate-800 print:shadow-none print:border-slate-200">
@@ -74,30 +96,41 @@ export function IncomeHeader({
         <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-3 print:hidden">
           {/* Month/Year Selectors - Always visible */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[100px] sm:w-[130px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 justify-between px-3 font-semibold"
-                >
-                <span className="flex items-center gap-1.5 sm:gap-2">
-                    {MONTH_NAMES[selectedMonth]}
-                    {monthPaymentStatuses?.[selectedMonth] &&
-                      monthPaymentStatuses[selectedMonth] !== "empty" && (
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full shrink-0",
-                        monthPaymentStatuses[selectedMonth] === "all-paid"
-                          ? "bg-emerald-500"
-                          : "bg-red-500"
-                      )}
-                    />
-                  )}
-                </span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="max-h-[300px] overflow-y-auto">
+            {/* Month navigation with arrows */}
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePreviousMonth}
+                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[80px] sm:w-[110px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 justify-between px-3 font-semibold"
+                  >
+                  <span className="flex items-center gap-1.5 sm:gap-2">
+                      {MONTH_NAMES[selectedMonth]}
+                      {monthPaymentStatuses?.[selectedMonth] &&
+                        monthPaymentStatuses[selectedMonth] !== "empty" && (
+                      <span
+                        className={cn(
+                          "h-2 w-2 rounded-full shrink-0",
+                          monthPaymentStatuses[selectedMonth] === "all-paid"
+                            ? "bg-emerald-500"
+                            : "bg-red-500"
+                        )}
+                      />
+                    )}
+                  </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+              <DropdownMenuContent>
                 {Object.entries(MONTH_NAMES).map(([value, name]) => {
                   const monthNum = parseInt(value);
                   const status = monthPaymentStatuses?.[monthNum];
@@ -131,6 +164,16 @@ export function IncomeHeader({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextMonth}
+              className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -141,9 +184,9 @@ export function IncomeHeader({
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="w-16 px-0 min-w-0">
                 {years.map((year) => (
-                  <DropdownMenuItem key={year} onClick={() => onYearChange(year)} className="justify-end font-numbers font-medium">
+                  <DropdownMenuItem key={year} onClick={() => onYearChange(year)} className="justify-center font-numbers font-medium px-2">
                     {year}
                   </DropdownMenuItem>
                 ))}
@@ -197,8 +240,9 @@ export function IncomeHeader({
                 <p>{isDarkMode ? "מצב יום" : "מצב לילה"}</p>
               </TooltipContent>
             </Tooltip>
-            <UserButton 
+            <UserButton
               onExportCSV={onExportCSV}
+              user={user}
             />
           </div>
         </div>

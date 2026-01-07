@@ -1,4 +1,29 @@
 import { z } from "zod";
+import {
+  Sparkles,
+  SlidersHorizontal,
+  Mic2,
+  BookOpen,
+  Layers,
+  Circle,
+  Music,
+  Headphones,
+  Guitar,
+  Piano,
+  Drum,
+  Radio,
+  Video,
+  Camera,
+  Briefcase,
+  GraduationCap,
+  Users,
+  Calendar,
+  Star,
+  Heart,
+  Zap,
+  Trophy,
+  type LucideIcon,
+} from "lucide-react";
 
 // Available colors for categories
 export const categoryColors = [
@@ -45,6 +70,41 @@ export const categoryIcons = [
 ] as const;
 
 export type CategoryIcon = (typeof categoryIcons)[number];
+
+// Icon component map - explicit imports prevent tree-shaking
+export const categoryIconMap: Record<CategoryIcon, LucideIcon> = {
+  Sparkles,
+  SlidersHorizontal,
+  Mic2,
+  BookOpen,
+  Layers,
+  Circle,
+  Music,
+  Headphones,
+  Guitar,
+  Piano,
+  Drum,
+  Radio,
+  Video,
+  Camera,
+  Briefcase,
+  GraduationCap,
+  Users,
+  Calendar,
+  Star,
+  Heart,
+  Zap,
+  Trophy,
+};
+
+// Helper to get icon component by name (type-safe)
+export function getIconByName(iconName?: string | null): LucideIcon {
+  if (!iconName) return Circle;
+  if (iconName in categoryIconMap) {
+    return categoryIconMap[iconName as CategoryIcon];
+  }
+  return Circle;
+}
 
 // Color schemes for UI rendering
 export const colorSchemes: Record<

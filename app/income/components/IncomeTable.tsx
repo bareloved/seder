@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import type { Category } from "@/db/schema";
 import { IncomeListView } from "./IncomeListView";
 import { IncomeCardsView } from "./IncomeCardsView";
 import type { ViewMode } from "./ViewModeToggle";
@@ -14,6 +15,7 @@ import type { ViewMode } from "./ViewModeToggle";
 interface IncomeTableProps {
   entries: IncomeEntry[];
   clients: string[];
+  categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
@@ -36,6 +38,7 @@ interface IncomeTableProps {
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
   onNewEntry: () => void;
+  onEditCategories?: () => void;
   // View mode props
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -44,6 +47,7 @@ interface IncomeTableProps {
 export const IncomeTable = React.memo(function IncomeTable({
   entries,
   clients,
+  categories,
   defaultDate,
   onRowClick,
   onStatusChange,
@@ -66,6 +70,7 @@ export const IncomeTable = React.memo(function IncomeTable({
   selectedCategories,
   onCategoryChange,
   onNewEntry,
+  onEditCategories,
   // View mode
   viewMode,
   onViewModeChange,
@@ -74,6 +79,7 @@ export const IncomeTable = React.memo(function IncomeTable({
   const viewProps = {
     entries,
     clients,
+    categories,
     defaultDate,
     onRowClick,
     onStatusChange,
@@ -95,6 +101,7 @@ export const IncomeTable = React.memo(function IncomeTable({
     selectedCategories,
     onCategoryChange,
     onNewEntry,
+    onEditCategories,
     viewMode,
     onViewModeChange,
   };

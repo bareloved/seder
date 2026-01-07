@@ -30,10 +30,12 @@ import {
   Trash2,
   StickyNote,
   CalendarDays,
+  Settings2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry, DisplayStatus, STATUS_CONFIG, CATEGORIES } from "../../types";
+import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
+import type { Category } from "@/db/schema";
 import {
   formatCurrency,
   formatDate,
@@ -69,8 +71,12 @@ export interface IncomeEntryRowProps {
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   /** Client list for autocomplete */
   clients?: string[];
+  /** Categories list for dropdown */
+  categories?: Category[];
   /** Column order for desktop layout */
   columnOrder?: ColumnKey[];
+  /** Optional handler to open category manager dialog */
+  onEditCategories?: () => void;
 }
 
 export const IncomeEntryRow = React.memo(function IncomeEntryRow({
@@ -82,7 +88,9 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   onDelete,
   onInlineEdit,
   clients = [],
+  categories = [],
   columnOrder,
+  onEditCategories,
 }: IncomeEntryRowProps) {
   const effectiveOrder = columnOrder && columnOrder.length ? columnOrder : DEFAULT_COLUMN_ORDER;
   const displayStatus = getDisplayStatus(entry);
@@ -393,37 +401,52 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                 className="shrink-0 w-[100px] px-2 py-2.5 border-l border-slate-100 dark:border-slate-800 flex items-center"
                 onClick={(e) => e.stopPropagation()}
               >
-                {onInlineEdit ? (
+                {onInlineEdit && categories.length > 0 ? (
                   <DropdownMenu open={isCategoryDropdownOpen} onOpenChange={setIsCategoryDropdownOpen}>
                     <DropdownMenuTrigger asChild>
                       <button className="w-full text-right hover:opacity-80 transition-opacity">
                         <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[130px]">
-                      {CATEGORIES.map((cat) => (
+                    <DropdownMenuContent align="end" className="w-[150px]">
+                      {categories.filter(c => !c.isArchived).map((cat) => (
                         <DropdownMenuItem
-                          key={cat}
+                          key={cat.id}
                           onClick={() => {
-                            if (onInlineEdit) onInlineEdit(entry.id, "category", cat);
+                            if (onInlineEdit) onInlineEdit(entry.id, "categoryId", cat.id);
                             setIsCategoryDropdownOpen(false);
                           }}
-                          className="justify-end text-sm"
+                          className="justify-end"
                         >
-                          {cat}
+                          <CategoryChip category={cat} size="sm" />
                         </DropdownMenuItem>
                       ))}
-                      {entry.category && (
+                      {(entry.categoryId || entry.category) && (
                         <>
                           <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
                           <DropdownMenuItem
                             onClick={() => {
-                              if (onInlineEdit) onInlineEdit(entry.id, "category", "");
+                              if (onInlineEdit) onInlineEdit(entry.id, "categoryId", "");
                               setIsCategoryDropdownOpen(false);
                             }}
                             className="justify-end text-xs text-slate-400"
                           >
                             הסר קטגוריה
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {onEditCategories && (
+                        <>
+                          <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setIsCategoryDropdownOpen(false);
+                              onEditCategories();
+                            }}
+                            className="justify-end text-xs text-slate-500 gap-1"
+                          >
+                            <Settings2 className="h-3 w-3" />
+                            ערוך קטגוריות
                           </DropdownMenuItem>
                         </>
                       )}

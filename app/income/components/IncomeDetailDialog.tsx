@@ -12,9 +12,11 @@ import { cn } from "@/lib/utils";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG, DEFAULT_VAT_RATE, VatType } from "../types";
 import { getDisplayStatus, getTodayDateString } from "../utils";
 import { IncomeDetailEdit } from "./income-drawer/IncomeDetailEdit";
+import type { Category } from "@/db/schema";
 
 interface IncomeDetailDialogProps {
   entry: IncomeEntry | null;
+  categories: Category[];
   isOpen: boolean;
   onClose: () => void;
   onMarkAsPaid: (id: string) => void;
@@ -27,6 +29,7 @@ interface IncomeDetailDialogProps {
 
 export function IncomeDetailDialog({
   entry,
+  categories,
   isOpen,
   onClose,
   onMarkAsPaid,
@@ -87,6 +90,7 @@ export function IncomeDetailDialog({
 
           <IncomeDetailEdit
             entry={effectiveEntry}
+            categories={categories}
             onSave={(updatedEntry) => {
               if (isNew) {
                 onAdd(updatedEntry);

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ListX, Plus, X } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import { IncomeFilters } from "./IncomeFilters";
 import { MobileIncomeCard } from "./income-table/MobileIncomeCard";
@@ -20,6 +21,7 @@ import { formatCurrency } from "../utils";
 interface IncomeCardsViewProps {
   entries: IncomeEntry[];
   clients: string[];
+  categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
@@ -42,6 +44,7 @@ interface IncomeCardsViewProps {
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
   onNewEntry: () => void;
+  onEditCategories?: () => void;
   // View mode props
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -172,6 +175,7 @@ function DesktopCardsTotals({ entries }: { entries: IncomeEntry[] }) {
 export const IncomeCardsView = React.memo(function IncomeCardsView({
   entries,
   clients,
+  categories,
   defaultDate,
   onRowClick,
   onStatusChange,
@@ -191,6 +195,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
   selectedCategories,
   onCategoryChange,
   onNewEntry,
+  onEditCategories,
   // View mode props
   viewMode,
   onViewModeChange,
@@ -214,9 +219,11 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
               clients={monthClients}
               selectedClient={selectedClient}
               onClientChange={onClientChange}
+              categories={categories}
               selectedCategories={selectedCategories}
               onCategoryChange={onCategoryChange}
               onNewEntry={onNewEntry}
+              onEditCategories={onEditCategories}
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
             />
@@ -267,7 +274,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
       <div className="md:hidden print:hidden">
         {/* Mobile Quick Add */}
         <div className="mb-3">
-          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} defaultDate={defaultDate} />
+          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} categories={categories} defaultDate={defaultDate} />
         </div>
 
         {/* Empty States for Mobile */}

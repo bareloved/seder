@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import * as LucideIcons from "lucide-react";
 import { Check } from "lucide-react";
 import {
   categoryIcons,
+  getIconByName,
   type CategoryIcon,
   colorSchemes,
   type CategoryColor,
@@ -19,15 +19,6 @@ interface IconPickerProps {
   className?: string;
 }
 
-// Helper to get icon component by name
-function getIconComponent(iconName: string): React.ComponentType<{ className?: string }> {
-  const Icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  if (Icon && typeof Icon === "function") {
-    return Icon as React.ComponentType<{ className?: string }>;
-  }
-  return LucideIcons.Circle;
-}
-
 export function IconPicker({ value, onChange, color = "slate", className }: IconPickerProps) {
   const scheme = colorSchemes[color];
 
@@ -35,7 +26,7 @@ export function IconPicker({ value, onChange, color = "slate", className }: Icon
     <div className={cn("flex flex-wrap gap-2", className)}>
       {categoryIcons.map((iconName) => {
         const isSelected = value === iconName;
-        const IconComponent = getIconComponent(iconName);
+        const IconComponent = getIconByName(iconName);
 
         return (
           <button

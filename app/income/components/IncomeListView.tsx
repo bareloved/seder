@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ListX, Plus, X } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import { IncomeFilters } from "./IncomeFilters";
 import { IncomeEntryRow } from "./income-table/IncomeEntryRow";
@@ -40,6 +41,7 @@ const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
 interface IncomeListViewProps {
   entries: IncomeEntry[];
   clients: string[];
+  categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
@@ -62,6 +64,7 @@ interface IncomeListViewProps {
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
   onNewEntry: () => void;
+  onEditCategories?: () => void;
   // View mode props
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -191,6 +194,7 @@ function DesktopListTotals({ totals }: { totals: Totals }) {
 export const IncomeListView = React.memo(function IncomeListView({
   entries,
   clients,
+  categories,
   defaultDate,
   onRowClick,
   onStatusChange,
@@ -213,6 +217,7 @@ export const IncomeListView = React.memo(function IncomeListView({
   selectedCategories,
   onCategoryChange,
   onNewEntry,
+  onEditCategories,
   // View mode props
   viewMode,
   onViewModeChange,
@@ -322,9 +327,11 @@ export const IncomeListView = React.memo(function IncomeListView({
               clients={monthClients}
               selectedClient={selectedClient}
               onClientChange={onClientChange}
+              categories={categories}
               selectedCategories={selectedCategories}
               onCategoryChange={onCategoryChange}
               onNewEntry={onNewEntry}
+              onEditCategories={onEditCategories}
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
             />
@@ -333,7 +340,7 @@ export const IncomeListView = React.memo(function IncomeListView({
 
         {/* QUICK ADD CARD */}
         <div className="mb-3">
-          <QuickAddCard onAddEntry={onAddEntry} clients={clients} />
+          <QuickAddCard onAddEntry={onAddEntry} clients={clients} categories={categories} onEditCategories={onEditCategories} />
         </div>
 
         {/* Column Headers - draggable (desktop only) */}
@@ -383,7 +390,9 @@ export const IncomeListView = React.memo(function IncomeListView({
                 onDelete={onDelete}
                 onInlineEdit={onInlineEdit}
                 clients={clients}
+                categories={categories}
                 columnOrder={columnOrder}
+                onEditCategories={onEditCategories}
               />
             ))}
 
@@ -400,7 +409,7 @@ export const IncomeListView = React.memo(function IncomeListView({
       <div className="md:hidden print:hidden">
         {/* Mobile Quick Add */}
         <div className="mb-3">
-          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} defaultDate={defaultDate} />
+          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} categories={categories} defaultDate={defaultDate} />
         </div>
 
         {/* Empty States for Mobile */}
@@ -432,6 +441,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 onMarkInvoiceSent={onMarkInvoiceSent}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
+                categories={categories}
                 // No onInlineEdit or clients for mobile - disables inline editing
               />
             ))}

@@ -13,6 +13,7 @@ export const createIncomeEntrySchema = zfd.formData({
   amountGross: amountSchema,
   amountPaid: zfd.numeric(z.number().min(0).optional().default(0)),
   category: zfd.text(z.string().optional()),
+  categoryId: zfd.text(z.string().uuid().optional()), // New FK to categories table
   notes: zfd.text(z.string().optional()),
   vatRate: zfd.numeric(z.number().min(0).default(18)),
   // Handle boolean string "true"/"false" or checkbox value
@@ -33,6 +34,7 @@ export const updateIncomeEntrySchema = zfd.formData({
   amountGross: zfd.numeric(z.number().min(0).optional()),
   amountPaid: zfd.numeric(z.number().min(0).optional()),
   category: zfd.text(z.string().optional()),
+  categoryId: zfd.text(z.string().uuid().optional()), // New FK to categories table
   notes: zfd.text(z.string().optional()),
   vatRate: zfd.numeric(z.number().min(0).optional()),
   includesVat: zfd.text(z.string().transform((val) => val === "true")).optional(),

@@ -20,17 +20,21 @@ import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon, Plus, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry, DisplayStatus, VatType, CATEGORIES } from "../../types";
+import { IncomeEntry, DisplayStatus, VatType } from "../../types";
+import type { Category } from "@/db/schema";
+import { CategoryChip } from "../CategoryChip";
 
 interface MobileQuickAddProps {
   onAddEntry: (entry: Omit<IncomeEntry, "id" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: VatType, invoiceStatus?: "draft" | "sent" | "paid" | "cancelled", paymentStatus?: "unpaid" | "partial" | "paid", vatRate?: number, includesVat?: boolean }) => void;
   clients: string[];
+  categories: Category[];
   defaultDate?: string;
 }
 
 export function MobileQuickAdd({
   onAddEntry,
   clients,
+  categories,
   defaultDate,
 }: MobileQuickAddProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -38,7 +42,7 @@ export function MobileQuickAdd({
   const [description, setDescription] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [clientName, setClientName] = React.useState("");
-  const [category, setCategory] = React.useState("");
+  const [categoryId, setCategoryId] = React.useState("");
   const [showClientSuggestions, setShowClientSuggestions] = React.useState(false);
 
   // Filter clients for autocomplete
@@ -59,13 +63,15 @@ export function MobileQuickAdd({
     if (!description && !amount) return;
 
     const date = newEntryDate || new Date();
+    const selectedCategory = categories.find(c => c.id === categoryId);
     onAddEntry({
       date: date.toISOString().split("T")[0],
       description: description || "עבודה חדשה",
       amountGross: parseFloat(amount) || 0,
       amountPaid: 0,
       clientName: clientName || "לא צוין",
-      category: category || undefined,
+      categoryId: categoryId || undefined,
+      categoryData: selectedCategory || null,
       status: "בוצע",
       vatType: "חייב מע״מ",
       invoiceStatus: "draft",
@@ -78,7 +84,7 @@ export function MobileQuickAdd({
     setDescription("");
     setAmount("");
     setClientName("");
-    setCategory("");
+    setCategoryId("");
     setNewEntryDate(undefined);
     setIsExpanded(false);
   };
@@ -153,14 +159,21 @@ export function MobileQuickAdd({
       />
 
       {/* Category */}
-      <Select value={category} onValueChange={setCategory}>
+      <Select value={categoryId} onValueChange={setCategoryId}>
         <SelectTrigger className="h-10 w-full text-sm bg-white dark:bg-slate-800 text-right justify-between" dir="rtl">
-          <SelectValue placeholder="בחר קטגוריה" />
+          <SelectValue placeholder="בחר קטגוריה">
+            {categoryId && (
+              <CategoryChip
+                category={categories.find(c => c.id === categoryId) || null}
+                size="sm"
+              />
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent align="end" dir="rtl">
-          {CATEGORIES.map((c) => (
-            <SelectItem key={c} value={c}>
-              {c}
+          {categories.filter(c => !c.isArchived).map((cat) => (
+            <SelectItem key={cat.id} value={cat.id}>
+              <CategoryChip category={cat} size="sm" />
             </SelectItem>
           ))}
         </SelectContent>

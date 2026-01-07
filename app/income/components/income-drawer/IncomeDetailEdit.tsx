@@ -31,14 +31,15 @@ import { he } from "date-fns/locale";
 import {
   IncomeEntry,
   DisplayStatus,
-  CATEGORIES,
   VatType,
 } from "../../types";
+import type { Category } from "@/db/schema";
 import { formatFullDate, getDisplayStatus, getVatTypeFromEntry } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
 
 interface IncomeDetailEditProps {
   entry: IncomeEntry;
+  categories: Category[];
   onSave: (entry: IncomeEntry & { status?: DisplayStatus; vatType?: VatType }) => void;
   onClose: () => void;
   onMarkAsPaid: (id: string) => void;
@@ -53,6 +54,7 @@ type EditableIncomeEntry = IncomeEntry & {
 
 export function IncomeDetailEdit({
   entry,
+  categories,
   onSave,
   onClose,
   onMarkAsPaid,
@@ -211,7 +213,9 @@ export function IncomeDetailEdit({
                 )}
               >
                 <span className="flex-1 text-right">
-                  {editedEntry.category ? (
+                  {editedEntry.categoryData ? (
+                    <CategoryChip category={editedEntry.categoryData} size="sm" className="mr-1" />
+                  ) : editedEntry.category ? (
                     <CategoryChip legacyCategory={editedEntry.category} size="sm" className="mr-1" />
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500">בחר קטגוריה</span>
@@ -221,13 +225,13 @@ export function IncomeDetailEdit({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="end">
-              {CATEGORIES.map((cat) => (
+              {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
-                  key={cat}
-                  onClick={() => handleChange({ category: cat })}
+                  key={cat.id}
+                  onClick={() => handleChange({ categoryId: cat.id, categoryData: cat })}
                   className="justify-end"
                 >
-                  <CategoryChip legacyCategory={cat} size="sm" />
+                  <CategoryChip category={cat} size="sm" />
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

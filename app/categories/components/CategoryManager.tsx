@@ -49,9 +49,10 @@ import { IconPicker } from "./IconPicker";
 
 interface CategoryManagerProps {
   initialCategories?: Category[];
+  hideHeader?: boolean;
 }
 
-export function CategoryManager({ initialCategories = [] }: CategoryManagerProps) {
+export function CategoryManager({ initialCategories = [], hideHeader = false }: CategoryManagerProps) {
   const [categories, setCategories] = React.useState<Category[]>(initialCategories);
   const [showArchived, setShowArchived] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -255,21 +256,33 @@ export function CategoryManager({ initialCategories = [] }: CategoryManagerProps
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            קטגוריות
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            התאם את הקטגוריות לצרכיך. גרור לשינוי סדר.
-          </p>
+      {/* Header - can be hidden when used inside a dialog */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              קטגוריות
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              התאם את הקטגוריות לצרכיך. גרור לשינוי סדר.
+            </p>
+          </div>
+          <Button onClick={handleAdd} className="gap-2">
+            <Plus className="h-4 w-4" />
+            קטגוריה חדשה
+          </Button>
         </div>
-        <Button onClick={handleAdd} className="gap-2">
-          <Plus className="h-4 w-4" />
-          קטגוריה חדשה
-        </Button>
-      </div>
+      )}
+
+      {/* Add button when header is hidden */}
+      {hideHeader && (
+        <div className="flex justify-end">
+          <Button onClick={handleAdd} className="gap-2">
+            <Plus className="h-4 w-4" />
+            קטגוריה חדשה
+          </Button>
+        </div>
+      )}
 
       {/* Category List with DnD */}
       <DndContext

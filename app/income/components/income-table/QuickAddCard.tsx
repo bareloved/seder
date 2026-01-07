@@ -17,10 +17,12 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, Plus, Keyboard, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Keyboard, ChevronDown, Settings2 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry, DisplayStatus, VatType, CATEGORIES } from "../../types";
+import { IncomeEntry, DisplayStatus, VatType } from "../../types";
+import type { Category } from "@/db/schema";
+import { CategoryChip } from "../CategoryChip";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quick Add Card Component
@@ -32,17 +34,21 @@ import { IncomeEntry, DisplayStatus, VatType, CATEGORIES } from "../../types";
 interface QuickAddCardProps {
   onAddEntry: (entry: Omit<IncomeEntry, "id" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: VatType, invoiceStatus?: "draft" | "sent" | "paid" | "cancelled", paymentStatus?: "unpaid" | "partial" | "paid", vatRate?: number, includesVat?: boolean }) => void;
   clients: string[];
+  categories: Category[];
+  onEditCategories?: () => void;
 }
 
 export function QuickAddCard({
   onAddEntry,
   clients,
+  categories,
+  onEditCategories,
 }: QuickAddCardProps) {
   const [newEntryDate, setNewEntryDate] = React.useState<Date>();
   const [quickAddDescription, setQuickAddDescription] = React.useState("");
   const [quickAddAmount, setQuickAddAmount] = React.useState("");
   const [quickAddClient, setQuickAddClient] = React.useState("");
-  const [quickAddCategory, setQuickAddCategory] = React.useState("");
+  const [quickAddCategoryId, setQuickAddCategoryId] = React.useState("");
   const [showClientSuggestions, setShowClientSuggestions] = React.useState(false);
 
   const quickAddDescriptionRef = React.useRef<HTMLInputElement>(null);
@@ -86,13 +92,15 @@ export function QuickAddCard({
     if (!quickAddDescription && !quickAddAmount) return;
 
     const date = newEntryDate || new Date();
+    const selectedCategory = categories.find(c => c.id === quickAddCategoryId);
     onAddEntry({
       date: date.toISOString().split("T")[0],
       description: quickAddDescription || "עבודה חדשה",
       amountGross: parseFloat(quickAddAmount) || 0,
       amountPaid: 0,
       clientName: quickAddClient || "לא צוין",
-      category: quickAddCategory || undefined,
+      categoryId: quickAddCategoryId || undefined,
+      categoryData: selectedCategory || null,
       status: "בוצע",
       vatType: "חייב מע״מ",
       invoiceStatus: "draft",
@@ -105,7 +113,7 @@ export function QuickAddCard({
     setQuickAddDescription("");
     setQuickAddAmount("");
     setQuickAddClient("");
-    setQuickAddCategory("");
+    setQuickAddCategoryId("");
     setNewEntryDate(undefined);
   };
 
@@ -211,22 +219,39 @@ export function QuickAddCard({
                 variant="outline"
                 className="h-8 w-full text-xs border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 rounded-lg transition-shadow text-right justify-between font-normal px-2"
               >
-                <span className={cn("truncate", !quickAddCategory && "text-muted-foreground")}>
-                  {quickAddCategory || "קטגוריה"}
-                </span>
+                {quickAddCategoryId ? (
+                  <CategoryChip
+                    category={categories.find(c => c.id === quickAddCategoryId) || null}
+                    size="sm"
+                  />
+                ) : (
+                  <span className="text-muted-foreground truncate">קטגוריה</span>
+                )}
                 <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-[200px] overflow-y-auto">
-              {CATEGORIES.map((category) => (
+            <DropdownMenuContent align="end">
+              {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
-                  key={category}
-                  onClick={() => setQuickAddCategory(category)}
-                  className="justify-end text-sm"
+                  key={cat.id}
+                  onClick={() => setQuickAddCategoryId(cat.id)}
+                  className="justify-end"
                 >
-                  {category}
+                  <CategoryChip category={cat} size="sm" />
                 </DropdownMenuItem>
               ))}
+              {onEditCategories && (
+                <>
+                  <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
+                  <DropdownMenuItem
+                    onClick={onEditCategories}
+                    className="justify-end text-xs text-slate-500 gap-1"
+                  >
+                    <Settings2 className="h-3 w-3" />
+                    ערוך קטגוריות
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

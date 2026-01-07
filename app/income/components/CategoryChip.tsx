@@ -2,16 +2,16 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import * as LucideIcons from "lucide-react";
+import { Circle } from "lucide-react";
 import type { Category } from "@/db/schema";
-import { getCategoryColorScheme, colorSchemes, type CategoryColor } from "@/app/categories/schemas";
+import { getCategoryColorScheme, colorSchemes, getIconByName, type CategoryColor, type CategoryIcon } from "@/app/categories/schemas";
 
 // Legacy visual mapping for backward compatibility during migration
 const LEGACY_CATEGORY_META: Record<
   string,
   {
     color: CategoryColor;
-    icon: keyof typeof LucideIcons;
+    icon: CategoryIcon;
   }
 > = {
   הופעות: { color: "emerald", icon: "Sparkles" },
@@ -33,16 +33,6 @@ interface CategoryChipProps {
   className?: string;
 }
 
-// Helper to get icon component by name
-function getIconComponent(iconName?: string | null): React.ComponentType<{ className?: string }> {
-  if (!iconName) return LucideIcons.Circle;
-  const Icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  if (Icon && typeof Icon === "function") {
-    return Icon as React.ComponentType<{ className?: string }>;
-  }
-  return LucideIcons.Circle;
-}
-
 export function CategoryChip({
   category,
   legacyCategory,
@@ -60,7 +50,7 @@ export function CategoryChip({
     // New: Using category object from database
     displayName = category.name;
     colorScheme = getCategoryColorScheme(category.color);
-    IconComponent = getIconComponent(category.icon);
+    IconComponent = getIconByName(category.icon);
     isArchived = category.isArchived;
   } else if (legacyCategory) {
     // Legacy: Using string category name
@@ -68,16 +58,16 @@ export function CategoryChip({
     const legacyMeta = LEGACY_CATEGORY_META[legacyCategory];
     if (legacyMeta) {
       colorScheme = colorSchemes[legacyMeta.color];
-      IconComponent = getIconComponent(legacyMeta.icon);
+      IconComponent = getIconByName(legacyMeta.icon);
     } else {
       colorScheme = getCategoryColorScheme(null);
-      IconComponent = LucideIcons.Circle;
+      IconComponent = Circle;
     }
   } else {
     // No category
     displayName = "ללא קטגוריה";
     colorScheme = getCategoryColorScheme(null);
-    IconComponent = LucideIcons.Circle;
+    IconComponent = Circle;
   }
 
   const hasCategory = category || legacyCategory;
@@ -112,7 +102,7 @@ export function getCategoryMeta(category?: Category | null, legacyCategory?: str
   if (category) {
     return {
       colorScheme: getCategoryColorScheme(category.color),
-      icon: getIconComponent(category.icon),
+      icon: getIconByName(category.icon),
       name: category.name,
       isArchived: category.isArchived,
     };
@@ -123,7 +113,7 @@ export function getCategoryMeta(category?: Category | null, legacyCategory?: str
     if (legacyMeta) {
       return {
         colorScheme: colorSchemes[legacyMeta.color],
-        icon: getIconComponent(legacyMeta.icon),
+        icon: getIconByName(legacyMeta.icon),
         name: legacyCategory,
         isArchived: false,
       };
@@ -132,7 +122,7 @@ export function getCategoryMeta(category?: Category | null, legacyCategory?: str
 
   return {
     colorScheme: getCategoryColorScheme(null),
-    icon: LucideIcons.Circle,
+    icon: Circle,
     name: "ללא קטגוריה",
     isArchived: false,
   };

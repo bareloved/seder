@@ -15,8 +15,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, Filter } from "lucide-react";
-import { CATEGORIES } from "../types";
+import { Search, X, ChevronDown, Plus, Filter, Settings2 } from "lucide-react";
+import type { Category } from "@/db/schema";
 import { CategoryChip } from "./CategoryChip";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
 import {
@@ -32,9 +32,11 @@ interface IncomeFiltersProps {
   clients: string[];
   selectedClient: string;
   onClientChange: (client: string) => void;
+  categories: Category[];
   selectedCategories: string[];
   onCategoryChange: (categories: string[]) => void;
   onNewEntry?: () => void;
+  onEditCategories?: () => void;
   // View mode toggle
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -46,9 +48,11 @@ export function IncomeFilters({
   clients,
   selectedClient,
   onClientChange,
+  categories,
   selectedCategories,
   onCategoryChange,
   onNewEntry,
+  onEditCategories,
   viewMode,
   onViewModeChange,
 }: IncomeFiltersProps) {
@@ -69,20 +73,20 @@ export function IncomeFilters({
       <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">
         קטגוריות:
       </span>
-      {CATEGORIES.map((category) => {
-        const isActive = selectedCategories.includes(category);
+      {categories.filter(c => !c.isArchived).map((category) => {
+        const isActive = selectedCategories.includes(category.id);
         return (
           <button
-            key={category}
+            key={category.id}
             type="button"
-            onClick={() => toggleCategory(category)}
+            onClick={() => toggleCategory(category.id)}
             className={cn(
               "transition-all px-1.5 py-0.5 rounded-full focus:outline-none focus-visible:ring-0",
               isActive ? "bg-slate-100 dark:bg-slate-800/70" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
             )}
           >
             <CategoryChip
-              legacyCategory={category}
+              category={category}
               size="sm"
               className={cn(
                 "cursor-pointer",
@@ -99,6 +103,21 @@ export function IncomeFilters({
         >
           נקה קטגוריות
         </button>
+      )}
+      {onEditCategories && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onEditCategories}
+              className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>ערוך קטגוריות</p>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
@@ -122,13 +141,16 @@ export function IncomeFilters({
         {selectedClient !== "all" && (
           <BadgeButton label={`לקוח: ${selectedClient}`} onClear={() => onClientChange("all")} />
         )}
-        {selectedCategories.map((category) => (
-          <BadgeButton
-            key={category}
-            label={category}
-            onClear={() => toggleCategory(category)}
-          />
-        ))}
+        {selectedCategories.map((categoryId) => {
+          const category = categories.find(c => c.id === categoryId);
+          return (
+            <BadgeButton
+              key={categoryId}
+              label={category?.name || categoryId}
+              onClear={() => toggleCategory(categoryId)}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -319,15 +341,29 @@ export function IncomeFilters({
 
           {/* Categories - mirror web chips style */}
           <div className="space-y-2">
-            <p className="text-xs text-slate-500 dark:text-slate-400 text-right">קטגוריות</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500 dark:text-slate-400 text-right">קטגוריות</p>
+              {onEditCategories && (
+                <button
+                  onClick={() => {
+                    setIsFilterSheetOpen(false);
+                    onEditCategories();
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1"
+                >
+                  <Settings2 className="h-3 w-3" />
+                  ערוך
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
-              {CATEGORIES.map((category) => {
-                const isActive = selectedCategories.includes(category);
+              {categories.filter(c => !c.isArchived).map((category) => {
+                const isActive = selectedCategories.includes(category.id);
                 return (
                   <button
-                    key={category}
+                    key={category.id}
                     type="button"
-                    onClick={() => toggleCategory(category)}
+                    onClick={() => toggleCategory(category.id)}
                     className={cn(
                       "transition-all px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus-visible:ring-0",
                       isActive
@@ -336,7 +372,7 @@ export function IncomeFilters({
                     )}
                   >
                     <CategoryChip
-                      legacyCategory={category}
+                      category={category}
                       size="sm"
                       className={cn(
                         "cursor-pointer",
