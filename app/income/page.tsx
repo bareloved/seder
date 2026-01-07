@@ -1,9 +1,11 @@
 import { Suspense } from "react";
-import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
+import { getIncomeEntriesForMonth, getIncomeAggregates, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
+import { getUserCategories } from "@/app/categories/data";
 import IncomePageClient from "./IncomePageClient";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import type { KPIScope, ScopeMode } from "./types";
 
 // Force dynamic rendering - don't pre-render during build
 // This avoids needing DATABASE_URL at build time
@@ -39,20 +41,25 @@ async function IncomePageContent({
   year,
   month,
   userId,
+  user,
+  scope,
   limit,
   offset,
 }: {
   year: number;
   month: number;
   userId: string;
+  user: { name: string | null; email: string; image: string | null };
+  scope: KPIScope;
   limit?: number;
   offset?: number;
 }) {
   // Fetch data in parallel
-  const [entries, aggregates, clients, monthStatuses, isGoogleConnected] = await Promise.all([
+  const [entries, aggregates, clients, categories, monthStatuses, isGoogleConnected] = await Promise.all([
     getIncomeEntriesForMonth({ year, month, userId, limit, offset }),
-    getIncomeAggregatesForMonth({ year, month, userId }),
+    getIncomeAggregates({ scope, userId, year, month }),
     getUniqueClients(userId),
+    getUserCategories(userId),
     getMonthPaymentStatuses(year, userId),
     hasGoogleCalendarConnection(userId),
   ]);
@@ -64,8 +71,10 @@ async function IncomePageContent({
       dbEntries={entries}
       aggregates={aggregates}
       clients={clients}
+      categories={categories}
       monthPaymentStatuses={monthStatuses}
       isGoogleConnected={isGoogleConnected}
+      user={user}
     />
   );
 }
@@ -74,7 +83,14 @@ async function IncomePageContent({
 export default async function IncomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string; page?: string }>;
+  searchParams: Promise<{
+    year?: string;
+    month?: string;
+    page?: string;
+    kpiScope?: string;
+    kpiFrom?: string;
+    kpiTo?: string;
+  }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -86,7 +102,7 @@ export default async function IncomePage({
 
   // Await search params (Next.js 15+ requirement)
   const params = await searchParams;
-  
+
   // Get current date for defaults
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -104,12 +120,31 @@ export default async function IncomePage({
   const pageSize = 500; // keep current behaviour (effectively first page)
   const offset = (page - 1) * pageSize;
 
+  // Parse KPI scope from URL params (defaults to "month")
+  const scopeMode = (params.kpiScope as ScopeMode) || "month";
+  const scope: KPIScope = (() => {
+    if (scopeMode === "all") {
+      return { mode: "all" };
+    }
+    if (scopeMode === "range" && params.kpiFrom && params.kpiTo) {
+      return { mode: "range", start: params.kpiFrom, end: params.kpiTo };
+    }
+    // Default to month mode
+    return { mode: "month" };
+  })();
+
   return (
     <Suspense fallback={<IncomePageSkeleton />}>
       <IncomePageContent
         year={validYear}
         month={validMonth}
         userId={session.user.id}
+        user={{
+          name: session.user.name ?? null,
+          email: session.user.email,
+          image: session.user.image ?? null,
+        }}
+        scope={scope}
         limit={pageSize}
         offset={offset}
       />

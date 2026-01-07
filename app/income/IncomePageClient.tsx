@@ -4,12 +4,14 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IncomeHeader } from "./components/IncomeHeader";
 import { KPICards } from "./components/KPICards";
+import { ScopeToggle } from "./components/ScopeToggle";
 import { IncomeTable } from "./components/IncomeTable";
 import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
 import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import type { ViewMode } from "./components/ViewModeToggle";
-import { exportToCSV, isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, formatCurrency, formatFullDate, getTodayDateString } from "./utils";
+import { exportToCSV, isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, formatCurrency, formatFullDate, getTodayDateString, formatScopeLabel } from "./utils";
+import { useScopeState } from "./hooks/useScopeState";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -19,11 +21,13 @@ import {
 } from "./actions";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
-import type { IncomeEntry as DBIncomeEntry } from "@/db/schema";
+import type { Category } from "@/db/schema";
+import type { IncomeEntryWithCategory } from "./data";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { CategoryManagerDialog } from "@/app/categories/components";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // View Mode localStorage key and helpers
@@ -59,18 +63,42 @@ function setStoredViewMode(mode: ViewMode): void {
 interface IncomePageClientProps {
   year: number;
   month: number;
-  dbEntries: DBIncomeEntry[];
+  dbEntries: IncomeEntryWithCategory[];
   aggregates: IncomeAggregates;
   clients: string[];
+  categories: Category[];
   monthPaymentStatuses: Record<number, MonthPaymentStatus>;
   isGoogleConnected: boolean;
+  user: { name: string | null; email: string; image: string | null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper to convert DB entry to UI entry format
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function dbEntryToUIEntry(dbEntry: DBIncomeEntry): IncomeEntry {
+// Accept either full entry with category data or basic entry from create/update
+type DBEntryInput = IncomeEntryWithCategory | {
+  id: string;
+  date: string;
+  description: string;
+  clientName: string;
+  amountGross: string;
+  amountPaid: string;
+  vatRate: string;
+  includesVat: boolean;
+  invoiceStatus: "draft" | "sent" | "paid" | "cancelled";
+  paymentStatus: "unpaid" | "partial" | "paid";
+  category: string | null;
+  categoryId: string | null;
+  notes: string | null;
+  invoiceSentDate: string | null;
+  paidDate: string | null;
+  calendarEventId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export function dbEntryToUIEntry(dbEntry: DBEntryInput): IncomeEntry {
   return {
     id: dbEntry.id,
     date: dbEntry.date,
@@ -83,6 +111,8 @@ export function dbEntryToUIEntry(dbEntry: DBIncomeEntry): IncomeEntry {
     invoiceStatus: dbEntry.invoiceStatus,
     paymentStatus: dbEntry.paymentStatus,
     category: dbEntry.category,
+    categoryId: dbEntry.categoryId,
+    categoryData: "categoryData" in dbEntry ? dbEntry.categoryData : null,
     notes: dbEntry.notes,
     invoiceSentDate: dbEntry.invoiceSentDate,
     paidDate: dbEntry.paidDate,
@@ -102,11 +132,20 @@ export default function IncomePageClient({
   dbEntries,
   aggregates,
   clients: initialClients,
+  categories,
   monthPaymentStatuses,
   isGoogleConnected,
+  user,
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // KPI Scope state management
+  const { scope, setScope } = useScopeState();
+  const scopeLabel = React.useMemo(
+    () => formatScopeLabel(scope, year, month),
+    [scope, year, month]
+  );
 
   // Convert DB entries to UI format
   const initialEntries = React.useMemo(
@@ -164,6 +203,9 @@ export default function IncomePageClient({
 
   // Calendar import dialog state
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = React.useState(false);
+
+  // Category manager dialog state
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
 
   // Filter state
   const [activeFilter, setActiveFilter] = React.useState<FilterType>("all");
@@ -391,6 +433,7 @@ export default function IncomePageClient({
     formData.append("amountGross", entry.amountGross.toString());
     formData.append("amountPaid", entry.amountPaid.toString());
     if (entry.category) formData.append("category", entry.category);
+    if (entry.categoryId) formData.append("categoryId", entry.categoryId);
     if (entry.notes) formData.append("notes", entry.notes);
 
     // Map Hebrew status to DB status
@@ -437,7 +480,8 @@ export default function IncomePageClient({
     formData.append("amountGross", updatedEntry.amountGross.toString());
     formData.append("amountPaid", updatedEntry.amountPaid.toString());
     formData.append("category", updatedEntry.category || "");
-    
+    if (updatedEntry.categoryId) formData.append("categoryId", updatedEntry.categoryId);
+
     // Keep notes as-is (calendar draft badge now only depends on amountGross and calendarEventId)
     formData.append("notes", updatedEntry.notes || "");
 
@@ -575,6 +619,17 @@ export default function IncomePageClient({
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
+
+        // Handle categoryId updates - also update categoryData
+        if (field === "categoryId") {
+          const selectedCategory = categories.find(c => c.id === value) || null;
+          return {
+            ...e,
+            categoryId: value as string || null,
+            categoryData: selectedCategory,
+          };
+        }
+
         return {
           ...e,
           [field]: value,
@@ -589,7 +644,7 @@ export default function IncomePageClient({
     formData.append(field, String(value));
 
     await updateIncomeEntryAction(formData);
-  }, []);
+  }, [categories]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Dialog handlers
@@ -659,12 +714,21 @@ export default function IncomePageClient({
           onImportFromCalendar={openCalendarImportDialog}
           monthPaymentStatuses={monthPaymentStatuses}
           isGoogleConnected={isGoogleConnected}
+          user={user}
         />
+
+        {/* KPI Scope Toggle */}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            מדדי ביצועים
+          </h2>
+          <ScopeToggle scope={scope} onScopeChange={setScope} />
+        </div>
 
         {/* KPI Cards */}
         <KPICards
           kpis={kpis}
-          selectedMonth={month}
+          scopeLabel={scopeLabel}
           onFilterClick={setActiveFilter}
           activeFilter={activeFilter}
         />
@@ -677,9 +741,11 @@ export default function IncomePageClient({
             clients={monthClients}
             selectedClient={selectedClient}
             onClientChange={setSelectedClient}
+            categories={categories}
             selectedCategories={selectedCategories}
             onCategoryChange={setSelectedCategories}
             onNewEntry={openNewEntryDialog}
+            onEditCategories={() => setIsCategoryDialogOpen(true)}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
           />
@@ -748,6 +814,7 @@ export default function IncomePageClient({
         <IncomeTable
           entries={filteredEntries}
           clients={allClients}
+          categories={categories}
           defaultDate={defaultNewEntryDate}
           onRowClick={openDialog}
           onStatusChange={updateStatus}
@@ -780,6 +847,7 @@ export default function IncomePageClient({
           selectedCategories={selectedCategories}
           onCategoryChange={setSelectedCategories}
           onNewEntry={openNewEntryDialog}
+          onEditCategories={() => setIsCategoryDialogOpen(true)}
           // View mode props
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
@@ -817,6 +885,7 @@ export default function IncomePageClient({
       {/* Detail Dialog */}
       <IncomeDetailDialog
         entry={selectedEntry}
+        categories={categories}
         isOpen={isDialogOpen}
         onClose={closeDialog}
         onMarkAsPaid={markAsPaid}
@@ -834,6 +903,13 @@ export default function IncomePageClient({
         onImport={handleCalendarImport}
         defaultYear={year}
         defaultMonth={month}
+      />
+
+      {/* Category Manager Dialog */}
+      <CategoryManagerDialog
+        isOpen={isCategoryDialogOpen}
+        onClose={() => setIsCategoryDialogOpen(false)}
+        initialCategories={categories}
       />
     </div>
   );

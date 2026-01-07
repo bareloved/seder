@@ -6,22 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Wallet, FileText, CalendarDays, TrendingUp, TrendingDown } from "lucide-react";
 import { KPIData, FilterType } from "../types";
-import { formatCurrency, MONTH_NAMES } from "../utils";
+import { formatCurrency } from "../utils";
 
 interface KPICardsProps {
   kpis: KPIData;
-  selectedMonth: number;
+  scopeLabel: string; // Display label for the current scope (e.g., "ינואר 2026", "כל הזמן")
   onFilterClick?: (filter: FilterType) => void;
   activeFilter: FilterType;
 }
 
 export function KPICards({
   kpis,
-  selectedMonth,
+  scopeLabel,
   onFilterClick,
   activeFilter,
 }: KPICardsProps) {
-  const monthName = MONTH_NAMES[selectedMonth];
   const carouselRef = React.useRef<HTMLDivElement>(null);
   const cardRefs = React.useRef<(HTMLElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -64,7 +63,7 @@ export function KPICards({
   const mobileKpis = [
     {
       key: "all" as FilterType,
-      label: monthName,
+      label: scopeLabel,
       amount: kpis.thisMonth,
       color: "slate",
       badge: `${kpis.thisMonthCount}`,
@@ -229,7 +228,7 @@ export function KPICards({
         onClick={() => onFilterClick?.("paid")}
       >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-3 px-4">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">התקבל החודש</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">התקבל</CardTitle>
             <div className="h-8 w-8 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
             {kpis.trend >= 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />
@@ -243,7 +242,7 @@ export function KPICards({
             {formatCurrency(kpis.totalPaid)}
           </div>
             <div className="flex flex-col gap-1 mt-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400">סכומים שהתקבלו בחודש זה</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">סכומים ששולמו</span>
             <Badge
               className={cn(
                   "border-0 text-[10px] px-1.5 py-0 font-medium font-numbers w-fit",
@@ -267,7 +266,7 @@ export function KPICards({
           onClick={() => onFilterClick?.("all")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-3 px-4">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">סה״כ {monthName}</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">סה״כ {scopeLabel}</CardTitle>
             <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
               <CalendarDays className="h-4 w-4 text-slate-600 dark:text-slate-400" />
             </div>
@@ -277,7 +276,7 @@ export function KPICards({
               {formatCurrency(kpis.thisMonth)}
             </div>
             <div className="flex flex-col gap-1 mt-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400">סך כל העבודות לחודש זה</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">סך כל העבודות</span>
               <span className="text-xs text-slate-400 dark:text-slate-500 font-numbers">
                 כולל מע״מ: {formatCurrency(kpis.thisMonth * 1.18)}
               </span>
