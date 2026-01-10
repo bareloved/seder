@@ -12,26 +12,26 @@ export const dynamic = "force-dynamic";
 // Loading component for Suspense
 function AnalyticsPageSkeleton() {
   return (
-    <div className="min-h-screen" dir="rtl">
-      <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+    <div className="min-h-screen paper-texture" dir="rtl">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Header skeleton */}
-        <div className="h-16 bg-muted rounded-lg animate-pulse" />
+        <div className="h-16 bg-white/50 dark:bg-slate-900/50 rounded-lg animate-pulse" />
 
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-white/50 dark:bg-slate-900/50 rounded-lg animate-pulse" />
           ))}
         </div>
 
         {/* Charts skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-[400px] bg-muted rounded-lg animate-pulse" />
-          <div className="h-[400px] bg-muted rounded-lg animate-pulse" />
+          <div className="h-[400px] bg-white/50 dark:bg-slate-900/50 rounded-lg animate-pulse" />
+          <div className="h-[400px] bg-white/50 dark:bg-slate-900/50 rounded-lg animate-pulse" />
         </div>
 
         {/* Table skeleton */}
-        <div className="h-96 bg-muted rounded-lg animate-pulse" />
+        <div className="h-96 bg-white/50 dark:bg-slate-900/50 rounded-lg animate-pulse" />
       </div>
     </div>
   );
@@ -39,12 +39,15 @@ function AnalyticsPageSkeleton() {
 
 // Server component for data fetching
 async function AnalyticsPageContent({ userId }: { userId: string }) {
-  // Fetch all data for the current year (to support client-side filtering)
-  // This keeps V1 simple - no need to refetch on date range change
-  const dateRange = getDateRangeFromPreset("this-year");
+  // Fetch all data for the current year +/- 3 years (to support client-side filtering)
+  const now = new Date();
+  const startYear = now.getFullYear() - 3;
+  const endYear = now.getFullYear() + 3;
+  const startDate = new Date(startYear, 0, 1); // Jan 1st of start year
+  const endDate = new Date(endYear, 11, 31); // Dec 31st of end year
 
   // Fetch analytics data
-  const entries = await getAnalyticsData(userId, dateRange.start, dateRange.end);
+  const entries = await getAnalyticsData(userId, startDate, endDate);
 
   return <AnalyticsPageClient initialEntries={entries} />;
 }

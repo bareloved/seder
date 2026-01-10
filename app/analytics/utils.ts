@@ -7,7 +7,7 @@ import { Currency } from "../income/currency";
 /**
  * Get date range based on preset
  */
-export function getDateRangeFromPreset(preset: DateRangePreset, customRange?: DateRange): DateRange {
+export function getDateRangeFromPreset(preset: DateRangePreset, customRange?: DateRange, month?: number, year?: number): DateRange {
   const now = new Date();
 
   switch (preset) {
@@ -24,10 +24,11 @@ export function getDateRangeFromPreset(preset: DateRangePreset, customRange?: Da
         end: endOfMonth(now),
       };
 
-    case "this-year":
+    case "specific-year":
+      const selectedYearDate = year ? new Date(year, 0, 1) : now;
       return {
-        start: startOfYear(now),
-        end: endOfYear(now),
+        start: startOfYear(selectedYearDate),
+        end: endOfYear(selectedYearDate),
       };
 
     case "custom":
@@ -39,6 +40,19 @@ export function getDateRangeFromPreset(preset: DateRangePreset, customRange?: Da
         };
       }
       return customRange;
+
+    case "specific-month":
+      if (month && year) {
+        const date = new Date(year, month - 1, 1);
+        return {
+          start: startOfMonth(date),
+          end: endOfMonth(date),
+        };
+      }
+      return {
+        start: startOfMonth(now),
+        end: endOfMonth(now),
+      };
 
     default:
       return {
@@ -169,14 +183,19 @@ export function groupEntriesByCategory(entries: IncomeEntry[]): CategoryDataPoin
 /**
  * Format date range for display
  */
-export function formatDateRangeLabel(preset: DateRangePreset, customRange?: DateRange): string {
+export function formatDateRangeLabel(preset: DateRangePreset, customRange?: DateRange, month?: number, year?: number): string {
   switch (preset) {
     case "this-month":
       return "החודש";
     case "last-3-months":
       return "3 חודשים אחרונים";
-    case "this-year":
-      return "השנה";
+    case "specific-year":
+      return year ? `${year}` : "שנה";
+    case "specific-month":
+      if (month && year) {
+        return `${MONTH_NAMES[month]} ${year}`;
+      }
+      return "חודש ספציפי";
     case "custom":
       if (!customRange) return "תקופה מותאמת";
       return `${format(customRange.start, "d/M/yy", { locale: he })} - ${format(customRange.end, "d/M/yy", { locale: he })}`;
@@ -254,3 +273,19 @@ export function getNeedsAttentionJobs(entries: IncomeEntry[]): NeedsAttentionJob
     };
   });
 }
+
+// Hebrew month names
+export const MONTH_NAMES: Record<number, string> = {
+  1: "ינואר",
+  2: "פברואר",
+  3: "מרץ",
+  4: "אפריל",
+  5: "מאי",
+  6: "יוני",
+  7: "יולי",
+  8: "אוגוסט",
+  9: "ספטמבר",
+  10: "אוקטובר",
+  11: "נובמבר",
+  12: "דצמבר",
+};

@@ -1,6 +1,6 @@
 import type { IncomeEntry } from "../income/types";
 
-export type DateRangePreset = "this-month" | "last-3-months" | "this-year" | "custom";
+export type DateRangePreset = "this-month" | "last-3-months" | "specific-year" | "custom" | "specific-month";
 export type MetricType = "amount" | "count";
 
 export interface DateRange {

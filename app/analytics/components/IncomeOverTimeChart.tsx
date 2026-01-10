@@ -13,12 +13,12 @@ interface IncomeOverTimeChartProps {
 export function IncomeOverTimeChart({ data, metricType }: IncomeOverTimeChartProps) {
   if (data.length === 0) {
     return (
-      <Card>
+      <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
         <CardHeader>
-          <CardTitle>הכנסות לאורך זמן</CardTitle>
+          <CardTitle className="text-slate-800 dark:text-slate-100">הכנסות לאורך זמן</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
             אין נתונים לתקופה זו
           </div>
         </CardContent>
@@ -27,41 +27,60 @@ export function IncomeOverTimeChart({ data, metricType }: IncomeOverTimeChartPro
   }
 
   const dataKey = metricType === "amount" ? "amount" : "count";
-  const yAxisLabel = metricType === "amount" ? "סכום (₪)" : "מספר עבודות";
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>הכנסות לאורך זמן</CardTitle>
+    <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-slate-800 dark:text-slate-100">הכנסות לאורך זמן</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              reversed={true} // RTL support
-            />
-            <YAxis
-              tick={{ fontSize: 12 }}
-              tickFormatter={(value) =>
-                metricType === "amount" ? `₪${value.toLocaleString("he-IL")}` : value
-              }
-            />
-            <Tooltip
-              formatter={(value) =>
-                metricType === "amount" && typeof value === "number"
-                  ? formatCurrency(value)
-                  : value
-              }
-              labelStyle={{ direction: "rtl" }}
-              contentStyle={{ direction: "rtl" }}
-            />
-            <Bar dataKey={dataKey} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {/* Wrap in LTR to prevent RTL interference with chart coordinates */}
+        <div dir="ltr">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data} margin={{ top: 10, right: 20, left: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#64748b" }}
+                tickLine={{ stroke: "#cbd5e1" }}
+                axisLine={{ stroke: "#cbd5e1" }}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#64748b" }}
+                tickLine={{ stroke: "#cbd5e1" }}
+                axisLine={{ stroke: "#cbd5e1" }}
+                tickFormatter={(value) =>
+                  metricType === "amount" ? `₪${value.toLocaleString("he-IL")}` : value
+                }
+                width={60}
+              />
+              <Tooltip
+                formatter={(value) => [
+                  metricType === "amount" && typeof value === "number"
+                    ? formatCurrency(value)
+                    : value,
+                  ""
+                ]}
+                separator=""
+                labelStyle={{ direction: "rtl", color: "#334155" }}
+                contentStyle={{
+                  direction: "rtl",
+                  backgroundColor: "white",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                }}
+              />
+              <Bar
+                dataKey={dataKey}
+                fill="#0ea5e9"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
