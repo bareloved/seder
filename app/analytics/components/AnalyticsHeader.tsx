@@ -132,7 +132,7 @@ export function AnalyticsHeader({
                           <ChevronDown className="h-4 w-4 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="max-h-[300px] overflow-y-auto">
+                      <DropdownMenuContent>
                         {Object.entries(MONTH_NAMES).map(([value, name]) => {
                           const monthNum = parseInt(value);
                           return (
@@ -171,7 +171,7 @@ export function AnalyticsHeader({
                         <ChevronDown className="h-4 w-4 opacity-50" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[90px] min-w-0 max-h-[300px] overflow-y-auto">
+                    <DropdownMenuContent className="w-[90px] min-w-0">
                       {years.map((year) => (
                         <DropdownMenuItem
                           key={year}
@@ -212,7 +212,7 @@ export function AnalyticsHeader({
                           <ChevronDown className="h-4 w-4 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-[90px] min-w-0 max-h-[300px] overflow-y-auto">
+                      <DropdownMenuContent className="w-[90px] min-w-0">
                         {years.map((year) => (
                           <DropdownMenuItem
                             key={year}

@@ -15,7 +15,6 @@ import {
   updateIncomeEntryAction,
   updateEntryStatusAction,
   deleteIncomeEntryAction,
-  importFromCalendarAction,
 } from "./actions";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
@@ -172,7 +171,7 @@ export default function IncomePageClient({
   // Important: start with a deterministic SSR-safe default to avoid hydration mismatches.
   // We defer reading window width/localStorage until after mount.
   const [viewMode, setViewMode] = React.useState<ViewMode>("list");
-  
+
   // On mount, restore user's saved view mode preference from localStorage or screen width
   React.useEffect(() => {
     const storedMode = getStoredViewMode();
@@ -238,7 +237,7 @@ export default function IncomePageClient({
   const kpis: KPIData = React.useMemo(() => {
     // Recalculate some values locally for accurate filtered display
     const localKPIs = calculateKPIs(entries, month, year, aggregates.previousMonthPaid);
-    
+
     return {
       outstanding: aggregates.outstanding,
       readyToInvoice: aggregates.readyToInvoice,
@@ -295,11 +294,25 @@ export default function IncomePageClient({
       );
     }
 
-    // Sort by date without mutating the source array
+    // Sort by date with deterministic tie-breaking to prevent shifts and maintain stable UI
     return [...result].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortDirection === "desc" ? dateB - dateA : dateA - dateB;
+      // 1. Primary sort: Date (string comparison for YYYY-MM-DD)
+      if (a.date !== b.date) {
+        return sortDirection === "desc"
+          ? b.date.localeCompare(a.date)
+          : a.date.localeCompare(b.date);
+      }
+
+      // 2. Secondary sort: Creation Time
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+      if (timeA !== timeB) {
+        return sortDirection === "desc" ? timeB - timeA : timeA - timeB;
+      }
+
+      // 3. Ultimate tie-breaker: ID (Guarantees stability)
+      return a.id.localeCompare(b.id);
     });
   }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortDirection]);
 
@@ -411,48 +424,55 @@ export default function IncomePageClient({
     router.push(`/income?${params.toString()}`);
   };
 
+  const handleMonthYearChange = (newMonth: number, newYear: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", newMonth.toString());
+    params.set("year", newYear.toString());
+    router.push(`/income?${params.toString()}`);
+  };
+
   // ─────────────────────────────────────────────────────────────────────────────
   // CRUD handlers with server actions
   // ─────────────────────────────────────────────────────────────────────────────
 
   const addEntry = React.useCallback(async (entry: Omit<IncomeEntry, "id" | "weekday" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ", invoiceStatus?: "draft" | "sent" | "paid" | "cancelled", paymentStatus?: "unpaid" | "partial" | "paid", vatRate?: number, includesVat?: boolean }) => {
     try {
-    const formData = new FormData();
-    formData.append("date", entry.date);
-    formData.append("description", entry.description);
-    formData.append("clientName", entry.clientName);
-    formData.append("amountGross", entry.amountGross.toString());
-    formData.append("amountPaid", entry.amountPaid.toString());
-    if (entry.category) formData.append("category", entry.category);
-    if (entry.categoryId) formData.append("categoryId", entry.categoryId);
-    if (entry.notes) formData.append("notes", entry.notes);
+      const formData = new FormData();
+      formData.append("date", entry.date);
+      formData.append("description", entry.description);
+      formData.append("clientName", entry.clientName);
+      formData.append("amountGross", entry.amountGross.toString());
+      formData.append("amountPaid", entry.amountPaid.toString());
+      if (entry.category) formData.append("category", entry.category);
+      if (entry.categoryId) formData.append("categoryId", entry.categoryId);
+      if (entry.notes) formData.append("notes", entry.notes);
 
-    // Map Hebrew status to DB status
-    const statusMapping = mapStatusToDb(entry.status || "בוצע");
-    formData.append("invoiceStatus", statusMapping.invoiceStatus);
-    if (statusMapping.paymentStatus) {
-      formData.append("paymentStatus", statusMapping.paymentStatus);
-    }
+      // Map Hebrew status to DB status
+      const statusMapping = mapStatusToDb(entry.status || "בוצע");
+      formData.append("invoiceStatus", statusMapping.invoiceStatus);
+      if (statusMapping.paymentStatus) {
+        formData.append("paymentStatus", statusMapping.paymentStatus);
+      }
 
-    // Map VAT type
-    if (entry.vatType) {
-      const vatMapping = mapVatTypeToDb(entry.vatType);
-      if (vatMapping.vatRate) formData.append("vatRate", vatMapping.vatRate);
-      formData.append("includesVat", vatMapping.includesVat);
-    } else {
-      formData.append("includesVat", "false");
-      formData.append("vatRate", "18");
-    }
+      // Map VAT type
+      if (entry.vatType) {
+        const vatMapping = mapVatTypeToDb(entry.vatType);
+        if (vatMapping.vatRate) formData.append("vatRate", vatMapping.vatRate);
+        formData.append("includesVat", vatMapping.includesVat);
+      } else {
+        formData.append("includesVat", "false");
+        formData.append("vatRate", "18");
+      }
 
-    const result = await createIncomeEntryAction(formData);
-    
-    if (result.success && result.entry) {
-      // Optimistically add to local state
-      const newEntry = dbEntryToUIEntry(result.entry);
-      setEntries((prev) => [newEntry, ...prev]);
+      const result = await createIncomeEntryAction(formData);
+
+      if (result.success && result.entry) {
+        // Optimistically add to local state
+        const newEntry = dbEntryToUIEntry(result.entry);
+        setEntries((prev) => [newEntry, ...prev]);
         toast.success("העבודה נשמרה");
-    } else {
-      console.error("Failed to create entry:", result.error);
+      } else {
+        console.error("Failed to create entry:", result.error);
         toast.error("לא הצלחנו לשמור, נסה שוב.");
       }
     } catch (error) {
@@ -463,59 +483,59 @@ export default function IncomePageClient({
 
   const updateEntry = React.useCallback(async (updatedEntry: IncomeEntry & { status?: DisplayStatus, vatType?: "חייב מע״מ" | "ללא מע״מ" | "כולל מע״מ" }) => {
     try {
-    const formData = new FormData();
-    formData.append("id", updatedEntry.id.toString());
-    formData.append("date", updatedEntry.date);
-    formData.append("description", updatedEntry.description);
-    formData.append("clientName", updatedEntry.clientName);
-    formData.append("amountGross", updatedEntry.amountGross.toString());
-    formData.append("amountPaid", updatedEntry.amountPaid.toString());
-    formData.append("category", updatedEntry.category || "");
-    if (updatedEntry.categoryId) formData.append("categoryId", updatedEntry.categoryId);
+      const formData = new FormData();
+      formData.append("id", updatedEntry.id.toString());
+      formData.append("date", updatedEntry.date);
+      formData.append("description", updatedEntry.description);
+      formData.append("clientName", updatedEntry.clientName);
+      formData.append("amountGross", updatedEntry.amountGross.toString());
+      formData.append("amountPaid", updatedEntry.amountPaid.toString());
+      formData.append("category", updatedEntry.category || "");
+      if (updatedEntry.categoryId) formData.append("categoryId", updatedEntry.categoryId);
 
-    // Keep notes as-is (calendar draft badge now only depends on amountGross and calendarEventId)
-    formData.append("notes", updatedEntry.notes || "");
+      // Keep notes as-is (calendar draft badge now only depends on amountGross and calendarEventId)
+      formData.append("notes", updatedEntry.notes || "");
 
-    // Map Hebrew status to DB status
-    // Use the display status if provided, otherwise fall back to existing DB status logic
-    if (updatedEntry.status) {
-      const statusMapping = mapStatusToDb(updatedEntry.status);
-      formData.append("invoiceStatus", statusMapping.invoiceStatus);
-      if (statusMapping.paymentStatus) {
-        formData.append("paymentStatus", statusMapping.paymentStatus);
+      // Map Hebrew status to DB status
+      // Use the display status if provided, otherwise fall back to existing DB status logic
+      if (updatedEntry.status) {
+        const statusMapping = mapStatusToDb(updatedEntry.status);
+        formData.append("invoiceStatus", statusMapping.invoiceStatus);
+        if (statusMapping.paymentStatus) {
+          formData.append("paymentStatus", statusMapping.paymentStatus);
+        }
+      } else {
+        // Fallback if status not explicitly changed in UI but exists in object
+        formData.append("invoiceStatus", updatedEntry.invoiceStatus);
+        formData.append("paymentStatus", updatedEntry.paymentStatus);
       }
-    } else {
-      // Fallback if status not explicitly changed in UI but exists in object
-      formData.append("invoiceStatus", updatedEntry.invoiceStatus);
-      formData.append("paymentStatus", updatedEntry.paymentStatus);
-    }
 
-    // Map VAT type
-    if (updatedEntry.vatType) {
-      const vatMapping = mapVatTypeToDb(updatedEntry.vatType);
-      if (vatMapping.vatRate) formData.append("vatRate", vatMapping.vatRate);
-      formData.append("includesVat", vatMapping.includesVat);
-    } else {
+      // Map VAT type
+      if (updatedEntry.vatType) {
+        const vatMapping = mapVatTypeToDb(updatedEntry.vatType);
+        if (vatMapping.vatRate) formData.append("vatRate", vatMapping.vatRate);
+        formData.append("includesVat", vatMapping.includesVat);
+      } else {
         formData.append("vatRate", updatedEntry.vatRate.toString());
         formData.append("includesVat", String(updatedEntry.includesVat));
-    }
+      }
 
-    // Optimistically update local state
-    const optimisticEntry: IncomeEntry = {
+      // Optimistically update local state
+      const optimisticEntry: IncomeEntry = {
         ...updatedEntry,
         // If status was updated, reflect it in DB fields for local state
         invoiceStatus: updatedEntry.status === "שולם" ? "paid" : updatedEntry.status === "נשלחה" ? "sent" : updatedEntry.status === "בוצע" ? "draft" : updatedEntry.invoiceStatus,
         paymentStatus: updatedEntry.status === "שולם" ? "paid" : updatedEntry.paymentStatus
-    };
+      };
 
-    setEntries((prev) =>
-      prev.map((e) => (e.id === updatedEntry.id ? optimisticEntry : e))
-    );
-    setSelectedEntry((prev) =>
-      prev?.id === updatedEntry.id ? optimisticEntry : prev
-    );
+      setEntries((prev) =>
+        prev.map((e) => (e.id === updatedEntry.id ? optimisticEntry : e))
+      );
+      setSelectedEntry((prev) =>
+        prev?.id === updatedEntry.id ? optimisticEntry : prev
+      );
 
-    await updateIncomeEntryAction(formData);
+      await updateIncomeEntryAction(formData);
       toast.success("העבודה עודכנה");
     } catch (error) {
       console.error("Failed to update entry:", error);
@@ -532,32 +552,32 @@ export default function IncomePageClient({
   const updateStatus = React.useCallback(async (id: string, status: DisplayStatus) => {
     // Optimistically update local state
     const today = new Date().toISOString().split("T")[0];
-    
+
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
-        
+
         const updates: Partial<IncomeEntry> = {};
-        
+
         if (status === "שולם") {
-            updates.invoiceStatus = "paid";
-            updates.paymentStatus = "paid";
-            updates.paidDate = today;
-            updates.amountPaid = e.amountGross;
+          updates.invoiceStatus = "paid";
+          updates.paymentStatus = "paid";
+          updates.paidDate = today;
+          updates.amountPaid = e.amountGross;
         } else if (status === "נשלחה") {
-            updates.invoiceStatus = "sent";
-            updates.paymentStatus = "unpaid";
-            updates.paidDate = undefined;
-            updates.amountPaid = 0;
-            if (!e.invoiceSentDate) {
-                updates.invoiceSentDate = today;
-            }
+          updates.invoiceStatus = "sent";
+          updates.paymentStatus = "unpaid";
+          updates.paidDate = undefined;
+          updates.amountPaid = 0;
+          if (!e.invoiceSentDate) {
+            updates.invoiceSentDate = today;
+          }
         } else if (status === "בוצע") {
-            updates.invoiceStatus = "draft";
-            updates.paymentStatus = "unpaid";
-            updates.invoiceSentDate = undefined;
-            updates.paidDate = undefined;
-            updates.amountPaid = 0;
+          updates.invoiceStatus = "draft";
+          updates.paymentStatus = "unpaid";
+          updates.invoiceSentDate = undefined;
+          updates.paidDate = undefined;
+          updates.amountPaid = 0;
         }
 
         return { ...e, ...updates };
@@ -565,7 +585,7 @@ export default function IncomePageClient({
     );
 
     try {
-    await updateEntryStatusAction(id, status);
+      await updateEntryStatusAction(id, status);
       const successMessage =
         status === "שולם"
           ? "סומן כ־שולם"
@@ -672,17 +692,6 @@ export default function IncomePageClient({
     setIsCalendarDialogOpen(true);
   };
 
-  const handleCalendarImport = async (importYear: number, importMonth: number) => {
-    try {
-      const result = await importFromCalendarAction(importYear, importMonth);
-      if (!result.success) {
-        console.error("Failed to import from calendar:", result.error);
-      }
-    } catch (error) {
-      console.error("Failed to import from calendar:", error);
-    }
-  };
-
   // ─────────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────────
@@ -699,12 +708,14 @@ export default function IncomePageClient({
           selectedYear={year}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
+          onMonthYearChange={handleMonthYearChange}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           onExportCSV={handleExportCSV}
           onImportFromCalendar={openCalendarImportDialog}
           monthPaymentStatuses={monthPaymentStatuses}
           isGoogleConnected={isGoogleConnected}
+          onGoogleConnectionChange={() => router.refresh()}
           user={user}
         />
 
@@ -883,7 +894,6 @@ export default function IncomePageClient({
       <CalendarImportDialog
         isOpen={isCalendarDialogOpen}
         onClose={() => setIsCalendarDialogOpen(false)}
-        onImport={handleCalendarImport}
         defaultYear={year}
         defaultMonth={month}
       />

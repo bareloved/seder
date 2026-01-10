@@ -20,18 +20,21 @@ import type { MonthPaymentStatus } from "../data";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import UserButton from "@/components/auth/user-button";
+import { GoogleConnectionButton } from "./GoogleConnectionButton";
 
 interface IncomeHeaderProps {
   selectedMonth: number;
   selectedYear: number;
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
+  onMonthYearChange?: (month: number, year: number) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onExportCSV: () => void;
   onImportFromCalendar?: () => void;
   monthPaymentStatuses?: Record<number, MonthPaymentStatus>;
   isGoogleConnected?: boolean;
+  onGoogleConnectionChange?: () => void;
   user: { name: string | null; email: string; image: string | null };
 }
 
@@ -40,12 +43,14 @@ export function IncomeHeader({
   selectedYear,
   onMonthChange,
   onYearChange,
+  onMonthYearChange,
   isDarkMode,
   onToggleDarkMode,
   onExportCSV,
   onImportFromCalendar,
   monthPaymentStatuses,
   isGoogleConnected,
+  onGoogleConnectionChange,
   user,
 }: IncomeHeaderProps) {
   const currentYear = new Date().getFullYear();
@@ -55,8 +60,12 @@ export function IncomeHeader({
   // Month navigation handlers
   const handlePreviousMonth = () => {
     if (selectedMonth === 1) {
-      onYearChange(selectedYear - 1);
-      onMonthChange(12);
+      if (onMonthYearChange) {
+        onMonthYearChange(12, selectedYear - 1);
+      } else {
+        onYearChange(selectedYear - 1);
+        onMonthChange(12);
+      }
     } else {
       onMonthChange(selectedMonth - 1);
     }
@@ -64,8 +73,12 @@ export function IncomeHeader({
 
   const handleNextMonth = () => {
     if (selectedMonth === 12) {
-      onYearChange(selectedYear + 1);
-      onMonthChange(1);
+      if (onMonthYearChange) {
+        onMonthYearChange(1, selectedYear + 1);
+      } else {
+        onYearChange(selectedYear + 1);
+        onMonthChange(1);
+      }
     } else {
       onMonthChange(selectedMonth + 1);
     }
@@ -114,66 +127,66 @@ export function IncomeHeader({
                     variant="outline"
                     className="w-[80px] sm:w-[110px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 justify-between px-3 font-semibold"
                   >
-                  <span className="flex items-center gap-1.5 sm:gap-2">
+                    <span className="flex items-center gap-1.5 sm:gap-2">
                       {MONTH_NAMES[selectedMonth]}
                       {monthPaymentStatuses?.[selectedMonth] &&
                         monthPaymentStatuses[selectedMonth] !== "empty" && (
-                      <span
-                        className={cn(
-                          "h-2 w-2 rounded-full shrink-0",
-                          monthPaymentStatuses[selectedMonth] === "all-paid"
-                            ? "bg-emerald-500"
-                            : "bg-red-500"
-                        )}
-                      />
-                    )}
-                  </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {Object.entries(MONTH_NAMES).map(([value, name]) => {
-                  const monthNum = parseInt(value);
-                  const status = monthPaymentStatuses?.[monthNum];
-                  return (
-                    <DropdownMenuItem
-                      key={value}
-                      onClick={() => onMonthChange(monthNum)}
-                      className="flex-row-reverse"
-                    >
-                      <span className="flex items-center justify-between gap-2 w-full flex-row-reverse">
-                        {name}
-                        {status && status !== "empty" && (
                           <span
                             className={cn(
                               "h-2 w-2 rounded-full shrink-0",
-                              status === "all-paid"
+                              monthPaymentStatuses[selectedMonth] === "all-paid"
                                 ? "bg-emerald-500"
                                 : "bg-red-500"
                             )}
-                            title={
-                              status === "all-paid"
-                                ? "הכל שולם"
-                                : "יש עבודות שלא שולמו"
-                            }
                           />
                         )}
-                      </span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {Object.entries(MONTH_NAMES).map(([value, name]) => {
+                    const monthNum = parseInt(value);
+                    const status = monthPaymentStatuses?.[monthNum];
+                    return (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => onMonthChange(monthNum)}
+                        className="flex-row-reverse"
+                      >
+                        <span className="flex items-center justify-between gap-2 w-full flex-row-reverse">
+                          {name}
+                          {status && status !== "empty" && (
+                            <span
+                              className={cn(
+                                "h-2 w-2 rounded-full shrink-0",
+                                status === "all-paid"
+                                  ? "bg-emerald-500"
+                                  : "bg-red-500"
+                              )}
+                              title={
+                                status === "all-paid"
+                                  ? "הכל שולם"
+                                  : "יש עבודות שלא שולמו"
+                              }
+                            />
+                          )}
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNextMonth}
-              className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNextMonth}
+                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -195,7 +208,7 @@ export function IncomeHeader({
             </DropdownMenu>
           </div>
 
-          {/* Controls: Analytics, Calendar, Dark mode, User */}
+          {/* Controls: Analytics, Google Connection, Calendar, Dark mode, User */}
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -213,45 +226,41 @@ export function IncomeHeader({
                 <p>אנליטיקה</p>
               </TooltipContent>
             </Tooltip>
-            {onImportFromCalendar && (
+            <GoogleConnectionButton
+              isConnected={isGoogleConnected ?? false}
+              onConnectionChange={onGoogleConnectionChange}
+            />
+            {onImportFromCalendar && isGoogleConnected && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span tabIndex={!isGoogleConnected ? 0 : undefined} className="inline-block">
-              <Button
-                variant="ghost"
-                      size="icon"
-                onClick={onImportFromCalendar}
-                      disabled={!isGoogleConnected}
-                      className={cn(
-                        "h-9 w-9 rounded-full",
-                        isGoogleConnected
-                          ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
-                          : "text-slate-300 dark:text-slate-600"
-                      )}
-              >
-                      <CalendarDays className="h-4 w-4" />
-              </Button>
-                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onImportFromCalendar}
+                    className="h-9 w-9 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{isGoogleConnected ? "ייבא מהיומן" : "עליך להתחבר לחשבון Google כדי לייבא מהיומן"}</p>
+                  <p>ייבא מהיומן</p>
                 </TooltipContent>
               </Tooltip>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-              onClick={onToggleDarkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={onToggleDarkMode}
+                >
+                  {isDarkMode ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{isDarkMode ? "מצב יום" : "מצב לילה"}</p>

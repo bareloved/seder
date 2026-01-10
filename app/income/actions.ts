@@ -14,8 +14,6 @@ import {
   revertToDraft,
   revertToSent,
   deleteIncomeEntry,
-  importIncomeEntriesFromCalendarForMonth,
-  CalendarImportError,
   type CreateIncomeEntryInput,
   type UpdateIncomeEntryInput,
 } from "./data";
@@ -207,7 +205,7 @@ export async function updateEntryStatusAction(
     } else if (status === "בוצע") {
       entry = await revertToDraft(id, userId);
     }
-    
+
     revalidatePath("/income");
     updateTag("income-data");
     return { success: true, entry };
@@ -243,70 +241,104 @@ export async function deleteIncomeEntryAction(id: string) {
 // Calendar Import Actions
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Calendar Import Actions (Preview Flow)
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Import income entries from Google Calendar for a specific month.
+ * Fetch calendar events without importing (for preview)
  */
-export async function importFromCalendarAction(year: number, month: number) {
+export async function fetchCalendarEventsAction(
+  year: number,
+  month: number,
+  calendarIds: string[] = ["primary"]
+) {
   const userId = await getUserId();
-  if (!userId) return { success: false, error: "Unauthorized", count: 0 };
+  if (!userId) return { success: false, error: "Unauthorized", events: [] };
 
-  // Validate inputs
-  if (!year || !month || month < 1 || month > 12) {
-    return { success: false, error: "Invalid year or month", count: 0 };
-  }
-
-  // Get Google Access Token
   const accessToken = await getGoogleAccessToken(userId);
   if (!accessToken) {
-    return { 
-      success: false, 
-      error: "Google Calendar permission missing. Please sign out and sign in again.", 
-      count: 0 
-    };
+    return { success: false, error: "Google Calendar not connected", events: [] };
   }
 
   try {
-    const count = await importIncomeEntriesFromCalendarForMonth({ 
-      year, 
-      month, 
-      userId,
-      accessToken 
-    });
-    revalidatePath("/income");
-    updateTag("income-data");
-    return { success: true, count };
+    const { listEventsForMonth } = await import("@/lib/googleCalendar");
+    const events = await listEventsForMonth(year, month, accessToken, calendarIds);
+
+    // Serialize dates for client
+    const serializedEvents = events.map((e) => ({
+      id: e.id,
+      summary: e.summary,
+      start: e.start.toISOString(),
+      end: e.end.toISOString(),
+      calendarId: e.calendarId,
+    }));
+
+    return { success: true, events: serializedEvents };
   } catch (error) {
-    console.error("Failed to import from calendar:", error);
-    if (error instanceof CalendarImportError) {
-      const message =
-        error.type === "tokenExpired"
-          ? "חיבור היומן פג תוקף, התחבר מחדש."
-          : error.message;
-      return {
-        success: false,
-        error: message,
-        count: 0,
-        type: error.type,
-      };
-    }
+    console.error("Failed to fetch calendar events:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to import from calendar",
-      count: 0,
-      type: "unknown",
+      error: error instanceof Error ? error.message : "Failed to fetch events",
+      events: []
     };
   }
 }
 
 /**
- * Import income entries from Google Calendar - Form action variant.
+ * Import selected events with user-provided data
  */
-export async function importFromCalendarFormAction(formData: FormData) {
-  const yearStr = formData.get("year");
-  const monthStr = formData.get("month");
+export async function importSelectedEventsAction(
+  events: Array<{
+    calendarEventId: string;
+    summary: string;
+    date: string;
+    clientName: string;
+  }>
+) {
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: "Unauthorized", count: 0 };
 
-  const year = yearStr ? parseInt(yearStr.toString(), 10) : 0;
-  const month = monthStr ? parseInt(monthStr.toString(), 10) : 0;
+  if (events.length === 0) {
+    return { success: true, count: 0 };
+  }
 
-  return importFromCalendarAction(year, month);
+  try {
+    const { createIncomeEntry } = await import("./data");
+
+    let importedCount = 0;
+    for (const event of events) {
+      try {
+        await createIncomeEntry({
+          date: event.date,
+          description: event.summary,
+          clientName: event.clientName || "",
+          amountGross: 0,
+          amountPaid: 0,
+          vatRate: 18,
+          includesVat: true,
+          invoiceStatus: "draft",
+          paymentStatus: "unpaid",
+          notes: "יובא מהיומן",
+          userId,
+        });
+        importedCount++;
+      } catch (entryError) {
+        // Skip duplicates or errors, continue with others
+        console.warn("Failed to import event:", event.summary, entryError);
+      }
+    }
+
+    revalidatePath("/income");
+    updateTag("income-data");
+
+    return { success: true, count: importedCount };
+  } catch (error) {
+    console.error("Failed to import selected events:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Import failed",
+      count: 0
+    };
+  }
 }

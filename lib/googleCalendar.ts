@@ -9,6 +9,15 @@ export interface CalendarEvent {
   summary: string;
   start: Date;
   end: Date;
+  calendarId: string;  // Track which calendar this event came from
+}
+
+export interface GoogleCalendar {
+  id: string;
+  summary: string;
+  primary: boolean;
+  backgroundColor: string;
+  accessRole: string;  // 'owner' | 'writer' | 'reader' | 'freeBusyReader'
 }
 
 export class GoogleCalendarAuthError extends Error {
@@ -51,65 +60,133 @@ function getMonthBoundsISO(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main function: List events for a given month
+// List user's calendars
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Fetches all events from the user's primary Google Calendar for a specific month.
+ * Fetches all calendars the user has access to (owned and subscribed).
+ *
+ * @param accessToken - The user's Google OAuth access token
+ * @returns Array of calendars with id, summary, primary flag, and color
+ */
+export async function listUserCalendars(
+  accessToken: string
+): Promise<GoogleCalendar[]> {
+  const calendar = getCalendarClient(accessToken);
+
+  try {
+    const response = await calendar.calendarList.list({
+      showHidden: false,
+      minAccessRole: "reader",
+    });
+
+    const calendars = response.data.items || [];
+
+    return calendars
+      .filter((cal) => cal.id && cal.summary)
+      .map((cal) => ({
+        id: cal.id!,
+        summary: cal.summary!,
+        primary: cal.primary ?? false,
+        backgroundColor: cal.backgroundColor || "#4285f4",
+        accessRole: cal.accessRole || "reader",
+      }));
+  } catch (error) {
+    console.error("Failed to fetch Google calendars:", error);
+    const status =
+      (error as { code?: number; response?: { status?: number } })?.code ??
+      (error as { code?: number; response?: { status?: number } })?.response?.status;
+    if (status === 401 || status === 403) {
+      throw new GoogleCalendarAuthError("Google access token is expired or revoked");
+    }
+    throw new Error(
+      `Failed to fetch calendars: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// List events for a given month
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fetches all events from the specified Google Calendars for a specific month.
+ * If no calendarIds provided, defaults to the primary calendar.
  *
  * @param year - The year (e.g., 2024)
  * @param month - The month (1-12)
  * @param accessToken - The user's Google OAuth access token
- * @returns Array of calendar events with id, summary, start, and end dates
+ * @param calendarIds - Optional array of calendar IDs to fetch from. Defaults to ["primary"]
+ * @returns Array of calendar events with id, summary, start, end dates, and calendarId
  */
 export async function listEventsForMonth(
   year: number,
   month: number,
-  accessToken: string
+  accessToken: string,
+  calendarIds: string[] = ["primary"]
 ): Promise<CalendarEvent[]> {
   const calendar = getCalendarClient(accessToken);
   const { timeMin, timeMax } = getMonthBoundsISO(year, month);
 
   try {
-    const response = await calendar.events.list({
-      calendarId: "primary", // Use the user's primary calendar
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: "startTime",
-      // Trim payload size to only what we need for import
-      fields: "items(id,summary,start,end)",
-      maxResults: 500,
+    // Fetch events from all requested calendars in parallel
+    const eventPromises = calendarIds.map(async (calendarId) => {
+      try {
+        const response = await calendar.events.list({
+          calendarId,
+          timeMin,
+          timeMax,
+          singleEvents: true,
+          orderBy: "startTime",
+          fields: "items(id,summary,start,end)",
+          maxResults: 500,
+        });
+
+        const events = response.data.items || [];
+
+        return events
+          .filter((event) => {
+            return event.id && (event.start?.dateTime || event.start?.date);
+          })
+          .map((event) => {
+            const startDateStr = event.start?.dateTime || event.start?.date;
+            const endDateStr = event.end?.dateTime || event.end?.date;
+
+            const start = startDateStr ? new Date(startDateStr) : new Date();
+            const end = endDateStr ? new Date(endDateStr) : start;
+
+            return {
+              id: event.id!,
+              summary: event.summary || "אירוע ללא שם",
+              start,
+              end,
+              calendarId,
+            };
+          });
+      } catch (calError) {
+        // Log but don't fail entirely if one calendar fails
+        console.warn(`Failed to fetch events from calendar ${calendarId}:`, calError);
+        return [];
+      }
     });
 
-    const events = response.data.items || [];
+    const allEventsArrays = await Promise.all(eventPromises);
+    const allEvents = allEventsArrays.flat();
 
-    // Map to our simplified CalendarEvent type
-    return events
-      .filter((event) => {
-        // Only include events that have an id and some form of start/end
-        return event.id && (event.start?.dateTime || event.start?.date);
-      })
-      .map((event) => {
-        // Handle both dateTime (regular events) and date (all-day events)
-        const startDateStr = event.start?.dateTime || event.start?.date;
-        const endDateStr = event.end?.dateTime || event.end?.date;
+    // Deduplicate events that might appear in multiple calendars (by event ID)
+    const seenIds = new Set<string>();
+    const uniqueEvents = allEvents.filter((event) => {
+      if (seenIds.has(event.id)) {
+        return false;
+      }
+      seenIds.add(event.id);
+      return true;
+    });
 
-        // For all-day events (date only), parse at midnight
-        const start = startDateStr
-          ? new Date(startDateStr)
-          : new Date();
-        const end = endDateStr
-          ? new Date(endDateStr)
-          : start;
+    // Sort by start time
+    uniqueEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
 
-        return {
-          id: event.id!,
-          summary: event.summary || "אירוע ללא שם",
-          start,
-          end,
-        };
-      });
+    return uniqueEvents;
   } catch (error) {
     console.error("Failed to fetch Google Calendar events:", error);
     const status =

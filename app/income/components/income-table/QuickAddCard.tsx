@@ -126,7 +126,7 @@ export function QuickAddCard({
     <div className="group rounded-xl border-2 border-dashed border-emerald-300 dark:border-emerald-700/50 bg-gradient-to-l from-emerald-50/60 via-emerald-50/40 to-white dark:from-emerald-900/20 dark:via-emerald-900/10 dark:to-slate-900 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 transition-colors print:hidden">
       <div className="hidden md:flex md:items-center md:min-h-[52px]">
         {/* DATE */}
-        <div className="shrink-0 w-[70px] px-2 py-2.5 border-l border-emerald-100/70 flex items-center justify-center">
+        <div className="shrink-0 w-[70px] px-2 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center justify-center">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -155,7 +155,7 @@ export function QuickAddCard({
         </div>
 
         {/* DESCRIPTION */}
-        <div className="flex-1 min-w-0 max-w-[420px] px-3 py-2.5 border-l border-emerald-100/70 flex items-center">
+        <div className="flex-1 min-w-0 max-w-[420px] px-3 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center">
           <div className="w-full relative">
             <Input
               ref={quickAddDescriptionRef}
@@ -179,7 +179,7 @@ export function QuickAddCard({
         </div>
 
         {/* CLIENT */}
-        <div className="shrink-0 w-[110px] px-3 py-2.5 border-l border-emerald-100/70 flex items-center">
+        <div className="shrink-0 w-[110px] px-3 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center">
           <div className="w-full relative">
             <Input
               value={quickAddClient}
@@ -212,7 +212,7 @@ export function QuickAddCard({
         </div>
 
         {/* CATEGORY */}
-        <div className="shrink-0 w-[100px] px-2 py-2.5 border-l border-emerald-100/70 flex items-center">
+        <div className="shrink-0 w-[100px] px-2 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -257,7 +257,7 @@ export function QuickAddCard({
         </div>
 
         {/* AMOUNT */}
-        <div className="shrink-0 w-[105px] px-3 py-2.5 border-l border-emerald-100/70 flex items-center justify-end">
+        <div className="shrink-0 w-[105px] px-3 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center justify-end">
           <div className="relative w-full">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
               ₪
@@ -274,7 +274,7 @@ export function QuickAddCard({
         </div>
 
         {/* STATUS BADGE */}
-        <div className="shrink-0 w-[100px] px-2 py-2.5 border-l border-emerald-100/70 flex items-center justify-center">
+        <div className="shrink-0 w-[100px] px-2 py-2.5 border-l border-emerald-100/70 dark:border-slate-800/60 flex items-center justify-center">
           <Badge className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             בוצע
           </Badge>

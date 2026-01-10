@@ -20,6 +20,7 @@ export interface MonthFilter {
 
 export interface ImportFilter extends MonthFilter {
   accessToken: string;
+  calendarIds?: string[];  // Optional array of calendar IDs to import from
 }
 
 export interface IncomeAggregates {
@@ -163,214 +164,222 @@ export type MonthPaymentStatus = "all-paid" | "has-unpaid" | "empty";
 
 /**
  * Get payment status for all months in a year for a specific user
+ * Cached with scoped key per year/user for performance
  */
-export const getMonthPaymentStatuses = unstable_cache(
-  async (year: number, userId: string): Promise<Record<number, MonthPaymentStatus>> => {
-    const startOfYear = `${year}-01-01`;
-    const endOfYear = `${year}-12-31`;
-    const today = getTodayString();
-    
-    const results = await db
-      .select({
-        month: sql<number>`EXTRACT(MONTH FROM ${incomeEntries.date})::int`,
-        pastJobsCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.date} < ${today})`,
-        unpaidCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.paymentStatus} != 'paid' AND ${incomeEntries.date} < ${today})`,
-      })
-      .from(incomeEntries)
-      .where(
-        and(
-          eq(incomeEntries.userId, userId),
-          gte(incomeEntries.date, startOfYear),
-          lte(incomeEntries.date, endOfYear)
+export async function getMonthPaymentStatuses(year: number, userId: string): Promise<Record<number, MonthPaymentStatus>> {
+  const cachedFn = unstable_cache(
+    async (y: number, uid: string): Promise<Record<number, MonthPaymentStatus>> => {
+      const startOfYear = `${y}-01-01`;
+      const endOfYear = `${y}-12-31`;
+      const today = getTodayString();
+
+      const results = await db
+        .select({
+          month: sql<number>`EXTRACT(MONTH FROM ${incomeEntries.date})::int`,
+          pastJobsCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.date} < ${today})`,
+          unpaidCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.paymentStatus} != 'paid' AND ${incomeEntries.date} < ${today})`,
+        })
+        .from(incomeEntries)
+        .where(
+          and(
+            eq(incomeEntries.userId, uid),
+            gte(incomeEntries.date, startOfYear),
+            lte(incomeEntries.date, endOfYear)
+          )
         )
-      )
-      .groupBy(sql`EXTRACT(MONTH FROM ${incomeEntries.date})`);
-    
-    const statusMap: Record<number, MonthPaymentStatus> = {};
-    
-    for (let m = 1; m <= 12; m++) {
-      statusMap[m] = "empty";
-    }
-    
-    for (const row of results) {
-      const month = row.month;
-      if (row.pastJobsCount === 0) {
-        statusMap[month] = "empty";
-      } else if (row.unpaidCount > 0) {
-        statusMap[month] = "has-unpaid";
-      } else {
-        statusMap[month] = "all-paid";
+        .groupBy(sql`EXTRACT(MONTH FROM ${incomeEntries.date})`);
+
+      const statusMap: Record<number, MonthPaymentStatus> = {};
+
+      for (let m = 1; m <= 12; m++) {
+        statusMap[m] = "empty";
       }
-    }
-    
-    return statusMap;
-  },
-  ["month-payment-statuses"],
-  { tags: ["income-data"] }
-);
+
+      for (const row of results) {
+        const month = row.month;
+        if (row.pastJobsCount === 0) {
+          statusMap[month] = "empty";
+        } else if (row.unpaidCount > 0) {
+          statusMap[month] = "has-unpaid";
+        } else {
+          statusMap[month] = "all-paid";
+        }
+      }
+
+      return statusMap;
+    },
+    [`month-payment-statuses-${year}-${userId}`],
+    { tags: ["income-data"], revalidate: 60 }
+  );
+  return cachedFn(year, userId);
+}
 
 /**
  * Calculate aggregates for a given month and user
+ * Cached with scoped key per year/month/user for performance
  */
-export const getIncomeAggregatesForMonth = unstable_cache(
-  async ({ year, month, userId }: MonthFilter): Promise<IncomeAggregates> => {
-    const { startDate, endDate } = getMonthBounds(year, month);
-    const today = getTodayString();
-    
-    const prevMonth = month === 1 ? 12 : month - 1;
-    const prevYear = month === 1 ? year - 1 : year;
-    const { startDate: prevStart, endDate: prevEnd } = getMonthBounds(prevYear, prevMonth);
+export async function getIncomeAggregatesForMonth({ year, month, userId }: MonthFilter): Promise<IncomeAggregates> {
+  const cachedFn = unstable_cache(
+    async (y: number, m: number, uid: string): Promise<IncomeAggregates> => {
+      const { startDate, endDate } = getMonthBounds(y, m);
+      const today = getTodayString();
 
-    const [
-      monthStatsResult,
-      vatTotalResult,
-      outstandingStatsResult,
-      readyToInvoiceStatsResult,
-      overdueStatsResult,
-      prevMonthStatsResult
-    ] = await Promise.all([
-      // 1. Current Month Aggregates
-      db
-        .select({
-          totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-          jobsCount: count(),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate)
+      const prevMonth = m === 1 ? 12 : m - 1;
+      const prevYear = m === 1 ? y - 1 : y;
+      const { startDate: prevStart, endDate: prevEnd } = getMonthBounds(prevYear, prevMonth);
+
+      const [
+        monthStatsResult,
+        vatTotalResult,
+        outstandingStatsResult,
+        readyToInvoiceStatsResult,
+        overdueStatsResult,
+        prevMonthStatsResult
+      ] = await Promise.all([
+        // 1. Current Month Aggregates
+        db
+          .select({
+            totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+            totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+            jobsCount: count(),
+          })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, startDate),
+              lte(incomeEntries.date, endDate)
+            )
+          ),
+
+        // 2. VAT Total
+        db
+          .select({
+            vatTotal: sql<string>`sum(
+              CASE 
+                WHEN ${incomeEntries.includesVat} THEN 
+                  (${incomeEntries.amountGross} - (${incomeEntries.amountGross} / (1 + ${incomeEntries.vatRate} / 100)))
+                ELSE 
+                  (${incomeEntries.amountGross} * (${incomeEntries.vatRate} / 100))
+              END
+            )`.mapWith(Number)
+          })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, startDate),
+              lte(incomeEntries.date, endDate)
+            )
+          ),
+
+        // 3. Outstanding (scoped to current month)
+        db
+          .select({
+            totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+            totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+            count: count(),
+          })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, startDate),
+              lte(incomeEntries.date, endDate),
+              eq(incomeEntries.invoiceStatus, "sent"),
+              sql`${incomeEntries.paymentStatus} != 'paid'`
+            )
+          ),
+
+        // 4. Ready to Invoice (scoped to current month)
+        db
+          .select({
+            total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+            count: count(),
+          })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, startDate),
+              lte(incomeEntries.date, endDate),
+              eq(incomeEntries.invoiceStatus, "draft"),
+              lt(incomeEntries.date, today)
+            )
+          ),
+
+        // 5. Overdue Count (scoped to current month)
+        db
+          .select({ count: count() })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, startDate),
+              lte(incomeEntries.date, endDate),
+              eq(incomeEntries.invoiceStatus, "sent"),
+              sql`${incomeEntries.paymentStatus} != 'paid'`,
+              sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
+            )
+          ),
+
+        // 6. Previous Month Paid
+        db
+          .select({
+            totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+          })
+          .from(incomeEntries)
+          .where(
+            and(
+              eq(incomeEntries.userId, uid),
+              gte(incomeEntries.date, prevStart),
+              lte(incomeEntries.date, prevEnd),
+              eq(incomeEntries.paymentStatus, "paid")
+            )
           )
-        ),
+      ]);
 
-      // 2. VAT Total
-      db
-        .select({
-          vatTotal: sql<string>`sum(
-            CASE 
-              WHEN ${incomeEntries.includesVat} THEN 
-                (${incomeEntries.amountGross} - (${incomeEntries.amountGross} / (1 + ${incomeEntries.vatRate} / 100)))
-              ELSE 
-                (${incomeEntries.amountGross} * (${incomeEntries.vatRate} / 100))
-            END
-          )`.mapWith(Number)
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate)
-          )
-        ),
+      const monthStats = monthStatsResult[0];
+      const outstandingStats = outstandingStatsResult[0];
+      const readyToInvoiceStats = readyToInvoiceStatsResult[0];
+      const overdueStats = overdueStatsResult[0];
+      const prevMonthStats = prevMonthStatsResult[0];
+      const vatTotal = vatTotalResult[0]?.vatTotal || 0;
 
-      // 3. Outstanding (scoped to current month)
-      db
-        .select({
-          totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-          count: count(),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate),
-            eq(incomeEntries.invoiceStatus, "sent"),
-            sql`${incomeEntries.paymentStatus} != 'paid'`
-          )
-        ),
+      const outstanding = Currency.subtract(
+        outstandingStats?.totalGross || 0,
+        outstandingStats?.totalPaid || 0
+      );
+      const invoicedCount = outstandingStats?.count || 0;
+      const totalGross = monthStats?.totalGross || 0;
+      const totalPaid = monthStats?.totalPaid || 0;
+      const totalUnpaid = Currency.subtract(totalGross, totalPaid);
+      const previousMonthPaid = prevMonthStats?.totalPaid || 0;
 
-      // 4. Ready to Invoice (scoped to current month)
-      db
-        .select({
-          total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
-          count: count(),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate),
-            eq(incomeEntries.invoiceStatus, "draft"),
-            lt(incomeEntries.date, today)
-          )
-        ),
+      const trend = previousMonthPaid > 0
+        ? Currency.multiply(Currency.divide(Currency.subtract(totalPaid, previousMonthPaid), previousMonthPaid), 100)
+        : 0;
 
-      // 5. Overdue Count (scoped to current month)
-      db
-        .select({ count: count() })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, startDate),
-            lte(incomeEntries.date, endDate),
-            eq(incomeEntries.invoiceStatus, "sent"),
-            sql`${incomeEntries.paymentStatus} != 'paid'`,
-            sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
-          )
-        ),
-
-      // 6. Previous Month Paid
-      db
-        .select({
-          totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
-        })
-        .from(incomeEntries)
-        .where(
-          and(
-            eq(incomeEntries.userId, userId),
-            gte(incomeEntries.date, prevStart),
-            lte(incomeEntries.date, prevEnd),
-            eq(incomeEntries.paymentStatus, "paid")
-          )
-        )
-    ]);
-
-    const monthStats = monthStatsResult[0];
-    const outstandingStats = outstandingStatsResult[0];
-    const readyToInvoiceStats = readyToInvoiceStatsResult[0];
-    const overdueStats = overdueStatsResult[0];
-    const prevMonthStats = prevMonthStatsResult[0];
-    const vatTotal = vatTotalResult[0]?.vatTotal || 0;
-
-    const outstanding = Currency.subtract(
-      outstandingStats?.totalGross || 0, 
-      outstandingStats?.totalPaid || 0
-    );
-    const invoicedCount = outstandingStats?.count || 0;
-    const totalGross = monthStats?.totalGross || 0;
-    const totalPaid = monthStats?.totalPaid || 0;
-    const totalUnpaid = Currency.subtract(totalGross, totalPaid);
-    const previousMonthPaid = prevMonthStats?.totalPaid || 0;
-
-    const trend = previousMonthPaid > 0
-      ? Currency.multiply(Currency.divide(Currency.subtract(totalPaid, previousMonthPaid), previousMonthPaid), 100)
-      : 0;
-
-    return {
-      totalGross,
-      totalPaid,
-      totalUnpaid,
-      vatTotal,
-      jobsCount: monthStats?.jobsCount || 0,
-      outstanding,
-      readyToInvoice: readyToInvoiceStats?.total || 0,
-      readyToInvoiceCount: readyToInvoiceStats?.count || 0,
-      invoicedCount,
-      overdueCount: overdueStats?.count || 0,
-      previousMonthPaid,
-      trend,
-    };
-  },
-  ["income-aggregates"],
-  { tags: ["income-data"] }
-);
+      return {
+        totalGross,
+        totalPaid,
+        totalUnpaid,
+        vatTotal,
+        jobsCount: monthStats?.jobsCount || 0,
+        outstanding,
+        readyToInvoice: readyToInvoiceStats?.total || 0,
+        readyToInvoiceCount: readyToInvoiceStats?.count || 0,
+        invoicedCount,
+        overdueCount: overdueStats?.count || 0,
+        previousMonthPaid,
+        trend,
+      };
+    },
+    [`income-aggregates-${year}-${month}-${userId}`],
+    { tags: ["income-data"], revalidate: 30 }
+  );
+  return cachedFn(year, month, userId);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CRUD operations
@@ -459,13 +468,13 @@ export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<
   if (updates.paidDate !== undefined) updateData.paidDate = updates.paidDate ?? undefined;
 
   updateData.updatedAt = new Date();
-  
+
   const [entry] = await db
     .update(incomeEntries)
     .set(updateData)
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning();
-  
+
   if (!entry) throw new Error(`Failed to update income entry - entry with id ${id} not found or access denied`);
   return entry;
 }
@@ -476,9 +485,9 @@ export async function markIncomeEntryAsPaid(id: string, userId: string): Promise
     .from(incomeEntries)
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .limit(1);
-  
+
   if (!existing) throw new Error(`Cannot mark as paid - entry with id ${id} not found or access denied`);
-  
+
   const today = getTodayString();
   const [entry] = await db
     .update(incomeEntries)
@@ -491,7 +500,7 @@ export async function markIncomeEntryAsPaid(id: string, userId: string): Promise
     })
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning();
-  
+
   if (!entry) throw new Error(`Failed to mark entry ${id} as paid`);
   return entry;
 }
@@ -507,7 +516,7 @@ export async function markInvoiceSent(id: string, userId: string): Promise<Incom
     })
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning();
-  
+
   if (!entry) throw new Error(`Failed to mark invoice sent - entry with id ${id} not found or access denied`);
   return entry;
 }
@@ -525,7 +534,7 @@ export async function revertToDraft(id: string, userId: string): Promise<IncomeE
     })
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning();
-  
+
   if (!entry) throw new Error(`Failed to revert to draft - entry with id ${id} not found or access denied`);
   return entry;
 }
@@ -536,9 +545,9 @@ export async function revertToSent(id: string, userId: string): Promise<IncomeEn
     .from(incomeEntries)
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .limit(1);
-  
+
   if (!existing) throw new Error(`Cannot revert to sent - entry with id ${id} not found or access denied`);
-  
+
   const today = getTodayString();
   const [entry] = await db
     .update(incomeEntries)
@@ -552,7 +561,7 @@ export async function revertToSent(id: string, userId: string): Promise<IncomeEn
     })
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning();
-  
+
   if (!entry) throw new Error(`Failed to revert to sent - entry with id ${id} not found or access denied`);
   return entry;
 }
@@ -562,7 +571,7 @@ export async function deleteIncomeEntry(id: string, userId: string): Promise<boo
     .delete(incomeEntries)
     .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)))
     .returning({ id: incomeEntries.id });
-  
+
   return result.length > 0;
 }
 
@@ -573,7 +582,7 @@ export async function getUniqueClients(userId: string): Promise<string[]> {
     .where(eq(incomeEntries.userId, userId))
     .groupBy(incomeEntries.clientName)
     .orderBy(asc(incomeEntries.clientName));
-  
+
   return results.map((r) => r.clientName);
 }
 
@@ -592,10 +601,12 @@ export async function importIncomeEntriesFromCalendarForMonth({
   month,
   userId,
   accessToken,
+  calendarIds,
 }: ImportFilter): Promise<number> {
   const { listEventsForMonth } = await import("@/lib/googleCalendar");
   try {
-    const calendarEvents = await listEventsForMonth(year, month, accessToken);
+    // Pass calendarIds to fetch from multiple calendars (defaults to primary if not provided)
+    const calendarEvents = await listEventsForMonth(year, month, accessToken, calendarIds);
 
     if (calendarEvents.length === 0) return 0;
 
