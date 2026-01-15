@@ -25,12 +25,13 @@ import { cn } from "@/lib/utils";
 import {
   Check,
   FileText,
-  MoreVertical,
   Pencil,
   Trash2,
   StickyNote,
   CalendarDays,
   Settings2,
+  Copy,
+  MoreVertical
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -47,14 +48,6 @@ import {
 } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared Income Entry Row Component
-// ─────────────────────────────────────────────────────────────────────────────
-// Desktop (md+): Compact table-like row with inline editing, separate columns
-//                for date, description, client, category, amount, status, actions.
-// Mobile (<md):  Stacked layout optimized for touch (unchanged).
-// ─────────────────────────────────────────────────────────────────────────────
-
 type EditableField = "date" | "description" | "amountGross" | "clientName" | "category" | null;
 type ColumnKey = "date" | "description" | "client" | "category" | "amount" | "status" | "actions";
 const DEFAULT_COLUMN_ORDER: ColumnKey[] = ["date", "description", "client", "category", "amount", "status", "actions"];
@@ -67,15 +60,10 @@ export interface IncomeEntryRowProps {
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
   onDelete: (id: string) => void;
-  /** Optional inline edit handler - enables Excel-like editing on desktop */
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
-  /** Client list for autocomplete */
   clients?: string[];
-  /** Categories list for dropdown */
   categories?: Category[];
-  /** Column order for desktop layout */
   columnOrder?: ColumnKey[];
-  /** Optional handler to open category manager dialog */
   onEditCategories?: () => void;
 }
 
@@ -85,6 +73,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   onStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
+  onDuplicate,
   onDelete,
   onInlineEdit,
   clients = [],
@@ -96,55 +85,16 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   const displayStatus = getDisplayStatus(entry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
   const overdue = isOverdue(entry);
-  const daysSinceInvoice = entry.invoiceSentDate
-    ? daysSince(entry.invoiceSentDate)
-    : null;
-  const isFutureGig = !isPastDate(entry.date);
-  
-  // Parse notes
+
   const rawNotes = (entry.notes || "").trim();
   const isCalendarImportNote = rawNotes === "יובא מהיומן";
   const hasNotes = rawNotes.length > 0 && !isCalendarImportNote;
   const hasCalendarEvent = !!entry.calendarEventId;
-  
-  // Status checks
+
   const isPaid = displayStatus === "שולם";
-  const isWaiting = displayStatus === "נשלחה";
   const isDraft = displayStatus === "בוצע";
-  
-  const isUnpaidPast = !isFutureGig && entry.paymentStatus !== "paid";
-  const isCalendarDraft =
-    entry.calendarEventId &&
-    entry.amountGross === 0 &&
-    entry.paymentStatus === "unpaid";
+  const isWaiting = displayStatus === "נשלחה";
 
-  // Invoice status label
-  const invoiceStatusLabel =
-    isPaid
-      ? null
-      : entry.invoiceStatus === "sent" || entry.invoiceSentDate
-        ? "נשלחה"
-        : "אין חשבונית";
-
-  // ─── Colors ───
-  const leftBorderColor = overdue
-    ? "border-l-red-500 dark:border-l-red-600"
-    : isPaid
-      ? "border-l-emerald-500 dark:border-l-emerald-600"
-      : isWaiting
-        ? "border-l-amber-400 dark:border-l-amber-500"
-        : "border-l-slate-300 dark:border-l-slate-600";
-
-  // Calm visual style: mostly white/neutral
-  const bgClass = "bg-white dark:bg-slate-900";
-
-  const amountColor = isPaid
-    ? "text-emerald-600 dark:text-emerald-400"
-    : isWaiting || overdue || isUnpaidPast
-      ? "text-amber-600 dark:text-amber-400"
-      : "text-slate-800 dark:text-slate-200";
-
-  // ─── Inline Editing State (Desktop only) ───
   const [editingField, setEditingField] = React.useState<EditableField>(null);
   const [editValue, setEditValue] = React.useState<string>("");
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
@@ -152,7 +102,6 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   const [showClientSuggestions, setShowClientSuggestions] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Focus input when editing starts
   React.useEffect(() => {
     if (editingField && inputRef.current && editingField !== "category" && editingField !== "date") {
       inputRef.current.focus();
@@ -178,19 +127,19 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
   const saveCurrentValue = (): boolean => {
     if (!editingField || !onInlineEdit) return false;
-    
+
     let valueToSave: string | number = editValue;
-    
+
     if (editingField === "amountGross") {
       const numValue = parseFloat(editValue.replace(/[^\d.-]/g, ""));
       if (isNaN(numValue)) return false;
       valueToSave = numValue;
     }
-    
-    const currentValue = editingField === "amountGross" 
-      ? entry.amountGross 
+
+    const currentValue = editingField === "amountGross"
+      ? entry.amountGross
       : entry[editingField];
-    
+
     if (valueToSave !== currentValue) {
       onInlineEdit(entry.id, editingField, valueToSave);
     }
@@ -233,122 +182,54 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
   return (
     <div
-      className={cn(
-        "group relative rounded-lg border border-slate-200 dark:border-slate-800",
-        "border-l-[3px] transition-all",
-        "hover:bg-slate-50/80 dark:hover:bg-slate-800/40",
-        leftBorderColor,
-        bgClass
-      )}
+      className="group relative border-b border-transparent hover:bg-slate-50/50 transition-colors py-1"
     >
       {/* ═══════════════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (md+)
-          Columns: תאריך | תיאור | לקוח | קטגוריה | סכום | סטטוס | פעולות
-          With Excel-like inline editing
+          match image style: clean white rows
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="hidden md:flex md:items-center md:min-h-[52px]">
-        { effectiveOrder.map((colKey) => {
+      <div className="hidden md:flex md:items-center min-h-[50px]">
+        {effectiveOrder.map((colKey) => {
           const columnMap: Record<ColumnKey, React.ReactElement> = {
             date: (
-              <div className="shrink-0 w-[70px] px-2 py-2.5 border-l border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center gap-0.5">
-                {onInlineEdit ? (
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className="text-sm font-numbers text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 px-1 py-0.5 rounded cursor-pointer transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {formatDate(entry.date)}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={new Date(entry.date)}
-                        onSelect={(date) => {
-                          if (date && onInlineEdit) {
-                            const dateStr = format(date, "yyyy-MM-dd");
-                            onInlineEdit(entry.id, "date", dateStr);
-                          }
-                          setIsDatePickerOpen(false);
-                        }}
-                        initialFocus
-                        locale={he}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <span className="text-sm font-numbers text-slate-600 dark:text-slate-300">
-                    {formatDate(entry.date)}
-                  </span>
-                )}
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                  {getWeekday(new Date(entry.date))}
-                </span>
-              </div>
-            ),
-            description: (
-              <div 
-                className="flex-1 min-w-0 max-w-[420px] px-3 py-2.5 border-l border-slate-100 dark:border-slate-800 flex items-center cursor-pointer"
-                onClick={(e) => {
-                  if (onInlineEdit && editingField !== "description") {
-                    e.stopPropagation();
-                    startEditing("description", entry.description);
-                  } else if (!onInlineEdit) {
-                    onClick(entry);
-                  }
-                }}
-              >
-                {editingField === "description" ? (
-                  <Input
-                    ref={inputRef}
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={saveEdit}
-                    onKeyDown={handleKeyDown}
-                    className="h-8 text-base w-full px-2 border border-emerald-500/50 bg-white dark:bg-slate-800 focus-visible:ring-0 rounded-md shadow-sm"
-                    dir="rtl"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <>
-                    {/* Icons should sit on the left of the text box (RTL aware) */}
-                    <div className="min-w-0 flex items-start gap-2 flex-row-reverse">
-                      <div className="min-w-0 flex-1">
-                        <p className={cn(
-                          "text-base font-medium text-slate-700 dark:text-slate-200 line-clamp-2 leading-snug",
-                          onInlineEdit && "hover:text-slate-900 dark:hover:text-white transition-colors"
-                        )}>
-                          {entry.description}
-                        </p>
-                        {overdue && (
-                          <Badge className="mt-1 text-[10px] px-1.5 py-0 bg-red-100 text-red-700 border-0 inline-flex items-center gap-1">
-                            מאחר
-                          </Badge>
-                        )}
-                      </div>
-                      {/* Icons column aligned to the left edge of the description cell */}
-                      <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
-                        {hasNotes && (
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <StickyNote className="h-3.5 w-3.5 text-amber-400/80" />
-                            </TooltipTrigger>
-                            <TooltipContent><p>{entry.notes}</p></TooltipContent>
-                          </Tooltip>
-                        )}
-                        {hasCalendarEvent && (
-                          <CalendarDays className="h-3.5 w-3.5 text-blue-400/80" />
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
+              <div className="shrink-0 w-[70px] px-2 flex justify-end">
+                <div className="text-right">
+                  {onInlineEdit ? (
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          className="text-base text-slate-900 font-medium hover:bg-slate-100 rounded px-1 transition-colors block text-right w-full"
+                        >
+                          {format(new Date(entry.date), "dd.MM", { locale: he })}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(entry.date)}
+                          onSelect={(date) => {
+                            if (date && onInlineEdit) {
+                              const dateStr = format(date, "yyyy-MM-dd");
+                              onInlineEdit(entry.id, "date", dateStr);
+                            }
+                            setIsDatePickerOpen(false);
+                          }}
+                          initialFocus
+                          locale={he}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <span className="text-base text-slate-900 font-medium">
+                      {format(new Date(entry.date), "dd.MM", { locale: he })}
+                    </span>
+                  )}
+                </div>
               </div>
             ),
             client: (
-              <div 
-                className="shrink-0 w-[110px] px-3 py-2.5 border-l border-slate-100 dark:border-slate-800 flex items-center cursor-pointer"
+              <div
+                className="shrink-0 w-[110px] px-3 flex items-center"
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "clientName") {
                     e.stopPropagation();
@@ -365,101 +246,116 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                         setEditValue(e.target.value);
                         setShowClientSuggestions(true);
                       }}
-                      onFocus={() => setShowClientSuggestions(true)}
                       onBlur={() => setTimeout(() => { setShowClientSuggestions(false); saveEdit(); }, 150)}
                       onKeyDown={handleKeyDown}
-                      className="h-8 text-sm w-full px-2 border border-emerald-500/50 bg-white dark:bg-slate-800 focus-visible:ring-0 rounded-md shadow-sm"
-                      dir="rtl"
-                      onClick={(e) => e.stopPropagation()}
+                      className="h-9 text-base px-2 w-full text-right"
                     />
                     {showClientSuggestions && filteredClients.length > 0 && (
-                      <div className="absolute z-20 top-full mt-1 w-full bg-white dark:bg-slate-800 rounded shadow-lg border border-slate-200 dark:border-slate-700 py-1">
+                      <div className="absolute z-20 top-full right-0 w-40 bg-white shadow-lg rounded border border-slate-100 p-1">
                         {filteredClients.map((client) => (
-                          <button
+                          <div
                             key={client}
-                            className="w-full px-2 py-1.5 text-right text-xs hover:bg-slate-100 dark:hover:bg-slate-700"
+                            className="px-2 py-1 text-xs hover:bg-slate-50 cursor-pointer text-right"
                             onClick={(e) => { e.stopPropagation(); selectClient(client); }}
                           >
                             {client}
-                          </button>
+                          </div>
                         ))}
                       </div>
                     )}
                   </div>
                 ) : (
                   <span className={cn(
-                    "text-sm text-slate-600 dark:text-slate-400 truncate block w-full",
-                    onInlineEdit && "hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+                    "text-base text-slate-900 truncate block w-full text-right",
+                    onInlineEdit && "hover:text-slate-600 cursor-pointer"
                   )}>
                     {entry.clientName || "—"}
                   </span>
                 )}
               </div>
             ),
+            description: (
+              <div
+                className="flex-1 min-w-0 max-w-[420px] px-3 flex items-center"
+                onClick={(e) => {
+                  if (onInlineEdit && editingField !== "description") {
+                    e.stopPropagation();
+                    startEditing("description", entry.description);
+                  } else if (!onInlineEdit) {
+                    onClick(entry);
+                  }
+                }}
+              >
+                {editingField === "description" ? (
+                  <Input
+                    ref={inputRef}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={saveEdit}
+                    onKeyDown={handleKeyDown}
+                    className="h-9 text-base w-full px-2 text-right"
+                  />
+                ) : (
+                  <div className="w-full text-right truncate">
+                    <span className={cn(
+                      "text-base text-slate-700 truncate block",
+                      onInlineEdit && "hover:text-slate-900 cursor-pointer"
+                    )}>
+                      {entry.description}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ),
             category: (
-              <div 
-                className="shrink-0 w-[100px] px-2 py-2.5 border-l border-slate-100 dark:border-slate-800 flex items-center"
+              <div
+                className="shrink-0 w-[100px] px-2 flex items-center justify-start"
                 onClick={(e) => e.stopPropagation()}
               >
                 {onInlineEdit && categories.length > 0 ? (
                   <DropdownMenu open={isCategoryDropdownOpen} onOpenChange={setIsCategoryDropdownOpen}>
                     <DropdownMenuTrigger asChild>
-                      <button className="w-full text-right hover:opacity-80 transition-opacity">
-                        <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
+                      <button className="flex items-center gap-1.5 hover:opacity-80">
+                        {/* Dot style as in image if possible, using CategoryChip for now but styling it minimally */}
+                        <div className={cn("h-2 w-2 rounded-full", entry.categoryData?.color ? `bg-[${entry.categoryData.color}]` : "bg-sky-400")}
+                          style={{ backgroundColor: entry.categoryData?.color || "#38bdf8" }}
+                        />
+                        <span className="text-base text-slate-700">
+                          {entry.categoryData?.name || entry.category || "---"}
+                        </span>
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[150px]">
-                      {categories.filter(c => !c.isArchived).map((cat) => (
+                      {categories.filter(c => !c.isArchived).map(cat => (
                         <DropdownMenuItem
                           key={cat.id}
                           onClick={() => {
                             if (onInlineEdit) onInlineEdit(entry.id, "categoryId", cat.id);
                             setIsCategoryDropdownOpen(false);
                           }}
-                          className="justify-end"
+                          className="justify-end gap-2"
                         >
-                          <CategoryChip category={cat} size="sm" />
+                          <span>{cat.name}</span>
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />
                         </DropdownMenuItem>
                       ))}
-                      {(entry.categoryId || entry.category) && (
-                        <>
-                          <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (onInlineEdit) onInlineEdit(entry.id, "categoryId", "");
-                              setIsCategoryDropdownOpen(false);
-                            }}
-                            className="justify-end text-xs text-slate-400"
-                          >
-                            הסר קטגוריה
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      {onEditCategories && (
-                        <>
-                          <div className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setIsCategoryDropdownOpen(false);
-                              onEditCategories();
-                            }}
-                            className="justify-end text-xs text-slate-500 gap-1"
-                          >
-                            <Settings2 className="h-3 w-3" />
-                            ערוך קטגוריות
-                          </DropdownMenuItem>
-                        </>
-                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
+                  <div className="flex items-center gap-1.5">
+                    <div className={cn("h-2 w-2 rounded-full")}
+                      style={{ backgroundColor: entry.categoryData?.color || "#38bdf8" }}
+                    />
+                    <span className="text-base text-slate-700">
+                      {entry.categoryData?.name || entry.category || "---"}
+                    </span>
+                  </div>
                 )}
               </div>
             ),
             amount: (
-              <div 
-                className="shrink-0 w-[105px] px-3 py-2.5 border-l border-slate-100 dark:border-slate-800 flex items-center cursor-pointer"
+              <div
+                className="shrink-0 w-[105px] px-3 flex items-center justify-end"
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "amountGross") {
                     e.stopPropagation();
@@ -475,143 +371,65 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-8 text-base w-full px-2 border border-emerald-500/50 bg-white dark:bg-slate-800 focus-visible:ring-0 rounded-md shadow-sm text-left"
-                    dir="ltr"
-                    onClick={(e) => e.stopPropagation()}
+                    className="h-9 text-base w-full px-2 text-left"
                   />
-                  ) : (
-                    <span
-                      className={cn(
-                        "text-base font-bold font-numbers tabular-nums ml-auto",
-                        amountColor,
-                        onInlineEdit && "hover:opacity-80 transition-opacity"
-                      )}
-                      dir="ltr"
-                    >
-                      {formatCurrency(entry.amountGross)}
-                    </span>
-                  )}
+                ) : (
+                  <span className="text-base font-bold text-slate-900">
+                    {formatCurrency(entry.amountGross)}
+                  </span>
+                )}
               </div>
             ),
             status: (
-              <div className="shrink-0 w-[100px] px-2 py-2.5 border-l border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center gap-1">
+              <div className="shrink-0 w-[100px] px-2 flex justify-center">
                 {statusConfig && (
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
-                      <button
-                        className="focus:outline-none group/status"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Badge
-                          className={cn(
-                            "text-[10px] px-2.5 py-0.5 rounded-full font-medium border cursor-pointer group-hover/status:opacity-90 transition-opacity whitespace-nowrap shadow-sm",
-                            statusConfig.bgClass,
-                            statusConfig.textClass,
-                            statusConfig.borderClass
-                          )}
-                        >
+                      <button className="focus:outline-none">
+                        <Badge variant="outline" className="text-xs font-normal border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 px-2.5 py-0.5 rounded-full">
                           {statusConfig.label}
                         </Badge>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="p-1 min-w-[120px]" sideOffset={4}>
-                      {(["בוצע", "נשלחה", "שולם"] as DisplayStatus[])
-                        .filter((status) => status !== displayStatus)
-                        .map((status) => {
-                          const config = STATUS_CONFIG[status];
-                          return (
-                            <DropdownMenuItem
-                              key={status}
-                              onClick={(e) => { e.stopPropagation(); onStatusChange(entry.id, status); }}
-                              className="p-1 focus:bg-transparent justify-center"
-                            >
-                              <Badge className={cn(
-                                "w-full justify-center text-[10px] px-2 py-0.5 rounded-full font-medium border cursor-pointer",
-                                config.bgClass, config.textClass, config.borderClass
-                              )}>
-                                {config.label}
-                              </Badge>
-                            </DropdownMenuItem>
-                          );
-                        })}
+                    <DropdownMenuContent align="center">
+                      {(["בוצע", "נשלחה", "שולם"] as DisplayStatus[]).map(status => (
+                        <DropdownMenuItem key={status} onClick={() => onStatusChange(entry.id, status)} className="justify-center">
+                          {STATUS_CONFIG[status].label}
+                        </DropdownMenuItem>
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-                {/* Invoice info - plain text below */}
-                {isWaiting && daysSinceInvoice !== null ? (
-                  <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium font-numbers">
-                    לפני {daysSinceInvoice} ימים
-                  </span>
-                ) : invoiceStatusLabel && !isWaiting ? (
-                  <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                    {invoiceStatusLabel}
-                  </span>
-                ) : null}
               </div>
             ),
             actions: (
-              <div className="shrink-0 w-[110px] px-1.5 py-2.5 flex items-center justify-center gap-1">
-                {isDraft && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full"
-                        onClick={(e) => { e.stopPropagation(); onMarkInvoiceSent(entry.id); }}
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>סמן כנשלחה</p></TooltipContent>
-                  </Tooltip>
-                )}
-
-                {!isPaid && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-full"
-                        onClick={(e) => { e.stopPropagation(); onMarkAsPaid(entry.id); }}
-                      >
-                        <Check className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>סמן כשולם</p></TooltipContent>
-                  </Tooltip>
-                )}
-
+              <div className="shrink-0 w-[110px] px-1.5 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
-                      onClick={(e) => { e.stopPropagation(); onClick(entry); }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>עריכה מלאה</p></TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full"
-                      onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
-                    >
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>מחיקה</p></TooltipContent>
+                  <TooltipContent><p>מחיקה</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onMarkAsPaid(entry.id); }}>
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>סמן כשולם</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onDuplicate(entry); }}>
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent><p>שכפל</p></TooltipContent>
                 </Tooltip>
               </div>
-            ),
+            )
           };
 
           return (
@@ -623,109 +441,26 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          MOBILE LAYOUT (<md) - Unchanged
+          MOBILE LAYOUT (<md) - Kept mostly same but cleaner
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="md:hidden p-3" onClick={() => onClick(entry)}>
-        {/* TOP LINE */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-numbers font-medium text-slate-700 dark:text-slate-200">
-              {formatDate(entry.date)}
-            </span>
-            <span>({getWeekday(new Date(entry.date))})</span>
-            {overdue && (
-              <span className="flex items-center gap-0.5 text-red-600 dark:text-red-400 font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                מאחר
-              </span>
-            )}
-            {isCalendarDraft && (
-              <Badge className="text-[9px] px-1.5 py-0 font-medium border-0 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                <CalendarDays className="h-2.5 w-2.5 ml-0.5" />
-                טיוטה
-              </Badge>
-            )}
-          </div>
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 -ml-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-44 text-right"
-              style={{ direction: "rtl" }}
-            >
-              <DropdownMenuItem
-                onClick={(e) => { e.stopPropagation(); onMarkAsPaid(entry.id); }}
-                disabled={isPaid}
-                className={cn("h-11 text-sm px-3 gap-3 items-center justify-start", isPaid && "opacity-50")}
-              >
-                <Check className="h-4 w-4" />
-                סמן כ־שולם
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => { e.stopPropagation(); onMarkInvoiceSent(entry.id); }}
-                disabled={isWaiting || isPaid}
-                className={cn("h-11 text-sm px-3 gap-3 items-center justify-start", (isWaiting || isPaid) && "opacity-50")}
-              >
-                <FileText className="h-4 w-4" />
-                נשלחה חשבונית
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
-                className="h-11 text-sm px-3 gap-3 items-center justify-start text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-                מחק
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <div className="md:hidden p-3 border-b border-slate-100" onClick={() => onClick(entry)}>
+        <div className="flex justify-between items-start mb-1">
+          <span className="text-base font-medium text-slate-900">{formatDate(entry.date)}</span>
+          <span className="text-base font-bold text-slate-900">{formatCurrency(entry.amountGross)}</span>
         </div>
-
-        {/* MIDDLE */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            {/* Description with calendar icon if imported */}
-            <div className="flex items-start gap-1.5">
-              <p className="text-sm font-medium text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug flex-1">
-                {entry.description}
-              </p>
-              {hasCalendarEvent && (
-                <CalendarDays className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              )}
-              {hasNotes && (
-                <StickyNote className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-              {entry.clientName}
-              {(entry.categoryData || entry.category) && (
-                <><span className="mx-1">·</span><CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={false} className="inline" /></>
-              )}
-            </p>
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col">
+            <span className="text-base text-slate-800">{entry.description}</span>
+            <span className="text-sm text-slate-500">{entry.clientName}</span>
           </div>
-          <div className="flex flex-col items-start shrink-0">
-            <span className={cn("text-lg font-bold font-numbers tabular-nums", amountColor)} dir="ltr">
-              {formatCurrency(entry.amountGross)}
-            </span>
-            {statusConfig && (
-              <Badge className={cn("text-[9px] px-1.5 py-0 rounded-full font-medium border mt-1", statusConfig.bgClass, statusConfig.textClass, statusConfig.borderClass)}>
-                {statusConfig.label}
-                {daysSinceInvoice !== null && displayStatus === "נשלחה" && (
-                  <span className="mr-1 font-numbers">({daysSinceInvoice})</span>
-                )}
-              </Badge>
-            )}
-          </div>
+          {statusConfig && (
+            <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-slate-50 text-slate-500 border-slate-200">
+              {statusConfig.label}
+            </Badge>
+          )}
         </div>
       </div>
+
     </div>
   );
 });

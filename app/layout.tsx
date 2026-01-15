@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
-import { Heebo, Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const heebo = Heebo({ 
-  subsets: ["hebrew", "latin"],
-  variable: "--font-heebo",
-});
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
+const ploni = localFont({
+  src: [
+    { path: "../public/fonts/ploni-ultralight-aaa.otf", weight: "200" },
+    { path: "../public/fonts/ploni-light-aaa.otf", weight: "300" },
+    { path: "../public/fonts/ploni-regular-aaa.otf", weight: "400" },
+    { path: "../public/fonts/ploni-medium-aaa.otf", weight: "500" },
+    { path: "../public/fonts/ploni-demibold-aaa.otf", weight: "600" },
+    { path: "../public/fonts/ploni-bold-aaa.otf", weight: "700" },
+    { path: "../public/fonts/ploni-ultrabold-aaa.otf", weight: "800" },
+    { path: "../public/fonts/ploni-black-aaa.otf", weight: "900" },
+  ],
+  variable: "--font-ploni",
 });
 
 export const metadata: Metadata = {
-  title: "SEDER",
-  description: "Track your income and invoices",
-  icons: {
-    icon: "/logo.svg",
-  },
+  title: "Seder",
+  description: "Manage your income and expenses",
 };
 
 export default function RootLayout({
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${heebo.variable} ${montserrat.variable} font-sans`}>
+      <body className={`${ploni.variable} font-sans antialiased text-slate-900 bg-slate-50 dark:bg-slate-950`}>
         <TooltipProvider>
           {children}
         </TooltipProvider>
@@ -38,4 +39,3 @@ export default function RootLayout({
     </html>
   );
 }
-

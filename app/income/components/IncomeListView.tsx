@@ -25,8 +25,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // תאריך | תיאור | לקוח | קטגוריה | סכום | סטטוס | פעולות
 // ─────────────────────────────────────────────────────────────────────────────
 
-type ColumnKey = "date" | "description" | "client" | "category" | "amount" | "status" | "actions";
-const DEFAULT_COLUMN_ORDER: ColumnKey[] = ["date", "description", "client", "category", "amount", "status", "actions"];
+type ColumnKey = "date" | "client" | "category" | "description" | "amount" | "status" | "actions";
+const DEFAULT_COLUMN_ORDER: ColumnKey[] = ["date", "client", "category", "description", "amount", "status", "actions"];
 const LOCAL_STORAGE_KEY = "income-list-column-order";
 const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   date: "w-[70px] shrink-0 px-2",
@@ -318,25 +318,7 @@ export const IncomeListView = React.memo(function IncomeListView({
           - Sticky totals bar at bottom
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:block">
-        {/* FILTERS TOOLBAR */}
-        <Card className="overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm mb-4">
-          <div className="p-3">
-            <IncomeFilters
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-              clients={monthClients}
-              selectedClient={selectedClient}
-              onClientChange={onClientChange}
-              categories={categories}
-              selectedCategories={selectedCategories}
-              onCategoryChange={onCategoryChange}
-              onNewEntry={onNewEntry}
-              onEditCategories={onEditCategories}
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-            />
-          </div>
-        </Card>
+        {/* FILTERS moved to parent component */}
 
         {/* QUICK ADD CARD */}
         <div className="mb-3">
@@ -415,7 +397,7 @@ export const IncomeListView = React.memo(function IncomeListView({
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
-            <EmptyState type="no-data" onAddClick={() => {}} />
+            <EmptyState type="no-data" onAddClick={() => { }} />
           </Card>
         )}
 
@@ -442,7 +424,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
                 categories={categories}
-                // No onInlineEdit or clients for mobile - disables inline editing
+              // No onInlineEdit or clients for mobile - disables inline editing
               />
             ))}
 

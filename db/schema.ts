@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  json,
 } from "drizzle-orm/pg-core";
 
 // Invoice status enum values
@@ -131,6 +132,22 @@ export const incomeEntries = pgTable("income_entries", {
     ),
   };
 });
+
+// User Settings table
+export const userSettings = pgTable("user_settings", {
+  userId: text("user_id").primaryKey().references(() => user.id),
+  language: varchar("language", { length: 10 }).default("he").notNull(),
+  timezone: varchar("timezone", { length: 50 }).default("Asia/Jerusalem").notNull(),
+  theme: varchar("theme", { length: 20 }).default("system").notNull(),
+  dateFormat: varchar("date_format", { length: 20 }).default("dd/MM/yyyy").notNull(),
+  defaultCurrency: varchar("default_currency", { length: 10 }).default("ILS").notNull(),
+  calendarSettings: json("calendar_settings").$type<{ rules?: any[]; defaultCalendarId?: string }>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type NewUserSettings = typeof userSettings.$inferInsert;
 
 // TypeScript type for income entry
 export type IncomeEntry = typeof incomeEntries.$inferSelect;

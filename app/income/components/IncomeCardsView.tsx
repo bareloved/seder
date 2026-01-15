@@ -210,25 +210,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
           Shows cards in a responsive grid layout
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:block">
-        {/* FILTERS TOOLBAR */}
-        <Card className="overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm mb-4">
-          <div className="p-3">
-            <IncomeFilters
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-              clients={monthClients}
-              selectedClient={selectedClient}
-              onClientChange={onClientChange}
-              categories={categories}
-              selectedCategories={selectedCategories}
-              onCategoryChange={onCategoryChange}
-              onNewEntry={onNewEntry}
-              onEditCategories={onEditCategories}
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-            />
-          </div>
-        </Card>
+        {/* FILTERS moved to parent component */}
 
         {/* Empty States */}
         {hasNoData && (
@@ -280,7 +262,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
-            <EmptyState type="no-data" onAddClick={() => {}} />
+            <EmptyState type="no-data" onAddClick={() => { }} />
           </Card>
         )}
 
