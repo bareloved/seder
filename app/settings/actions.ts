@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db/client";
-import { userSettings, incomeEntries } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { userSettings, incomeEntries, categories } from "@/db/schema";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -102,7 +102,15 @@ export async function updateCalendarSettings(data: {
 
 // --- Data Actions ---
 
-export async function exportUserData() {
+export type ExportOptions = {
+    includeIncomeEntries: boolean;
+    includeCategories: boolean;
+    dateRange: "all" | "thisYear" | "thisMonth" | "custom";
+    customStartDate?: string;
+    customEndDate?: string;
+};
+
+export async function exportUserData(options: ExportOptions) {
     const session = await auth.api.getSession({
         headers: await headers(),
     });
@@ -112,32 +120,98 @@ export async function exportUserData() {
     }
 
     try {
-        const entries = await db.select().from(incomeEntries).where(eq(incomeEntries.userId, session.user.id));
+        const csvParts: string[] = [];
 
-        // Convert to CSV string
-        // Simple implementation
-        const headers = ["ID", "Date", "Client", "Description", "Amount Gross", "Amount Paid", "Status", "Notes"];
-        const rows = entries.map(e => [
-            e.id,
-            e.date,
-            `"${e.clientName.replace(/"/g, '""')}"`, // Escape quotes
-            `"${e.description.replace(/"/g, '""')}"`,
-            e.amountGross,
-            e.amountPaid,
-            e.invoiceStatus,
-            `"${(e.notes || "").replace(/"/g, '""')}"`
-        ]);
+        // Export income entries
+        if (options.includeIncomeEntries) {
+            let dateConditions = [eq(incomeEntries.userId, session.user.id)];
 
-        const csvContent = [
-            headers.join(","),
-            ...rows.map(r => r.join(","))
-        ].join("\n");
+            // Apply date filters
+            if (options.dateRange === "thisYear") {
+                const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
+                dateConditions.push(gte(incomeEntries.date, startOfYear));
+            } else if (options.dateRange === "thisMonth") {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+                dateConditions.push(gte(incomeEntries.date, startOfMonth));
+            } else if (options.dateRange === "custom" && options.customStartDate && options.customEndDate) {
+                dateConditions.push(gte(incomeEntries.date, options.customStartDate));
+                dateConditions.push(lte(incomeEntries.date, options.customEndDate));
+            }
+
+            const entries = await db
+                .select()
+                .from(incomeEntries)
+                .where(and(...dateConditions));
+
+            if (entries.length > 0) {
+                const incomeHeaders = [
+                    "תאריך",
+                    "תיאור",
+                    "לקוח",
+                    "סכום ברוטו",
+                    "סכום ששולם",
+                    "אחוז מעמ",
+                    "כולל מעמ",
+                    "סטטוס חשבונית",
+                    "סטטוס תשלום",
+                    "הערות",
+                ];
+                const incomeRows = entries.map((e) => [
+                    e.date,
+                    `"${e.description.replace(/"/g, '""')}"`,
+                    `"${e.clientName.replace(/"/g, '""')}"`,
+                    e.amountGross,
+                    e.amountPaid,
+                    e.vatRate,
+                    e.includesVat ? "כן" : "לא",
+                    e.invoiceStatus,
+                    e.paymentStatus,
+                    `"${(e.notes || "").replace(/"/g, '""')}"`,
+                ]);
+
+                csvParts.push("# הכנסות");
+                csvParts.push(incomeHeaders.join(","));
+                csvParts.push(...incomeRows.map((r) => r.join(",")));
+            }
+        }
+
+        // Export categories
+        if (options.includeCategories) {
+            const userCategories = await db
+                .select()
+                .from(categories)
+                .where(eq(categories.userId, session.user.id));
+
+            if (userCategories.length > 0) {
+                if (csvParts.length > 0) csvParts.push(""); // Empty line separator
+
+                const categoryHeaders = ["שם", "צבע", "אייקון", "מאורכב"];
+                const categoryRows = userCategories.map((c) => [
+                    `"${c.name.replace(/"/g, '""')}"`,
+                    c.color,
+                    c.icon,
+                    c.isArchived ? "כן" : "לא",
+                ]);
+
+                csvParts.push("# קטגוריות");
+                csvParts.push(categoryHeaders.join(","));
+                csvParts.push(...categoryRows.map((r) => r.join(",")));
+            }
+        }
+
+        if (csvParts.length === 0) {
+            return { success: false, error: "אין נתונים לייצוא" };
+        }
+
+        // Add BOM for Excel Hebrew support
+        const bom = "\uFEFF";
+        const csvContent = bom + csvParts.join("\n");
 
         return { success: true, csv: csvContent };
-
     } catch (error) {
         console.error("Export failed:", error);
-        return { success: false, error: "Export failed" };
+        return { success: false, error: "הייצוא נכשל" };
     }
 }
 
