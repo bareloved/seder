@@ -20,6 +20,17 @@ npm run db:migrate       # Run pending migrations
 npm run db:studio        # Open Drizzle Studio for data management
 ```
 
+## RTL / Hebrew-First UI
+
+**IMPORTANT:** This app is Hebrew-first with RTL (right-to-left) layout. When creating new UI:
+
+- Always add `dir="rtl"` to dialogs, modals, and new page containers
+- Use logical CSS properties: `start/end` instead of `left/right` (e.g., `ms-2` not `ml-2`, `end-4` not `right-4`)
+- Use `text-start/text-end` instead of `text-left/text-right`
+- Labels and text should align to the right by default
+- Keep input fields with `dir="ltr"` for emails, passwords, numbers
+- All user-facing text should be in Hebrew
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router with Server Components & Actions)
