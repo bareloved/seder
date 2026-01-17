@@ -499,7 +499,7 @@ export default function IncomePageClient({
   return (
     <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
 
-      <Navbar user={user} />
+      <Navbar user={user} isGoogleConnected={isGoogleConnected} />
 
       <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
 
