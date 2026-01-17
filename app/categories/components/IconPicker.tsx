@@ -23,7 +23,7 @@ export function IconPicker({ value, onChange, color = "slate", className }: Icon
   const scheme = colorSchemes[color];
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       {categoryIcons.map((iconName) => {
         const isSelected = value === iconName;
         const IconComponent = getIconByName(iconName);
@@ -34,7 +34,7 @@ export function IconPicker({ value, onChange, color = "slate", className }: Icon
             type="button"
             onClick={() => onChange(iconName)}
             className={cn(
-              "h-9 w-9 rounded-lg transition-all",
+              "h-8 w-8 rounded-lg transition-all",
               "flex items-center justify-center relative",
               "hover:scale-105 active:scale-95",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400",
@@ -46,10 +46,10 @@ export function IconPicker({ value, onChange, color = "slate", className }: Icon
             aria-label={`בחר אייקון ${iconName}`}
             aria-pressed={isSelected}
           >
-            <IconComponent className="h-5 w-5" />
+            <IconComponent className="h-4 w-4" />
             {isSelected && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-slate-900 dark:bg-white flex items-center justify-center">
-                <Check className="h-2.5 w-2.5 text-white dark:text-slate-900" />
+              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-slate-900 dark:bg-white flex items-center justify-center">
+                <Check className="h-2 w-2 text-white dark:text-slate-900" />
               </span>
             )}
           </button>

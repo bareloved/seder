@@ -33,7 +33,7 @@ const colorPickerBg: Record<CategoryColor, string> = {
 
 export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       {categoryColors.map((color) => {
         const isSelected = value === color;
         return (
@@ -42,7 +42,7 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
             type="button"
             onClick={() => onChange(color)}
             className={cn(
-              "h-8 w-8 rounded-full transition-all",
+              "h-7 w-7 rounded-full transition-all",
               "flex items-center justify-center",
               "hover:scale-110 active:scale-95",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400",
@@ -53,7 +53,7 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
             aria-pressed={isSelected}
           >
             {isSelected && (
-              <Check className="h-4 w-4 text-white drop-shadow-sm" />
+              <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" />
             )}
           </button>
         );

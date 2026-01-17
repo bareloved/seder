@@ -308,7 +308,7 @@ export const IncomeListView = React.memo(function IncomeListView({
     description: <div className="truncate">תיאור</div>,
     client: <div>לקוח</div>,
     category: <div>קטגוריה</div>,
-    amount: <div className="w-full flex"><span className="ml-auto">סכום</span></div>,
+    amount: <div className="text-left">סכום</div>,
     status: <div className="text-center">סטטוס</div>,
     actions: <div className="text-center">פעולות</div>,
   };

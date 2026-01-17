@@ -214,9 +214,9 @@ export function IncomeDetailEdit({
               >
                 <span className="flex-1 text-right">
                   {editedEntry.categoryData ? (
-                    <CategoryChip category={editedEntry.categoryData} size="sm" className="mr-1" />
+                    <CategoryChip category={editedEntry.categoryData} size="sm" withIcon={true} className="mr-1" />
                   ) : editedEntry.category ? (
-                    <CategoryChip legacyCategory={editedEntry.category} size="sm" className="mr-1" />
+                    <CategoryChip legacyCategory={editedEntry.category} size="sm" withIcon={true} className="mr-1" />
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500">בחר קטגוריה</span>
                   )}
@@ -224,14 +224,13 @@ export function IncomeDetailEdit({
                 <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="end">
+            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="end" dir="rtl">
               {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
                   key={cat.id}
                   onClick={() => handleChange({ categoryId: cat.id, categoryData: cat })}
-                  className="justify-end"
                 >
-                  <CategoryChip category={cat} size="sm" />
+                  <CategoryChip category={cat} size="sm" withIcon={true} />
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

@@ -26,10 +26,10 @@ export function CategoryManagerDialog({
 }: CategoryManagerDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>ניהול קטגוריות</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[420px] max-h-[85vh] overflow-y-auto [&>button]:left-3 [&>button]:sm:left-4 [&>button]:right-auto">
+        <DialogHeader className="text-right" dir="rtl">
+          <DialogTitle className="text-base text-right">ניהול קטגוריות</DialogTitle>
+          <DialogDescription className="text-xs text-right">
             התאם את הקטגוריות לצרכיך. גרור לשינוי סדר.
           </DialogDescription>
         </DialogHeader>

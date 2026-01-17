@@ -215,7 +215,7 @@ export function QuickAddCard({
                   : "קטגוריה"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" dir="rtl">
               {categories.filter(c => !c.isArchived).map(cat => (
                 <DropdownMenuItem key={cat.id} onClick={() => setQuickAddCategoryId(cat.id)}>
                   <CategoryChip category={cat} size="sm" withIcon={true} />
@@ -226,7 +226,7 @@ export function QuickAddCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={onEditCategories} className="text-slate-500 gap-2">
                     <Settings2 className="h-3.5 w-3.5" />
-                    ניהול קטגוריות
+                    <span>ניהול קטגוריות</span>
                   </DropdownMenuItem>
                 </>
               )}

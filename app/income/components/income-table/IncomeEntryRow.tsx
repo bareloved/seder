@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Popover,
@@ -266,10 +267,13 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   </div>
                 ) : (
                   <span className={cn(
-                    "text-base text-slate-900 truncate block w-full text-right",
-                    onInlineEdit && "hover:text-slate-600 cursor-pointer"
+                    "text-base truncate block w-full text-right",
+                    entry.clientName
+                      ? "text-slate-900"
+                      : "text-slate-400 dark:text-slate-500 opacity-50",
+                    onInlineEdit && entry.clientName && "hover:text-slate-600 cursor-pointer"
                   )}>
-                    {entry.clientName || "—"}
+                    {entry.clientName || "-"}
                   </span>
                 )}
               </div>
@@ -315,17 +319,16 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                 {onInlineEdit && categories.length > 0 ? (
                   <DropdownMenu open={isCategoryDropdownOpen} onOpenChange={setIsCategoryDropdownOpen}>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-1.5 hover:opacity-80">
-                        {/* Dot style as in image if possible, using CategoryChip for now but styling it minimally */}
-                        <div className={cn("h-2 w-2 rounded-full", entry.categoryData?.color ? `bg-[${entry.categoryData.color}]` : "bg-sky-400")}
-                          style={{ backgroundColor: entry.categoryData?.color || "#38bdf8" }}
+                      <button className="hover:opacity-80">
+                        <CategoryChip
+                          category={entry.categoryData}
+                          legacyCategory={entry.category}
+                          size="sm"
+                          withIcon={true}
                         />
-                        <span className="text-base text-slate-700">
-                          {entry.categoryData?.name || entry.category || "---"}
-                        </span>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[150px]">
+                    <DropdownMenuContent align="end" className="w-[180px]">
                       {categories.filter(c => !c.isArchived).map(cat => (
                         <DropdownMenuItem
                           key={cat.id}
@@ -333,29 +336,45 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                             if (onInlineEdit) onInlineEdit(entry.id, "categoryId", cat.id);
                             setIsCategoryDropdownOpen(false);
                           }}
-                          className="justify-end gap-2"
+                          className="justify-end"
                         >
-                          <span>{cat.name}</span>
-                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                          <CategoryChip
+                            category={cat}
+                            size="sm"
+                            withIcon={true}
+                          />
                         </DropdownMenuItem>
                       ))}
+                      {onEditCategories && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setIsCategoryDropdownOpen(false);
+                              onEditCategories();
+                            }}
+                            className="text-slate-500 gap-2 justify-end"
+                          >
+                            <span>ניהול קטגוריות</span>
+                            <Settings2 className="h-3.5 w-3.5" />
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <div className="flex items-center gap-1.5">
-                    <div className={cn("h-2 w-2 rounded-full")}
-                      style={{ backgroundColor: entry.categoryData?.color || "#38bdf8" }}
-                    />
-                    <span className="text-base text-slate-700">
-                      {entry.categoryData?.name || entry.category || "---"}
-                    </span>
-                  </div>
+                  <CategoryChip
+                    category={entry.categoryData}
+                    legacyCategory={entry.category}
+                    size="sm"
+                    withIcon={true}
+                  />
                 )}
               </div>
             ),
             amount: (
               <div
-                className="shrink-0 w-[105px] px-3 flex items-center justify-end"
+                className="shrink-0 w-[105px] px-3 flex items-center justify-start"
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "amountGross") {
                     e.stopPropagation();
@@ -371,18 +390,19 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-9 text-base w-full px-2 text-left"
+                    className="h-9 text-base w-full px-2 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    dir="rtl"
                   />
                 ) : (
-                  <span className="text-base font-bold text-slate-900">
-                    {formatCurrency(entry.amountGross)}
+                  <span className="text-lg font-normal font-numbers text-slate-900" dir="ltr">
+                    <span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}
                   </span>
                 )}
               </div>
             ),
             status: (
               <div className="shrink-0 w-[100px] px-2 flex justify-center">
-                {statusConfig && (
+                {statusConfig ? (
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
@@ -399,6 +419,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                ) : (
+                  <span className="text-base text-slate-400 dark:text-slate-500 opacity-50">-</span>
                 )}
               </div>
             ),
@@ -446,7 +468,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
       <div className="md:hidden p-3 border-b border-slate-100" onClick={() => onClick(entry)}>
         <div className="flex justify-between items-start mb-1">
           <span className="text-base font-medium text-slate-900">{formatDate(entry.date)}</span>
-          <span className="text-base font-bold text-slate-900">{formatCurrency(entry.amountGross)}</span>
+          <span className="text-base font-bold text-slate-900" dir="ltr"><span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}</span>
         </div>
         <div className="flex justify-between items-center">
           <div className="flex flex-col">

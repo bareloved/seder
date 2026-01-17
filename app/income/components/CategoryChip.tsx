@@ -65,31 +65,38 @@ export function CategoryChip({
     }
   } else {
     // No category
-    displayName = "ללא קטגוריה";
+    displayName = "-";
     colorScheme = getCategoryColorScheme(null);
     IconComponent = Circle;
   }
 
   const hasCategory = category || legacyCategory;
-  const padding = size === "sm" ? "text-[11px]" : "text-xs";
-  const iconSize = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";
+  const textSize = size === "sm" ? "text-sm" : "text-base";
+  const iconSize = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
   const showIcon = withIcon && hasCategory;
-  const textClass = hasCategory ? colorScheme.text : "text-slate-400 dark:text-slate-500";
+  // Icon keeps category color, text is normal black like other columns
+  const iconColorClass = hasCategory ? colorScheme.text : "text-slate-400 dark:text-slate-500";
+
+  const isNoCategory = !hasCategory;
 
   return (
     <span
+      dir="rtl"
       className={cn(
-        "inline-flex items-center gap-1 font-medium whitespace-nowrap",
-        textClass,
-        padding,
+        "inline-flex flex-row items-baseline gap-1.5 whitespace-nowrap",
+        textSize,
         isArchived && "opacity-60",
+        isNoCategory && "justify-center opacity-50",
         className
       )}
     >
       {showIcon && (
-        <IconComponent className={cn(iconSize, "shrink-0 opacity-80")} />
+        <IconComponent className={cn(iconSize, "shrink-0 relative top-[1px]", iconColorClass)} />
       )}
-      <span className="truncate max-w-[120px]">
+      <span className={cn(
+        "truncate max-w-[120px]",
+        isNoCategory ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-100"
+      )}>
         {displayName}
         {isArchived && " (ארכיון)"}
       </span>
@@ -123,7 +130,7 @@ export function getCategoryMeta(category?: Category | null, legacyCategory?: str
   return {
     colorScheme: getCategoryColorScheme(null),
     icon: Circle,
-    name: "ללא קטגוריה",
+    name: "-",
     isArchived: false,
   };
 }

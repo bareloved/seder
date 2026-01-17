@@ -116,7 +116,7 @@ export function KPICards({
                 </span>
                 {/* Bottom Right: Amount */}
                 <div className={cn("text-[34px] font-normal font-numbers tracking-tight mt-1", card.amountColor)} dir="ltr">
-                  {formatCurrency(card.amount)}
+                  <span className="text-xl">₪</span> {card.amount.toLocaleString("he-IL")}
                 </div>
               </div>
 

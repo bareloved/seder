@@ -22,6 +22,7 @@ import { Calendar as CalendarIcon, Plus, Keyboard, ChevronDown } from "lucide-re
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, VatType, CATEGORIES } from "../../types";
+import { CategoryChip } from "../CategoryChip";
 
 interface IncomeTableQuickAddProps {
   onAddEntry: (entry: Omit<IncomeEntry, "id" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: VatType, invoiceStatus?: "draft" | "sent" | "paid" | "cancelled", paymentStatus?: "unpaid" | "partial" | "paid", vatRate?: number, includesVat?: boolean }) => void;
@@ -223,19 +224,22 @@ export function IncomeTableQuickAdd({
                 className="h-9 w-full text-sm border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 rounded-lg transition-shadow text-right justify-between font-normal px-3"
               >
                 <span className={cn("truncate", !quickAddCategory && "text-muted-foreground")}>
-                  {quickAddCategory || "קטגוריה"}
+                  {quickAddCategory ? (
+                    <CategoryChip legacyCategory={quickAddCategory} size="sm" withIcon={true} />
+                  ) : (
+                    "קטגוריה"
+                  )}
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-[200px] overflow-y-auto">
+            <DropdownMenuContent align="end" dir="rtl" className="max-h-[200px] overflow-y-auto">
               {CATEGORIES.map((category) => (
                 <DropdownMenuItem
                   key={category}
                   onClick={() => setQuickAddCategory(category)}
-                  className="justify-end"
                 >
-                  {category}
+                  <CategoryChip legacyCategory={category} size="sm" withIcon={true} />
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
