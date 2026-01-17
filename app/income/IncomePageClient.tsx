@@ -18,6 +18,7 @@ import {
   deleteIncomeEntryAction,
 } from "./actions";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
+import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
 import type { Category } from "@/db/schema";
 import type { IncomeEntryWithCategory } from "./data";
@@ -142,6 +143,7 @@ export default function IncomePageClient({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedClient, setSelectedClient] = React.useState<string>("all");
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
+  const [sortColumn, setSortColumn] = React.useState<SortColumn>("date");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
 
   const [selectedEntry, setSelectedEntry] = React.useState<IncomeEntry | null>(null);
@@ -223,14 +225,36 @@ export default function IncomePageClient({
     }
 
     return [...result].sort((a, b) => {
-      // Default to date desc for income list if not specified
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      if (dateA !== dateB) return sortDirection === "desc" ? dateB - dateA : dateA - dateB;
-      // Fallback
-      return a.description.localeCompare(b.description);
+      const multiplier = sortDirection === "desc" ? -1 : 1;
+
+      switch (sortColumn) {
+        case "date": {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return multiplier * (dateA - dateB);
+        }
+        case "description":
+          return multiplier * a.description.localeCompare(b.description, "he");
+        case "amount":
+          return multiplier * (a.amountGross - b.amountGross);
+        case "client":
+          return multiplier * (a.clientName || "").localeCompare(b.clientName || "", "he");
+        case "category": {
+          const catA = a.categoryData?.name || a.category || "";
+          const catB = b.categoryData?.name || b.category || "";
+          return multiplier * catA.localeCompare(catB, "he");
+        }
+        case "status": {
+          const statusOrder: Record<string, number> = { "בוצע": 0, "נשלחה": 1, "שולם": 2 };
+          const statusA = getDisplayStatus(a) || "";
+          const statusB = getDisplayStatus(b) || "";
+          return multiplier * ((statusOrder[statusA] ?? 0) - (statusOrder[statusB] ?? 0));
+        }
+        default:
+          return 0;
+      }
     });
-  }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortDirection]);
+  }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortColumn, sortDirection]);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -428,9 +452,14 @@ export default function IncomePageClient({
     setIsDialogOpen(true);
   };
 
-  const onSortToggle = React.useCallback(() => {
-    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-  }, []);
+  const onSort = React.useCallback((column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }, [sortColumn]);
 
   const hasActiveFilter =
     activeFilter !== "all" ||
@@ -452,8 +481,9 @@ export default function IncomePageClient({
     onViewModeChange: handleViewModeChange,
     onAddEntry: addEntry,
     hasActiveFilter: hasActiveFilter,
+    sortColumn: sortColumn,
     sortDirection: sortDirection,
-    onSortToggle: onSortToggle,
+    onSort: onSort,
     searchQuery: searchQuery,
     onSearchChange: setSearchQuery,
     monthClients: monthClients,

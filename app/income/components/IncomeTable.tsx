@@ -3,6 +3,7 @@
 import * as React from "react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
+import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeListView } from "./IncomeListView";
 import { IncomeCardsView } from "./IncomeCardsView";
 import type { ViewMode } from "./ViewModeToggle";
@@ -27,8 +28,9 @@ interface IncomeTableProps {
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   onClearFilter?: () => void;
   hasActiveFilter: boolean;
+  sortColumn: SortColumn;
   sortDirection: "asc" | "desc";
-  onSortToggle: () => void;
+  onSort: (column: SortColumn) => void;
   // Filter/search props
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -59,8 +61,9 @@ export const IncomeTable = React.memo(function IncomeTable({
   onInlineEdit,
   onClearFilter,
   hasActiveFilter,
+  sortColumn,
   sortDirection,
-  onSortToggle,
+  onSort,
   // Filter/search props
   searchQuery,
   onSearchChange,
@@ -91,8 +94,9 @@ export const IncomeTable = React.memo(function IncomeTable({
     onInlineEdit,
     onClearFilter,
     hasActiveFilter,
+    sortColumn,
     sortDirection,
-    onSortToggle,
+    onSort,
     searchQuery,
     onSearchChange,
     monthClients,

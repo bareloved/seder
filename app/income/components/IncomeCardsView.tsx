@@ -7,6 +7,7 @@ import { CalendarDays, ListX, Plus, X } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
+import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeFilters } from "./IncomeFilters";
 import { MobileIncomeCard } from "./income-table/MobileIncomeCard";
 import { MobileQuickAdd } from "./income-table/MobileQuickAdd";
@@ -33,8 +34,9 @@ interface IncomeCardsViewProps {
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   onClearFilter?: () => void;
   hasActiveFilter: boolean;
+  sortColumn: SortColumn;
   sortDirection: "asc" | "desc";
-  onSortToggle: () => void;
+  onSort: (column: SortColumn) => void;
   // Filter/search props
   searchQuery: string;
   onSearchChange: (query: string) => void;

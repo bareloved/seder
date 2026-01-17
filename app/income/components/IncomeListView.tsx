@@ -4,10 +4,11 @@ import * as React from "react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, ListX, Plus, X, GripVertical } from "lucide-react";
+import { CalendarDays, ListX, Plus, X, GripVertical, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
+import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeFilters } from "./IncomeFilters";
 import { IncomeEntryRow } from "./income-table/IncomeEntryRow";
 import { QuickAddCard } from "./income-table/QuickAddCard";
@@ -63,8 +64,9 @@ interface IncomeListViewProps {
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   onClearFilter?: () => void;
   hasActiveFilter: boolean;
+  sortColumn: SortColumn;
   sortDirection: "asc" | "desc";
-  onSortToggle: () => void;
+  onSort: (column: SortColumn) => void;
   // Filter/search props
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -162,8 +164,9 @@ export const IncomeListView = React.memo(function IncomeListView({
   onInlineEdit,
   onClearFilter,
   hasActiveFilter,
+  sortColumn,
   sortDirection,
-  onSortToggle,
+  onSort,
   // Filter/search props
   searchQuery,
   onSearchChange,
@@ -298,18 +301,50 @@ export const IncomeListView = React.memo(function IncomeListView({
     setDropTarget(null);
   };
 
-  const headerContent: Record<ColumnKey, React.ReactNode> = {
-    date: (
-      <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-slate-600 dark:hover:text-slate-400 transition-colors" onClick={onSortToggle}>
-        תאריך
-        <span className="text-[10px]">{sortDirection === "asc" ? "↑" : "↓"}</span>
+  // Map ColumnKey to SortColumn (actions is not sortable)
+  const columnToSortColumn: Partial<Record<ColumnKey, SortColumn>> = {
+    date: "date",
+    description: "description",
+    client: "client",
+    category: "category",
+    amount: "amount",
+    status: "status",
+  };
+
+  const SortableColumnHeader = ({ columnKey, label, className }: { columnKey: ColumnKey; label: string; className?: string }) => {
+    const sortKey = columnToSortColumn[columnKey];
+    if (!sortKey) return <div className={className}>{label}</div>;
+
+    const isActive = sortColumn === sortKey;
+    return (
+      <div
+        className={`flex items-center gap-0.5 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-colors ${className || ""}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSort(sortKey);
+        }}
+      >
+        {label}
+        {isActive ? (
+          sortDirection === "desc" ? (
+            <ArrowDown className="h-3 w-3" />
+          ) : (
+            <ArrowUp className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
       </div>
-    ),
-    description: <div className="truncate">תיאור</div>,
-    client: <div>לקוח</div>,
-    category: <div>קטגוריה</div>,
-    amount: <div className="text-left">סכום</div>,
-    status: <div className="text-center">סטטוס</div>,
+    );
+  };
+
+  const headerContent: Record<ColumnKey, React.ReactNode> = {
+    date: <SortableColumnHeader columnKey="date" label="תאריך" className="justify-center" />,
+    description: <SortableColumnHeader columnKey="description" label="תיאור" />,
+    client: <SortableColumnHeader columnKey="client" label="לקוח" />,
+    category: <SortableColumnHeader columnKey="category" label="קטגוריה" />,
+    amount: <SortableColumnHeader columnKey="amount" label="סכום" className="justify-start" />,
+    status: <SortableColumnHeader columnKey="status" label="סטטוס" className="justify-center" />,
     actions: <div className="text-center">פעולות</div>,
   };
 
