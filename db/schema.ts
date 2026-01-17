@@ -141,7 +141,13 @@ export const userSettings = pgTable("user_settings", {
   theme: varchar("theme", { length: 20 }).default("system").notNull(),
   dateFormat: varchar("date_format", { length: 20 }).default("dd/MM/yyyy").notNull(),
   defaultCurrency: varchar("default_currency", { length: 10 }).default("ILS").notNull(),
-  calendarSettings: json("calendar_settings").$type<{ rules?: any[]; defaultCalendarId?: string }>().default({}),
+  calendarSettings: json("calendar_settings").$type<{
+    rules?: any[];
+    defaultCalendarId?: string;
+    autoSyncEnabled?: boolean;
+    lastAutoSync?: string;  // ISO timestamp
+    selectedCalendarIds?: string[];  // Which calendars to sync
+  }>().default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

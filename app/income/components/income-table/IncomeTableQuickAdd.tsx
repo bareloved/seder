@@ -233,7 +233,7 @@ export function IncomeTableQuickAdd({
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl" className="max-h-[200px] overflow-y-auto">
+            <DropdownMenuContent align="end" className="max-h-[200px] overflow-y-auto">
               {CATEGORIES.map((category) => (
                 <DropdownMenuItem
                   key={category}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { SettingsLayout, SettingsTab } from "./components/SettingsLayout";
 import { AccountSection } from "./components/AccountSection";
@@ -10,14 +11,13 @@ import { DataSection } from "./components/DataSection";
 import { DangerSection } from "./components/DangerSection";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Loader2 } from "lucide-react";
 
-export default function SettingsPage() {
+function SettingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = React.useState<SettingsTab>("account");
 
-    // Fetch user data client-side for now or pass from server component wrapper if preferred
-    // For simplicity using auth-client hook if available or simple fetch
     const { data: session } = authClient.useSession();
 
     React.useEffect(() => {
@@ -35,7 +35,7 @@ export default function SettingsPage() {
     };
 
     if (!session) {
-        return null; // Or loading state / redirect handled by layout/middleware
+        return null;
     }
 
     return (
@@ -57,5 +57,17 @@ export default function SettingsPage() {
                 </SettingsLayout>
             </main>
         </div>
+    );
+}
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 flex items-center justify-center" dir="rtl">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            </div>
+        }>
+            <SettingsContent />
+        </Suspense>
     );
 }

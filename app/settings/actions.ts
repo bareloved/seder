@@ -49,6 +49,57 @@ export async function updateUserSettings(data: any) {
     }
 }
 
+// --- Calendar Settings Actions ---
+
+export async function updateCalendarSettings(data: {
+    autoSyncEnabled?: boolean;
+    selectedCalendarIds?: string[];
+}) {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const existingSettings = await db
+            .select()
+            .from(userSettings)
+            .where(eq(userSettings.userId, session.user.id));
+
+        const currentCalendarSettings = existingSettings[0]?.calendarSettings || {};
+
+        // Merge new settings with existing ones
+        const mergedCalendarSettings = {
+            ...currentCalendarSettings,
+            ...(data.autoSyncEnabled !== undefined && { autoSyncEnabled: data.autoSyncEnabled }),
+            ...(data.selectedCalendarIds !== undefined && { selectedCalendarIds: data.selectedCalendarIds }),
+        };
+
+        if (existingSettings.length > 0) {
+            await db.update(userSettings)
+                .set({
+                    calendarSettings: mergedCalendarSettings,
+                    updatedAt: new Date()
+                })
+                .where(eq(userSettings.userId, session.user.id));
+        } else {
+            await db.insert(userSettings).values({
+                userId: session.user.id,
+                calendarSettings: mergedCalendarSettings,
+            });
+        }
+
+        revalidatePath("/settings");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update calendar settings:", error);
+        return { success: false, error: "Failed to update calendar settings" };
+    }
+}
+
 // --- Data Actions ---
 
 export async function exportUserData() {
