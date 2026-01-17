@@ -46,7 +46,7 @@ export function KPICards({
       icon: FileText,
       amountColor: "text-slate-900",
       filter: "ready-to-invoice" as FilterType,
-      highlight: true, // Special blue border
+      highlight: false, // Special blue border
       iconColor: "text-sky-500",
       iconBg: "bg-sky-50"
     },
@@ -80,37 +80,49 @@ export function KPICards({
       {cards.map((card) => {
         const isActive = activeFilter === card.filter;
 
+        // Define active styles based on filter type
+        let activeClass = "";
+        if (isActive) {
+          switch (card.filter) {
+            case "all":
+              activeClass = "ring-1 ring-slate-900 bg-white";
+              break;
+            case "ready-to-invoice":
+              activeClass = "ring-1 ring-sky-500 bg-white";
+              break;
+            case "invoiced":
+              activeClass = "ring-1 ring-orange-500 bg-white";
+              break;
+            case "paid":
+              activeClass = "ring-1 ring-emerald-500 bg-white";
+              break;
+          }
+        }
+
         return (
           <Card
             key={card.id}
             className={cn(
-              "cursor-pointer transition-all shadow-sm hover:shadow-md border-0 relative overflow-hidden",
-              card.highlight
-                ? "ring-2 ring-sky-400 shadow-sky-100"
-                : "bg-white"
+              "cursor-pointer transition-all shadow-sm hover:shadow-md border border-slate-100 relative overflow-hidden h-[120px]",
+              isActive ? activeClass : "bg-white hover:bg-slate-50/50"
             )}
             onClick={() => onFilterClick?.(card.filter)}
           >
-            {/* Special highlight background tint if needed */}
-            {card.highlight && <div className="absolute inset-0 bg-sky-50/30 pointer-events-none" />}
-
-            <CardContent className="p-5 flex flex-col items-center justify-center relative z-10 h-[100px]">
-              <span className="text-sm font-medium text-slate-500 mb-1">
-                {card.title}
-              </span>
-              <div className={cn("text-3xl font-bold font-numbers tracking-tight", card.amountColor)}>
-                {formatCurrency(card.amount)}
+            <CardContent className="p-4 h-full flex flex-col justify-between">
+              {/* Top Right: Title */}
+              <div className="text-right">
+                <span className="text-base text-slate-600 font-normal block">
+                  {card.title}
+                </span>
+                {/* Bottom Right: Amount */}
+                <div className={cn("text-[34px] font-normal font-numbers tracking-tight mt-1", card.amountColor)} dir="ltr">
+                  {formatCurrency(card.amount)}
+                </div>
               </div>
 
-              {/* Icon positioned absolute bottom-left (LTR perspective) or bottom-right? 
-                  In the image, the icons are bottom-left relative to the card box.
-                  For RTL, bottom-left is the left side. */}
-              <div className="absolute bottom-3 left-3">
-                {card.hasTrend ? (
-                  <TrendingUp className="h-4 w-4 text-[#2ecc71]" />
-                ) : (
-                  <card.icon className={cn("h-4 w-4 opacity-70", card.iconColor)} />
-                )}
+              {/* Bottom Left: Icon */}
+              <div className="absolute bottom-4 left-4">
+                <card.icon className={cn("h-3 w-3", card.iconColor)} />
               </div>
             </CardContent>
           </Card>

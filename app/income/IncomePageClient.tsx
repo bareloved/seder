@@ -254,6 +254,13 @@ export default function IncomePageClient({
     router.push(`/income?${params.toString()}`);
   };
 
+  const handleMonthYearChange = (newMonth: number, newYear: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", newMonth.toString());
+    params.set("year", newYear.toString());
+    router.push(`/income?${params.toString()}`);
+  };
+
   const addEntry = React.useCallback(async (entry: any) => {
     try {
       const formData = new FormData();
@@ -477,7 +484,7 @@ export default function IncomePageClient({
         </section>
 
         {/* Main Content Card - Filters + Table in one white container */}
-        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden min-h-[500px]">
+        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
 
           {/* Toolbar / Filters Area */}
           <div className="p-2 border-b border-slate-100 dark:border-slate-800">
@@ -495,8 +502,10 @@ export default function IncomePageClient({
               month={month}
               onYearChange={handleYearChange}
               onMonthChange={handleMonthChange}
+              onMonthYearChange={handleMonthYearChange}
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
+              monthPaymentStatuses={monthPaymentStatuses}
             />
           </div>
 

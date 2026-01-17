@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, ListX, Plus, X } from "lucide-react";
+import { CalendarDays, ListX, Plus, X, GripVertical } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
@@ -36,6 +36,16 @@ const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   amount: "w-[105px] shrink-0 px-3",
   status: "w-[100px] shrink-0 px-2",
   actions: "w-[110px] shrink-0 px-1.5",
+};
+
+const COLUMN_LABELS: Record<ColumnKey, string> = {
+  date: "תאריך",
+  description: "תיאור",
+  client: "לקוח",
+  category: "קטגוריה",
+  amount: "סכום",
+  status: "סטטוס",
+  actions: "פעולות",
 };
 
 interface IncomeListViewProps {
@@ -133,63 +143,9 @@ type Totals = {
   count: number;
 };
 
-// Mobile totals summary component for list view
-function MobileListTotals({ totals }: { totals: Totals }) {
-  if (totals.count === 0) return null;
 
-  return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 mt-3">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-600 dark:text-slate-400 font-medium">
-          סה״כ ({totals.count} עבודות)
-        </span>
-        <span className="font-bold text-slate-800 dark:text-slate-200 tabular-nums" dir="ltr">
-          {formatCurrency(totals.totalGross)}
-        </span>
-      </div>
-      {totals.unpaid > 0 && (
-        <div className="flex items-center justify-between text-xs mt-1.5">
-          <span className="text-orange-600 dark:text-orange-400">
-            ממתין לתשלום
-          </span>
-          <span className="font-semibold text-orange-600 dark:text-orange-400 tabular-nums" dir="ltr">
-            {formatCurrency(totals.unpaid)}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
 
-// Desktop totals bar (shown below row-cards)
-function DesktopListTotals({ totals }: { totals: Totals }) {
-  if (totals.count === 0) return null;
 
-  return (
-    <div className="sticky bottom-0 z-10 mt-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="grid grid-cols-3 items-center text-center gap-6">
-        <div className="flex flex-col items-center">
-          <span className="text-sm text-slate-500 dark:text-slate-400 block">סה״כ ({totals.count} עבודות)</span>
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-200 font-numbers tabular-nums" dir="ltr">
-            {formatCurrency(totals.totalGross)}
-          </span>
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="text-sm text-emerald-600 dark:text-emerald-400 block">שולם</span>
-          <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-numbers tabular-nums" dir="ltr">
-            {formatCurrency(totals.totalPaid)}
-          </span>
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="text-sm text-orange-600 dark:text-orange-400 block">ממתין</span>
-          <span className="text-xl font-bold text-orange-600 dark:text-orange-400 font-numbers tabular-nums" dir="ltr">
-            {formatCurrency(Math.max(totals.unpaid, 0))}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export const IncomeListView = React.memo(function IncomeListView({
   entries,
@@ -225,6 +181,9 @@ export const IncomeListView = React.memo(function IncomeListView({
   const hasNoData = entries.length === 0 && !hasActiveFilter;
   const hasFilteredAway = entries.length === 0 && hasActiveFilter;
   const [columnOrder, setColumnOrder] = useState<ColumnKey[]>(DEFAULT_COLUMN_ORDER);
+  const [dropTarget, setDropTarget] = useState<{ key: ColumnKey; position: "left" | "right" } | null>(null);
+  const [draggedKey, setDraggedKey] = useState<ColumnKey | null>(null);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
 
   const handleAddClick = () => {
     const input = document.querySelector(
@@ -271,25 +230,72 @@ export const IncomeListView = React.memo(function IncomeListView({
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, key: ColumnKey) => {
+    setDraggedKey(key);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", key);
+
+    // Set custom compact drag image
+    if (dragPreviewRef.current) {
+      const previewText = dragPreviewRef.current.querySelector("#drag-preview-text");
+      if (previewText) {
+        previewText.textContent = COLUMN_LABELS[key];
+      }
+      e.dataTransfer.setDragImage(dragPreviewRef.current, -10, -10);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetKey: ColumnKey) => {
     e.preventDefault();
+    setDropTarget(null);
     const sourceKey = e.dataTransfer.getData("text/plain") as ColumnKey;
     if (!sourceKey || sourceKey === targetKey) return;
+
+    // Calculate precise drop position again to be sure (or trust state if synchronous enough, but recalculating is safer)
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midpoint = rect.x + rect.width / 2;
+    // In RTL, Right is Start (index), Left is End (index + 1)
+    const isRight = e.clientX > midpoint;
+
     const current = columnOrder.slice();
     const from = current.indexOf(sourceKey);
-    const to = current.indexOf(targetKey);
+    let to = current.indexOf(targetKey);
+
     if (from === -1 || to === -1) return;
+
+    // Remove source first
     current.splice(from, 1);
+
+    // Adjust target index because removal might have shifted indices
+    to = current.indexOf(targetKey);
+
+    // If dropping on Left (End in RTL), we insert AFTER the target (index + 1)
+    // If dropping on Right (Start in RTL), we insert AT the target (index)
+    if (!isRight) {
+      to += 1;
+    }
+
     current.splice(to, 0, sourceKey);
     persistOrder(current);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, key: ColumnKey) => {
     e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midpoint = rect.x + rect.width / 2;
+    const position = e.clientX > midpoint ? "right" : "left"; // Right side is Start in RTL
+
+    if (dropTarget?.key !== key || dropTarget?.position !== position) {
+      setDropTarget({ key, position });
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDropTarget(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedKey(null);
+    setDropTarget(null);
   };
 
   const headerContent: Record<ColumnKey, React.ReactNode> = {
@@ -326,17 +332,32 @@ export const IncomeListView = React.memo(function IncomeListView({
         </div>
 
         {/* Column Headers - draggable (desktop only) */}
-        <div className="flex items-center text-[11px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none">
+        <div className="flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none">
           {columnOrder.map((key) => (
             <div
               key={key}
               draggable
               onDragStart={(e) => handleDragStart(e, key)}
-              onDragOver={handleDragOver}
+              onDragOver={(e) => handleDragOver(e, key)}
+              onDragLeave={handleDragLeave}
+              onDragEnd={handleDragEnd}
               onDrop={(e) => handleDrop(e, key)}
-              className={`cursor-move ${HEADER_WIDTH_MAP[key]} flex items-center`}
+              className={`
+                ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
+                ${dropTarget?.key === key ? "bg-slate-50 dark:bg-slate-800/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
+                ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-slate-800/50 dashed border border-site-300" : "cursor-grab active:cursor-grabbing"}
+              `}
             >
+              {/* Drop candidate indicator line */}
+              {dropTarget?.key === key && (
+                <div
+                  className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-slate-600 z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
+                />
+              )}
               {headerContent[key]}
+              <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-3 w-3" />
+              </div>
             </div>
           ))}
         </div>
@@ -378,8 +399,7 @@ export const IncomeListView = React.memo(function IncomeListView({
               />
             ))}
 
-            {/* Desktop Totals Bar */}
-            <DesktopListTotals totals={totals} />
+
           </div>
         )}
       </div>
@@ -428,11 +448,20 @@ export const IncomeListView = React.memo(function IncomeListView({
               />
             ))}
 
-            {/* Mobile Totals Summary */}
-            <MobileListTotals totals={totals} />
+
           </div>
         )}
       </div>
-    </TooltipProvider>
+
+
+      {/* Custom Drag Preview Element (Hidden off-screen) */}
+      <div
+        ref={dragPreviewRef}
+        className="fixed top-[-1000px] left-[-1000px] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1.5 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 font-medium text-xs flex items-center gap-1.5 pointer-events-none z-50 whitespace-nowrap"
+      >
+        <GripVertical className="h-3 w-3 text-slate-400" />
+        <span id="drag-preview-text"></span>
+      </div>
+    </TooltipProvider >
   );
 });

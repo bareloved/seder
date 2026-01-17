@@ -25,6 +25,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+import { MonthPaymentStatus } from "../data";
+
 interface IncomeFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -43,6 +45,8 @@ interface IncomeFiltersProps {
   month: number;
   onYearChange: (year: number) => void;
   onMonthChange: (month: number) => void;
+  onMonthYearChange?: (month: number, year: number) => void;
+  monthPaymentStatuses: Record<number, MonthPaymentStatus>;
 }
 
 export function IncomeFilters({
@@ -59,14 +63,43 @@ export function IncomeFilters({
   month,
   onYearChange,
   onMonthChange,
+  onMonthYearChange,
+  monthPaymentStatuses,
 }: IncomeFiltersProps) {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
+
+  // Dynamic year range state
+  const [minYear, setMinYear] = React.useState(year - 1);
+  const [maxYear, setMaxYear] = React.useState(year + 1);
+
+  // Update range when prop changes, if outside current range
+  React.useEffect(() => {
+    if (year < minYear) setMinYear(year - 1);
+    if (year > maxYear) setMaxYear(year + 1);
+  }, [year, minYear, maxYear]);
+
+  const loadEarlierYears = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMinYear(prev => prev - 2);
+  };
+
+  const loadLaterYears = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMaxYear(prev => prev + 2);
+  };
+
+  // Generate array of years
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
 
   // Month navigation helpers
   const handlePrevMonth = () => {
     if (month === 1) {
-      onMonthChange(12);
-      onYearChange(year - 1);
+      if (onMonthYearChange) {
+        onMonthYearChange(12, year - 1);
+      } else {
+        onMonthChange(12);
+        onYearChange(year - 1);
+      }
     } else {
       onMonthChange(month - 1);
     }
@@ -74,131 +107,50 @@ export function IncomeFilters({
 
   const handleNextMonth = () => {
     if (month === 12) {
-      onMonthChange(1);
-      onYearChange(year + 1);
+      if (onMonthYearChange) {
+        onMonthYearChange(1, year + 1);
+      } else {
+        onMonthChange(1);
+        onYearChange(year + 1);
+      }
     } else {
       onMonthChange(month + 1);
     }
   };
 
+  // Helper to determine dot color for a given month status
+  const getStatusDot = (status: MonthPaymentStatus) => {
+    if (status === "has-unpaid") return <span className="w-1.5 h-1.5 rounded-full bg-red-500/80 shrink-0" />;
+    if (status === "all-paid") return <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 shrink-0" />;
+    return null; // empty or mixed without unpaid (though logic implies empty)
+  };
+
   const monthName = new Date(year, month - 1).toLocaleString('he-IL', { month: 'long' });
+  const currentMonthStatus = monthPaymentStatuses[month];
 
   return (
     <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 p-1">
 
-      {/* Left Side: Date Selectors (Desktop) - order matched image: Year Year Month */}
-      <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar">
-
-        {/* Year Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 min-w-[80px] justify-between bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-normal">
-              <ChevronDown className="h-3 w-3 opacity-50 ml-2" />
-              {year}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {[year - 1, year, year + 1].map((y) => (
-              <DropdownMenuItem key={y} onClick={() => onYearChange(y)}>
-                {y}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Month Selector */}
-        <div className="flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 h-9">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
-            onClick={handlePrevMonth}
-          >
-            <ChevronRight className="h-4 w-4 text-slate-500" />
-          </Button>
-          <span className="min-w-[70px] text-center text-sm text-slate-700 dark:text-slate-300">
-            {monthName}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
-            onClick={handleNextMonth}
-          >
-            <ChevronLeft className="h-4 w-4 text-slate-500" />
-          </Button>
-        </div>
-      </div>
-
       {/* Right Side: Filters & Search & Add */}
-      <div className="flex items-center gap-3 flex-1 w-full md:w-auto justify-end">
+      <div className="flex items-center gap-3 flex-1 w-full md:w-auto justify-start">
 
-        {/* Mobile Filter Toggle */}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setIsFilterSheetOpen(true)}
-          className="md:hidden h-9 w-9 bg-white"
-        >
-          <Filter className="h-4 w-4" />
-        </Button>
-
-        {/* Desktop Filter Dropdowns */}
-        <div className="hidden md:flex items-center gap-3">
-          {/* Categories */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedCategories.length === 0 ? "כל הקטגוריות" : `${selectedCategories.length} נבחרו`}
-                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
+        {/* Add Entry Button */}
+        {onNewEntry && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onNewEntry}
+                size="icon"
+                className="h-9 w-9 rounded-full bg-[#2ecc71] hover:bg-[#27ae60] text-white shadow-sm shrink-0 transition-all"
+              >
+                <Plus className="h-5 w-5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-end bg-slate-50">
-                כל הקטגוריות
-              </DropdownMenuItem>
-              {categories.filter(c => !c.isArchived).map((category) => (
-                <DropdownMenuItem
-                  key={category.id}
-                  onClick={() => {
-                    const newCats = selectedCategories.includes(category.id)
-                      ? selectedCategories.filter(c => c !== category.id)
-                      : [...selectedCategories, category.id];
-                    onCategoryChange(newCats);
-                  }}
-                  className="justify-between"
-                >
-                  {category.name}
-                  {selectedCategories.includes(category.id) && <span className="text-emerald-500">✓</span>}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Clients */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedClient === "all" ? "כל הלקוחות" : selectedClient}
-                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 max-h-[300px] overflow-y-auto" align="end">
-              <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-end bg-slate-50">
-                כל הלקוחות
-              </DropdownMenuItem>
-              {clients.map((client) => (
-                <DropdownMenuItem
-                  key={client}
-                  onClick={() => onClientChange(client)}
-                  className="justify-end"
-                >
-                  {client}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>עבודה חדשה</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {/* Search Bar */}
         <div className="relative flex-1 max-w-[240px] hidden md:block group">
@@ -219,24 +171,178 @@ export function IncomeFilters({
           )}
         </div>
 
-        {/* Add Entry Button */}
-        {onNewEntry && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onNewEntry}
-                size="icon"
-                className="h-9 w-9 rounded-full bg-[#2ecc71] hover:bg-[#27ae60] text-white shadow-sm shrink-0 transition-all"
-              >
-                <Plus className="h-5 w-5" />
+        {/* Desktop Filter Dropdowns */}
+        <div className="hidden md:flex items-center gap-3">
+          {/* Categories */}
+          <DropdownMenu dir="rtl">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
+                {selectedCategories.length === 0 ? "כל הקטגוריות" : `${selectedCategories.length} נבחרו`}
+                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>עבודה חדשה</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40" align="start">
+              <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-start bg-slate-50">
+                כל הקטגוריות
+              </DropdownMenuItem>
+              {categories.filter(c => !c.isArchived).map((category) => (
+                <DropdownMenuItem
+                  key={category.id}
+                  onClick={() => {
+                    const newCats = selectedCategories.includes(category.id)
+                      ? selectedCategories.filter(c => c !== category.id)
+                      : [...selectedCategories, category.id];
+                    onCategoryChange(newCats);
+                  }}
+                  className="justify-between"
+                >
+                  <span>{category.name}</span>
+                  {selectedCategories.includes(category.id) && <span className="text-emerald-500">✓</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
+          {/* Clients */}
+          <DropdownMenu dir="rtl">
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
+                {selectedClient === "all" ? "כל הלקוחות" : selectedClient}
+                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40 max-h-[300px] overflow-y-auto" align="start">
+              <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-start bg-slate-50">
+                כל הלקוחות
+              </DropdownMenuItem>
+              {clients.map((client) => (
+                <DropdownMenuItem
+                  key={client}
+                  onClick={() => onClientChange(client)}
+                  className="justify-start"
+                >
+                  {client}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Mobile Filter Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsFilterSheetOpen(true)}
+          className="md:hidden h-9 w-9 bg-white"
+        >
+          <Filter className="h-4 w-4" />
+        </Button>
+
+      </div>
+
+      {/* Left Side: Date Selectors (Desktop) - Order: Month Year */}
+      <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar">
+
+        {/* Month Selector Dropdown with Arrows */}
+        <div className="flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 h-9">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
+            onClick={handlePrevMonth}
+          >
+            <ChevronRight className="h-4 w-4 text-slate-500" />
+          </Button>
+
+          <DropdownMenu dir="rtl">
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-8 min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{monthName}</span>
+                {getStatusDot(currentMonthStatus)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="min-w-[150px]" align="start">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                const mName = new Date(year, m - 1).toLocaleString('he-IL', { month: 'long' });
+                const status = monthPaymentStatuses[m];
+                return (
+                  <DropdownMenuItem
+                    key={m}
+                    onClick={() => onMonthChange(m)}
+                    className={cn(
+                      "flex items-center justify-between gap-4 cursor-pointer",
+                      month === m && "bg-slate-50 dark:bg-slate-800 font-medium"
+                    )}
+                  >
+                    <span>{mName}</span>
+                    {getStatusDot(status)}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
+            onClick={handleNextMonth}
+          >
+            <ChevronLeft className="h-4 w-4 text-slate-500" />
+          </Button>
+        </div>
+
+        {/* Year Dropdown */}
+        <DropdownMenu dir="rtl">
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9 px-3 justify-center gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-normal">
+              <span>{year}</span>
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="min-w-0" align="center">
+            {/* Load Earlier Button */}
+            <div className="flex justify-center p-1 border-b border-slate-100 dark:border-slate-800 mb-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-slate-400 hover:text-slate-600 w-full"
+                onClick={loadEarlierYears}
+              >
+                <ChevronDown className="h-3 w-3 rotate-180" />
+              </Button>
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+              {years.map((y) => (
+                <DropdownMenuItem
+                  key={y}
+                  onClick={() => onYearChange(y)}
+                  className={cn(
+                    "justify-center text-center px-4 cursor-pointer",
+                    year === y && "bg-slate-50 dark:bg-slate-800 font-medium"
+                  )}
+                >
+                  {y}
+                </DropdownMenuItem>
+              ))}
+            </div>
+
+            {/* Load Later Button */}
+            <div className="flex justify-center p-1 border-t border-slate-100 dark:border-slate-800 mt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs text-slate-400 hover:text-slate-600 w-full"
+                onClick={loadLaterYears}
+              >
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Mobile Filter Sheet */}

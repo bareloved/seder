@@ -62,7 +62,7 @@ export function Navbar({ user }: NavbarProps) {
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        "text-xl font-normal transition-opacity hover:opacity-100",
+                                        "text-base font-normal transition-opacity hover:opacity-100",
                                         isActive ? "opacity-100 font-medium" : "opacity-80"
                                     )}
                                 >
@@ -101,12 +101,6 @@ export function Navbar({ user }: NavbarProps) {
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="/profile" className="flex justify-between items-center cursor-pointer w-full" dir="rtl">
-                                    <span>הפרופיל שלי</span>
-                                    <User className="h-4 w-4 opacity-70" />
-                                </Link>
-                            </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                                 <Link href="/settings" className="flex justify-between items-center cursor-pointer w-full" dir="rtl">
                                     <span>הגדרות</span>
