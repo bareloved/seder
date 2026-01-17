@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Navbar } from "@/components/Navbar";
 import type { IncomeEntry } from "../income/types";
 import type { DateRangePreset, MetricType, DateRange } from "./types";
 import { AnalyticsHeader } from "./components/AnalyticsHeader";
@@ -18,12 +19,18 @@ import {
 
 interface AnalyticsPageClientProps {
   initialEntries: IncomeEntry[];
+  user: { name: string | null; email: string; image: string | null };
+  isGoogleConnected: boolean;
 }
 
-export default function AnalyticsPageClient({ initialEntries }: AnalyticsPageClientProps) {
+export default function AnalyticsPageClient({
+  initialEntries,
+  user,
+  isGoogleConnected,
+}: AnalyticsPageClientProps) {
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>("specific-month");
   const [metricType, setMetricType] = useState<MetricType>("amount");
-  const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
+  const [customRange] = useState<DateRange | undefined>(undefined);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -58,35 +65,52 @@ export default function AnalyticsPageClient({ initialEntries }: AnalyticsPageCli
   }, [initialEntries, dateRangePreset, customRange, selectedMonth, selectedYear]);
 
   return (
-    <div
-      className="min-h-screen paper-texture print:bg-white"
-      dir="rtl"
-    >
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-28 space-y-3 sm:space-y-4 md:space-y-6 md:pb-8">
-        {/* Header with filters */}
-        <AnalyticsHeader
-          dateRangePreset={dateRangePreset}
-          onDateRangeChange={setDateRangePreset}
-          metricType={metricType}
-          onMetricTypeChange={setMetricType}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onMonthChange={setSelectedMonth}
-          onYearChange={setSelectedYear}
-        />
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+      <Navbar user={user} isGoogleConnected={isGoogleConnected} />
+
+      <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+        {/* Filters Toolbar */}
+        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+          <div className="p-4">
+            <AnalyticsHeader
+              dateRangePreset={dateRangePreset}
+              onDateRangeChange={setDateRangePreset}
+              metricType={metricType}
+              onMetricTypeChange={setMetricType}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onMonthChange={setSelectedMonth}
+              onYearChange={setSelectedYear}
+            />
+          </div>
+        </section>
 
         {/* KPI Cards */}
-        <AnalyticsKPICards kpi={analyticsData.kpi} />
+        <section>
+          <AnalyticsKPICards kpi={analyticsData.kpi} />
+        </section>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <IncomeOverTimeChart data={analyticsData.timeSeriesData} metricType={metricType} />
           <IncomeByCategoryChart data={analyticsData.categoryData} metricType={metricType} />
-        </div>
+        </section>
 
         {/* Needs Attention Table */}
-        <NeedsAttentionTable jobs={analyticsData.needsAttentionJobs} />
-      </div>
+        <section>
+          <NeedsAttentionTable jobs={analyticsData.needsAttentionJobs} />
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full py-6 text-center text-xs text-slate-400">
+        <div className="flex justify-center gap-6 mb-2">
+          <a href="#" className="hover:text-slate-600 transition-colors">הצהרת נגישות</a>
+          <a href="#" className="hover:text-slate-600 transition-colors">מדיניות פרטיות</a>
+          <a href="#" className="hover:text-slate-600 transition-colors">תנאי שימוש</a>
+        </div>
+        <p>© 2026 סדר - יוצאים לעצמאות</p>
+      </footer>
     </div>
   );
 }

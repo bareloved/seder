@@ -47,8 +47,8 @@ export function Navbar({ user, isGoogleConnected }: NavbarProps) {
 
     const navItems = [
         { label: "תשלומים", href: "/income" },
-        { label: "הוצאות", href: "/expenses" },
-        { label: "סטטיסטיקות", href: "/statistics" },
+        { label: "הוצאות", href: "/expenses", comingSoon: true },
+        { label: "אנליטיקה", href: "/analytics" },
     ];
 
     return (
@@ -67,6 +67,21 @@ export function Navbar({ user, isGoogleConnected }: NavbarProps) {
                     <nav className="hidden md:flex items-center gap-14">
                         {navItems.map((item) => {
                             const isActive = pathname.startsWith(item.href);
+
+                            if (item.comingSoon) {
+                                return (
+                                    <span
+                                        key={item.href}
+                                        className="text-base font-normal opacity-40 cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {item.label}
+                                        <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded">
+                                            בקרוב
+                                        </span>
+                                    </span>
+                                );
+                            }
+
                             return (
                                 <Link
                                     key={item.href}
