@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Popover,
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { Calendar as CalendarIcon, Plus, ChevronDown, Check } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronDown, Check, Settings2 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, VatType } from "../../types";
@@ -42,6 +43,7 @@ export function QuickAddCard({
   const [quickAddClient, setQuickAddClient] = React.useState("");
   const [quickAddCategoryId, setQuickAddCategoryId] = React.useState("");
   const [showClientSuggestions, setShowClientSuggestions] = React.useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   const quickAddDescriptionRef = React.useRef<HTMLInputElement>(null);
 
@@ -117,16 +119,59 @@ export function QuickAddCard({
         {/* DATE */}
         <div className="shrink-0 w-[70px] px-2">
           <div className="text-right">
-            <span className="text-base text-slate-400">
-              {newEntryDate
-                ? format(newEntryDate, "dd.MM", { locale: he })
-                : format(new Date(), "dd.MM", { locale: he })}
-            </span>
+            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <button className="text-base text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded px-1 transition-colors">
+                  {newEntryDate
+                    ? format(newEntryDate, "dd.MM", { locale: he })
+                    : format(new Date(), "dd.MM", { locale: he })}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={newEntryDate || new Date()}
+                  onSelect={(date) => {
+                    setNewEntryDate(date);
+                    setIsDatePickerOpen(false);
+                  }}
+                  initialFocus
+                  locale={he}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* DESCRIPTION - Flexible */}
+        <div className="flex-1 min-w-0 max-w-[420px] px-3">
+          <Input
+            ref={quickAddDescriptionRef}
+            value={quickAddDescription}
+            onChange={(e) => setQuickAddDescription(e.target.value)}
+            placeholder="הוסף עבודה חדשה..."
+            className="h-9 w-full border-transparent bg-transparent placeholder:text-slate-300 focus:bg-white focus:shadow-sm focus:border-slate-200 transition-all text-right text-base"
+            onKeyDown={handleQuickAddKeyDown}
+          />
+        </div>
+
+        {/* AMOUNT */}
+        <div className="shrink-0 w-[105px] px-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₪</span>
+            <Input
+              value={quickAddAmount}
+              onChange={(e) => setQuickAddAmount(e.target.value)}
+              placeholder="0"
+              className="h-8 w-full border-transparent bg-transparent focus:bg-white focus:border-slate-200 text-right pl-6 text-base"
+              onKeyDown={handleQuickAddKeyDown}
+              dir="rtl"
+            />
           </div>
         </div>
 
         {/* CLIENT */}
-        <div className="shrink-0 w-[110px] px-3">
+        <div className="shrink-0 w-[110px] px-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <div className="relative">
             <Button
               variant="ghost"
@@ -160,20 +205,7 @@ export function QuickAddCard({
           </div>
         </div>
 
-
-        {/* DESCRIPTION - Flexible */}
-        <div className="flex-1 min-w-0 max-w-[420px] px-3">
-          <Input
-            ref={quickAddDescriptionRef}
-            value={quickAddDescription}
-            onChange={(e) => setQuickAddDescription(e.target.value)}
-            placeholder="הוסף עבודה חדשה..."
-            className="h-9 w-full border-transparent bg-transparent placeholder:text-slate-300 focus:bg-white focus:shadow-sm focus:border-slate-200 transition-all text-right text-base"
-            onKeyDown={handleQuickAddKeyDown}
-          />
-        </div>
-
-        {/* CATEGORY (Hidden in ghost row usually, or simplified) */}
+        {/* CATEGORY */}
         <div className="shrink-0 w-[100px] px-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -186,26 +218,20 @@ export function QuickAddCard({
             <DropdownMenuContent align="end">
               {categories.filter(c => !c.isArchived).map(cat => (
                 <DropdownMenuItem key={cat.id} onClick={() => setQuickAddCategoryId(cat.id)}>
-                  <CategoryChip category={cat} size="sm" />
+                  <CategoryChip category={cat} size="sm" withIcon={true} />
                 </DropdownMenuItem>
               ))}
+              {onEditCategories && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onEditCategories} className="text-slate-500 gap-2">
+                    <Settings2 className="h-3.5 w-3.5" />
+                    ניהול קטגוריות
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
-
-        {/* AMOUNT (Hidden in ghost row usually, or simplified) */}
-        <div className="shrink-0 w-[105px] px-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          <div className="relative">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">₪</span>
-            <Input
-              value={quickAddAmount}
-              onChange={(e) => setQuickAddAmount(e.target.value)}
-              placeholder="0"
-              className="h-8 w-full border-transparent bg-transparent focus:bg-white focus:border-slate-200 text-right pl-6 text-base"
-              onKeyDown={handleQuickAddKeyDown}
-            />
-          </div>
         </div>
 
         {/* ADD ACTION */}
