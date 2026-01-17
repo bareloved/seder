@@ -200,7 +200,7 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
             {(entry.categoryData || entry.category) && (
               <>
                 <span className="text-slate-300 dark:text-slate-600">•</span>
-                <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" />
+                <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={true} />
               </>
             )}
             {hasNotes && (
@@ -213,12 +213,12 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
         <div className="flex items-center justify-end min-w-[85px]">
           <span
             className={cn(
-              "text-xl font-bold tabular-nums font-numbers whitespace-nowrap",
+              "text-2xl font-normal font-numbers whitespace-nowrap",
               getAmountColor()
             )}
             dir="ltr"
           >
-            {formatCurrency(entry.amountGross)}
+            <span className="text-sm">₪</span> {entry.amountGross.toLocaleString("he-IL")}
           </span>
         </div>
       </div>

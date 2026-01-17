@@ -7,6 +7,7 @@ import { CalendarDays, ListX, Plus, X } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
+import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeFilters } from "./IncomeFilters";
 import { MobileIncomeCard } from "./income-table/MobileIncomeCard";
 import { MobileQuickAdd } from "./income-table/MobileQuickAdd";
@@ -33,8 +34,9 @@ interface IncomeCardsViewProps {
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   onClearFilter?: () => void;
   hasActiveFilter: boolean;
+  sortColumn: SortColumn;
   sortDirection: "asc" | "desc";
-  onSortToggle: () => void;
+  onSort: (column: SortColumn) => void;
   // Filter/search props
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -120,8 +122,8 @@ function MobileTotals({ entries }: { entries: IncomeEntry[] }) {
         <span className="text-slate-600 dark:text-slate-400 font-medium">
           סה״כ ({entries.length} עבודות)
         </span>
-        <span className="font-bold text-slate-800 dark:text-slate-200 tabular-nums" dir="ltr">
-          {formatCurrency(totalGross)}
+        <span className="text-lg font-normal font-numbers text-slate-800 dark:text-slate-200" dir="ltr">
+          <span className="text-xs">₪</span> {totalGross.toLocaleString("he-IL")}
         </span>
       </div>
       {unpaid > 0 && (
@@ -129,8 +131,8 @@ function MobileTotals({ entries }: { entries: IncomeEntry[] }) {
           <span className="text-orange-600 dark:text-orange-400">
             ממתין לתשלום
           </span>
-          <span className="font-semibold text-orange-600 dark:text-orange-400 tabular-nums" dir="ltr">
-            {formatCurrency(unpaid)}
+          <span className="text-lg font-normal font-numbers text-orange-600 dark:text-orange-400" dir="ltr">
+            <span className="text-xs">₪</span> {unpaid.toLocaleString("he-IL")}
           </span>
         </div>
       )}
@@ -151,20 +153,20 @@ function DesktopCardsTotals({ entries }: { entries: IncomeEntry[] }) {
       <div className="grid grid-cols-3 items-center text-center gap-4">
         <div className="flex flex-col items-center">
           <span className="text-sm text-slate-500 dark:text-slate-400 block">סה״כ ({entries.length} עבודות)</span>
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tabular-nums" dir="ltr">
-            {formatCurrency(totalGross)}
+          <span className="text-2xl font-normal font-numbers text-slate-800 dark:text-slate-200" dir="ltr">
+            <span className="text-sm">₪</span> {totalGross.toLocaleString("he-IL")}
           </span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-sm text-emerald-600 dark:text-emerald-400 block">שולם</span>
-          <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums" dir="ltr">
-            {formatCurrency(totalPaid)}
+          <span className="text-2xl font-normal font-numbers text-emerald-600 dark:text-emerald-400" dir="ltr">
+            <span className="text-sm">₪</span> {totalPaid.toLocaleString("he-IL")}
           </span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-sm text-orange-600 dark:text-orange-400 block">ממתין</span>
-          <span className="text-xl font-bold text-orange-600 dark:text-orange-400 tabular-nums" dir="ltr">
-            {formatCurrency(Math.max(unpaid, 0))}
+          <span className="text-2xl font-normal font-numbers text-orange-600 dark:text-orange-400" dir="ltr">
+            <span className="text-sm">₪</span> {Math.max(unpaid, 0).toLocaleString("he-IL")}
           </span>
         </div>
       </div>
@@ -210,25 +212,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
           Shows cards in a responsive grid layout
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:block">
-        {/* FILTERS TOOLBAR */}
-        <Card className="overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm mb-4">
-          <div className="p-3">
-            <IncomeFilters
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-              clients={monthClients}
-              selectedClient={selectedClient}
-              onClientChange={onClientChange}
-              categories={categories}
-              selectedCategories={selectedCategories}
-              onCategoryChange={onCategoryChange}
-              onNewEntry={onNewEntry}
-              onEditCategories={onEditCategories}
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-            />
-          </div>
-        </Card>
+        {/* FILTERS moved to parent component */}
 
         {/* Empty States */}
         {hasNoData && (
@@ -280,7 +264,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
-            <EmptyState type="no-data" onAddClick={() => {}} />
+            <EmptyState type="no-data" onAddClick={() => { }} />
           </Card>
         )}
 

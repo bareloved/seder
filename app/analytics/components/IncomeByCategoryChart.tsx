@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import type { CategoryDataPoint, MetricType } from "../types";
 import { formatCurrency } from "@/app/income/utils";
@@ -25,27 +24,25 @@ const COLORS = [
 export function IncomeByCategoryChart({ data, metricType }: IncomeByCategoryChartProps) {
   if (data.length === 0) {
     return (
-      <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
-            אין נתונים לתקופה זו
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</h3>
+        </div>
+        <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
+          אין נתונים לתקופה זו
+        </div>
+      </div>
     );
   }
 
   const dataKey = metricType === "amount" ? "amount" : "count";
 
   return (
-    <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden transition-all hover:shadow-md">
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</h3>
+      </div>
+      <div className="p-4">
         {/* Wrap in LTR to prevent RTL interference with chart coordinates */}
         <div dir="ltr">
           <ResponsiveContainer width="100%" height={300}>
@@ -98,8 +95,7 @@ export function IncomeByCategoryChart({ data, metricType }: IncomeByCategoryChar
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
-

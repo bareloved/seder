@@ -62,40 +62,41 @@ export function SortableCategory({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 p-3 rounded-xl border bg-white dark:bg-slate-900 transition-all",
-        "border-slate-200 dark:border-slate-800",
+        "flex items-center gap-2 p-2.5 rounded-xl border bg-white dark:bg-slate-900 transition-all shadow-sm",
+        "border-slate-200/80 dark:border-slate-800",
         isDragging && "shadow-lg z-10 opacity-90",
         category.isArchived && "opacity-60",
         disabled && "cursor-default"
       )}
+      dir="rtl"
     >
-      {/* Drag Handle */}
+      {/* Drag Handle - on the right in RTL */}
       {!disabled && (
         <button
           {...attributes}
           {...listeners}
           className={cn(
-            "p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-grab active:cursor-grabbing",
-            "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300",
+            "p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-grab active:cursor-grabbing",
+            "text-slate-300 hover:text-slate-500 dark:hover:text-slate-400",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           )}
           aria-label="גרור לשינוי סדר"
         >
-          <GripVertical className="h-5 w-5" />
+          <GripVertical className="h-4 w-4" />
         </button>
       )}
 
-      {/* Category Preview */}
+      {/* Category Preview Badge */}
       <div
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-full border",
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full border",
           colorScheme.bg,
           colorScheme.text,
           colorScheme.border
         )}
       >
-        <IconComponent className="h-4 w-4" />
-        <span className="font-medium text-sm">{category.name}</span>
+        <span className="font-medium text-xs">{category.name}</span>
+        <IconComponent className="h-3.5 w-3.5" />
       </div>
 
       {/* Archive badge */}
@@ -108,39 +109,39 @@ export function SortableCategory({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onEdit(category)}
-          className="h-8 w-8 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          aria-label="ערוך קטגוריה"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-
+      {/* Actions - on the left in RTL */}
+      <div className="flex items-center gap-0.5">
         {category.isArchived ? (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onUnarchive(category.id)}
-            className="h-8 w-8 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+            className="h-7 w-7 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/20"
             aria-label="שחזר מארכיון"
           >
-            <ArchiveRestore className="h-4 w-4" />
+            <ArchiveRestore className="h-3.5 w-3.5" />
           </Button>
         ) : (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onArchive(category.id)}
-            className="h-8 w-8 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400"
+            className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800"
             aria-label="העבר לארכיון"
           >
-            <Archive className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onEdit(category)}
+          className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800"
+          aria-label="ערוך קטגוריה"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
 
         {/* Delete - only for archived categories, with confirmation */}
         {category.isArchived && onDelete && (
@@ -149,10 +150,10 @@ export function SortableCategory({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-500 hover:text-red-600 dark:hover:text-red-400"
+                className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                 aria-label="מחק קטגוריה"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

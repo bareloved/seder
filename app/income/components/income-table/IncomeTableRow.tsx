@@ -87,7 +87,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
   const notePreviewShort =
     notePreview.length > 80 ? `${notePreview.slice(0, 80)}...` : notePreview;
   const hasNotes = notePreviewShort.length > 0;
-  
+
   // Check if this is an unpaid past job (work done but not fully paid)
   const isUnpaidPast = !isFutureGig && entry.paymentStatus !== "paid";
 
@@ -117,7 +117,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
     if (!onInlineEdit) return;
     setEditingField(field);
     setEditValue(currentValue);
-    
+
     // Open category dropdown when editing category
     if (field === "category") {
       setIsCategoryDropdownOpen(true);
@@ -126,9 +126,9 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
 
   const saveCurrentValue = (): boolean => {
     if (!editingField || !onInlineEdit) return false;
-    
+
     let valueToSave: string | number = editValue;
-    
+
     // Convert amount to number
     if (editingField === "amountGross") {
       const numValue = parseFloat(editValue.replace(/[^\d.-]/g, ""));
@@ -137,12 +137,12 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
       }
       valueToSave = numValue;
     }
-    
+
     // Only save if value changed
-    const currentValue = editingField === "amountGross" 
-      ? entry.amountGross 
+    const currentValue = editingField === "amountGross"
+      ? entry.amountGross
       : entry[editingField];
-    
+
     if (valueToSave !== currentValue) {
       onInlineEdit(entry.id, editingField, valueToSave);
     }

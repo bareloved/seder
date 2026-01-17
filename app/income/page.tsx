@@ -11,25 +11,19 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 // Loading component for Suspense
+// Loading component for Suspense
 function IncomePageSkeleton() {
   return (
-    <div className="min-h-screen paper-texture" dir="rtl">
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Header skeleton */}
-        <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 px-4 py-3 shadow-sm h-16 animate-pulse" />
-        
-        {/* KPI cards skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-slate-900 rounded-lg h-32 animate-pulse"
-            />
-          ))}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950" dir="rtl">
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+          <div className="absolute top-0 left-0 w-16 h-16 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
         </div>
-
-        {/* Table skeleton */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg h-96 animate-pulse" />
+        <div className="flex flex-col items-center gap-1">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">טוען נתונים...</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">אנא המתן רגע</p>
+        </div>
       </div>
     </div>
   );

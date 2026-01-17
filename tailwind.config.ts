@@ -25,6 +25,10 @@ const config: Config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        "brand-primary": {
+          DEFAULT: "#2ecc71", // Bright green from design
+          foreground: "#ffffff",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -53,6 +57,19 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          DEFAULT: "#00C853", // Main green from design
+          50: "#E8F5E9",
+          100: "#C8E6C9",
+          200: "#A5D6A7",
+          300: "#81C784",
+          400: "#66BB6A",
+          500: "#4CAF50",
+          600: "#43A047",
+          700: "#388E3C",
+          800: "#2E7D32",
+          900: "#1B5E20",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -60,8 +77,10 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-heebo)", "sans-serif"],
-        numbers: ["var(--font-montserrat)", "sans-serif"],
+        sans: ["var(--font-ploni)", "Heebo", "sans-serif"],
+        heebo: ["var(--font-ploni)", "Heebo", "sans-serif"],
+        montserrat: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
+        numbers: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

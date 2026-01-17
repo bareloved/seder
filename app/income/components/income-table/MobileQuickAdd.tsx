@@ -166,14 +166,15 @@ export function MobileQuickAdd({
               <CategoryChip
                 category={categories.find(c => c.id === categoryId) || null}
                 size="sm"
+                withIcon={true}
               />
             )}
           </SelectValue>
         </SelectTrigger>
         <SelectContent align="end" dir="rtl">
           {categories.filter(c => !c.isArchived).map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
-              <CategoryChip category={cat} size="sm" />
+            <SelectItem key={cat.id} value={cat.id} className="justify-end">
+              <CategoryChip category={cat} size="sm" withIcon={true} />
             </SelectItem>
           ))}
         </SelectContent>
@@ -182,7 +183,7 @@ export function MobileQuickAdd({
       {/* Amount + Client in a row */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
             ₪
           </span>
           <Input

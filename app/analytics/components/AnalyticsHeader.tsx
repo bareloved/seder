@@ -1,11 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-
-import { ArrowRight, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import type { DateRangePreset, MetricType } from "../types";
-import { formatDateRangeLabel, MONTH_NAMES } from "../utils";
+import { MONTH_NAMES } from "../utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +30,8 @@ export function AnalyticsHeader({
   onMetricTypeChange,
   selectedMonth = new Date().getMonth() + 1,
   selectedYear = new Date().getFullYear(),
-  onMonthChange = () => { },
-  onYearChange = () => { },
+  onMonthChange = () => {},
+  onYearChange = () => {},
 }: AnalyticsHeaderProps) {
   const currentYear = new Date().getFullYear();
   // Show 7 years: 3 years before and 3 years after current year
@@ -59,213 +57,202 @@ export function AnalyticsHeader({
   };
 
   return (
-    <header className="rounded-2xl bg-white/80 dark:bg-slate-900/80 px-3 sm:px-4 py-3 shadow-sm backdrop-blur border border-slate-100 dark:border-slate-800 mb-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Title Row with Back Button */}
-        <div className="flex items-center gap-3">
-          <Link href="/income">
-            <Button variant="ghost" size="icon" className="h-9 w-9 -ml-2">
-              <ArrowRight className="h-5 w-5" />
+    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      {/* Date Range Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">תקופה:</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-[140px] h-9 justify-between font-normal text-sm border-slate-200 dark:border-slate-700"
+            >
+              <span className="truncate">
+                {dateRangePreset === "this-month" && "החודש"}
+                {dateRangePreset === "last-3-months" && "3 חודשים אחרונים"}
+                {dateRangePreset === "specific-year" && "שנה"}
+                {dateRangePreset === "specific-month" && "חודש ספציפי"}
+                {dateRangePreset === "custom" && "תקופה מותאמת"}
+              </span>
+              <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
             </Button>
-          </Link>
-          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">אנליטיקה</h1>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[160px]">
+            <DropdownMenuItem onClick={() => onDateRangeChange("this-month")}>
+              החודש
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDateRangeChange("last-3-months")}>
+              3 חודשים אחרונים
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDateRangeChange("specific-year")}>
+              שנה
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDateRangeChange("specific-month")}>
+              חודש ספציפי
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full md:w-auto">
-          {/* Date Range Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline-block">תקופה:</span>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-[160px] h-9 bg-white dark:bg-slate-950 justify-between font-normal">
-                    <span className="truncate">
-                      {dateRangePreset === "this-month" && "החודש"}
-                      {dateRangePreset === "last-3-months" && "3 חודשים אחרונים"}
-                      {dateRangePreset === "specific-year" && "שנה"}
-                      {dateRangePreset === "specific-month" && "חודש ספציפי"}
-                      {dateRangePreset === "custom" && "תקופה מותאמת"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[180px]">
-                  <DropdownMenuItem onClick={() => onDateRangeChange("this-month")}>
-                    החודש
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDateRangeChange("last-3-months")}>
-                    3 חודשים אחרונים
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDateRangeChange("specific-year")}>
-                    שנה
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDateRangeChange("specific-month")}>
-                    חודש ספציפי
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {/* Month/Year Selectors - Visible only when specific-month is selected */}
+        {dateRangePreset === "specific-month" && (
+          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePreviousMonth}
+              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
 
-              {/* Month/Year Selectors - Visible only when specific-month is selected */}
-              {dateRangePreset === "specific-month" && (
-                <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
-                  {/* Month navigation with arrows */}
-                  <div className="flex items-center gap-0.5">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handlePreviousMonth}
-                      className="h-9 w-9 bg-white dark:bg-slate-950"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-[110px] h-9 text-sm bg-white dark:bg-slate-950 justify-between px-3 font-semibold"
-                        >
-                          <span className="flex items-center gap-2">
-                            {MONTH_NAMES[selectedMonth]}
-                          </span>
-                          <ChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {Object.entries(MONTH_NAMES).map(([value, name]) => {
-                          const monthNum = parseInt(value);
-                          return (
-                            <DropdownMenuItem
-                              key={value}
-                              onClick={() => onMonthChange(monthNum)}
-                              className={cn(
-                                "flex-row-reverse justify-between",
-                                selectedMonth === monthNum && "bg-accent"
-                              )}
-                            >
-                              {name}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleNextMonth}
-                      className="h-9 w-9 bg-white dark:bg-slate-950"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-[90px] h-9 text-sm bg-white dark:bg-slate-950 justify-between px-3 font-semibold font-numbers"
-                      >
-                        {selectedYear}
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[90px] min-w-0">
-                      {years.map((year) => (
-                        <DropdownMenuItem
-                          key={year}
-                          onClick={() => onYearChange(year)}
-                          className={cn(
-                            "justify-center font-numbers font-medium",
-                            selectedYear === year && "bg-accent"
-                          )}
-                        >
-                          {year}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-
-              {/* Year Selector - Visible only when specific-year is selected */}
-              {dateRangePreset === "specific-year" && (
-                <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="flex items-center gap-0.5">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onYearChange(selectedYear - 1)}
-                      className="h-9 w-9 bg-white dark:bg-slate-950"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-[90px] h-9 text-sm bg-white dark:bg-slate-950 justify-between px-3 font-semibold font-numbers"
-                        >
-                          {selectedYear}
-                          <ChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-[90px] min-w-0">
-                        {years.map((year) => (
-                          <DropdownMenuItem
-                            key={year}
-                            onClick={() => onYearChange(year)}
-                            className={cn(
-                              "justify-center font-numbers font-medium",
-                              selectedYear === year && "bg-accent"
-                            )}
-                          >
-                            {year}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onYearChange(selectedYear + 1)}
-                      className="h-9 w-9 bg-white dark:bg-slate-950"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Metric Toggle */}
-            <div className="flex items-center gap-2 mr-auto md:mr-0">
-              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline-block">מדד:</span>
-              <div className="inline-flex rounded-md shadow-sm h-9" role="group">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant={metricType === "amount" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onMetricTypeChange("amount")}
-                  className="rounded-l-md rounded-r-none h-full"
+                  variant="outline"
+                  className="w-[100px] h-9 text-sm justify-between px-3 font-medium border-slate-200 dark:border-slate-700"
                 >
-                  סכום
+                  <span>{MONTH_NAMES[selectedMonth]}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {Object.entries(MONTH_NAMES).map(([value, name]) => {
+                  const monthNum = parseInt(value);
+                  return (
+                    <DropdownMenuItem
+                      key={value}
+                      onClick={() => onMonthChange(monthNum)}
+                      className={cn(
+                        "flex-row-reverse justify-between",
+                        selectedMonth === monthNum && "bg-accent"
+                      )}
+                    >
+                      {name}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextMonth}
+              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant={metricType === "count" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onMetricTypeChange("count")}
-                  className="rounded-r-md rounded-l-none h-full"
+                  variant="outline"
+                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-slate-700"
                 >
-                  כמות
+                  {selectedYear}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
-              </div>
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[80px] min-w-0">
+                {years.map((year) => (
+                  <DropdownMenuItem
+                    key={year}
+                    onClick={() => onYearChange(year)}
+                    className={cn(
+                      "justify-center font-numbers font-medium",
+                      selectedYear === year && "bg-accent"
+                    )}
+                  >
+                    {year}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+        )}
+
+        {/* Year Selector - Visible only when specific-year is selected */}
+        {dateRangePreset === "specific-year" && (
+          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onYearChange(selectedYear - 1)}
+              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-slate-700"
+                >
+                  {selectedYear}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[80px] min-w-0">
+                {years.map((year) => (
+                  <DropdownMenuItem
+                    key={year}
+                    onClick={() => onYearChange(year)}
+                    className={cn(
+                      "justify-center font-numbers font-medium",
+                      selectedYear === year && "bg-accent"
+                    )}
+                  >
+                    {year}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onYearChange(selectedYear + 1)}
+              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Metric Toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">מדד:</span>
+        <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden" role="group">
+          <Button
+            variant={metricType === "amount" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onMetricTypeChange("amount")}
+            className={cn(
+              "rounded-none h-9 px-4",
+              metricType === "amount"
+                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                : "hover:bg-slate-50 dark:hover:bg-slate-800"
+            )}
+          >
+            סכום
+          </Button>
+          <Button
+            variant={metricType === "count" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onMetricTypeChange("count")}
+            className={cn(
+              "rounded-none h-9 px-4",
+              metricType === "count"
+                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                : "hover:bg-slate-50 dark:hover:bg-slate-800"
+            )}
+          >
+            כמות
+          </Button>
         </div>
       </div>
-    </header>
+    </div>
   );
 }

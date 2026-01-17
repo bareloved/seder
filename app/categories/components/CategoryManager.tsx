@@ -255,7 +255,7 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header - can be hidden when used inside a dialog */}
       {!hideHeader && (
         <div className="flex items-center justify-between">
@@ -276,9 +276,12 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
 
       {/* Add button when header is hidden */}
       {hideHeader && (
-        <div className="flex justify-end">
-          <Button onClick={handleAdd} className="gap-2">
-            <Plus className="h-4 w-4" />
+        <div className="flex justify-start">
+          <Button
+            onClick={handleAdd}
+            className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 rounded-xl px-3.5 py-2 h-auto text-sm"
+          >
+            <Plus className="h-3.5 w-3.5" />
             קטגוריה חדשה
           </Button>
         </div>
@@ -320,19 +323,19 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
 
       {/* Archived Section */}
       {archivedCategories.length > 0 && (
-        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
           >
-            <Archive className="h-4 w-4" />
+            <Archive className="h-3.5 w-3.5" />
             <span>
               {showArchived ? "הסתר ארכיון" : `הצג ארכיון (${archivedCategories.length})`}
             </span>
           </button>
 
           {showArchived && (
-            <div className="mt-4 space-y-2">
+            <div className="mt-3 space-y-2">
               {archivedCategories.map((category) => (
                 <SortableCategory
                   key={category.id}
@@ -350,10 +353,10 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
 
       {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={handleCloseAddDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>קטגוריה חדשה</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[340px] [&>button]:left-3 [&>button]:sm:left-4 [&>button]:right-auto">
+          <DialogHeader className="text-right" dir="rtl">
+            <DialogTitle className="text-base text-right">קטגוריה חדשה</DialogTitle>
+            <DialogDescription className="text-xs text-right">
               הוסף קטגוריה חדשה למעקב אחר ההכנסות שלך.
             </DialogDescription>
           </DialogHeader>
@@ -375,10 +378,10 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
 
       {/* Edit Dialog */}
       <Dialog open={!!editingCategory} onOpenChange={handleCloseEditDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>עריכת קטגוריה</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[340px] [&>button]:left-3 [&>button]:sm:left-4 [&>button]:right-auto">
+          <DialogHeader className="text-right" dir="rtl">
+            <DialogTitle className="text-base text-right">עריכת קטגוריה</DialogTitle>
+            <DialogDescription className="text-xs text-right">
               עדכן את פרטי הקטגוריה.
             </DialogDescription>
           </DialogHeader>
@@ -430,32 +433,32 @@ function CategoryForm({
   submitLabel,
 }: CategoryFormProps) {
   return (
-    <form onSubmit={onSubmit} className="space-y-6 mt-4">
+    <form onSubmit={onSubmit} className="space-y-4 mt-3">
       {/* Name */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
           שם
         </label>
         <Input
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           placeholder="לדוגמה: הופעות"
-          className="text-right"
+          className="text-right text-sm h-9"
           autoFocus
         />
       </div>
 
       {/* Color */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
           צבע
         </label>
         <ColorPicker value={color} onChange={onColorChange} />
       </div>
 
       {/* Icon */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
           אייקון
         </label>
         <IconPicker value={icon} onChange={onIconChange} color={color} />
@@ -463,16 +466,16 @@ function CategoryForm({
 
       {/* Error */}
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-start gap-3 pt-2">
-        <Button type="submit" disabled={isSaving}>
-          {isSaving && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+      <div className="flex items-center justify-start gap-2 pt-1">
+        <Button type="submit" disabled={isSaving} className="h-9 text-sm">
+          {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin ml-2" />}
           {submitLabel}
         </Button>
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} className="h-9 text-sm">
           ביטול
         </Button>
       </div>
