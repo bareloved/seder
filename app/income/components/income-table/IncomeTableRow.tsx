@@ -16,21 +16,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   Check,
   Pencil,
-  Copy,
   Trash2,
   FileText,
   CalendarDays,
   StickyNote,
+  MoreVertical,
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -514,99 +510,41 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
 
       {/* Actions */}
       <TableCell className="py-3 pl-1 pr-0 print:hidden">
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          {displayStatus === "בוצע" && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkInvoiceSent(entry.id);
-                  }}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>שלחתי חשבונית</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {displayStatus === "נשלחה" && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkAsPaid(entry.id);
-                  }}
-                >
-                  <Check className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>סמן כשולם</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-                onClick={() => onRowClick(entry)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>ערוך</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate(entry);
-                }}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>שכפל</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(entry.id);
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>מחק</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[150px]">
+            <DropdownMenuItem onClick={() => onRowClick(entry)} className="gap-2 justify-end whitespace-nowrap">
+              <span>עריכה</span>
+              <Pencil className="h-3.5 w-3.5 shrink-0" />
+            </DropdownMenuItem>
+            {displayStatus !== "שולם" && (
+              <DropdownMenuItem onClick={() => onMarkAsPaid(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+                <span>סמן כשולם</span>
+                <Check className="h-3.5 w-3.5 shrink-0" />
+              </DropdownMenuItem>
+            )}
+            {displayStatus === "בוצע" && (
+              <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+                <span>נשלחה חשבונית</span>
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDelete(entry.id)} className="gap-2 justify-end whitespace-nowrap text-red-600 focus:text-red-600">
+              <span>מחיקה</span>
+              <Trash2 className="h-3.5 w-3.5 shrink-0" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TableCell>
     </TableRow>
   );
