@@ -17,6 +17,7 @@ export interface IncomeEntry {
   date: string;
   description: string;
   clientName: string; // Aligned with DB column
+  clientId?: string | null; // FK to clients table
   userId?: string;
   amountGross: number;
   amountPaid: number;

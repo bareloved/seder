@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import { CategoryChip } from "./CategoryChip";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ interface BatchEditDialogProps {
   editType: EditType | null;
   selectedCount: number;
   clients: string[];
+  clientRecords?: Client[];
   categories: Category[];
   onConfirm: (value: string | null) => void;
   isLoading?: boolean;
@@ -35,6 +36,7 @@ export function BatchEditDialog({
   editType,
   selectedCount,
   clients,
+  clientRecords,
   categories,
   onConfirm,
   isLoading = false,

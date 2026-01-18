@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeListView } from "./IncomeListView";
 import { IncomeCardsView } from "./IncomeCardsView";
@@ -16,6 +16,7 @@ import type { ViewMode } from "./ViewModeToggle";
 interface IncomeTableProps {
   entries: IncomeEntry[];
   clients: string[];
+  clientRecords?: Client[];
   categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
@@ -55,6 +56,7 @@ interface IncomeTableProps {
 export const IncomeTable = React.memo(function IncomeTable({
   entries,
   clients,
+  clientRecords,
   categories,
   defaultDate,
   onRowClick,
@@ -94,6 +96,7 @@ export const IncomeTable = React.memo(function IncomeTable({
   const viewProps = {
     entries,
     clients,
+    clientRecords,
     categories,
     defaultDate,
     onRowClick,

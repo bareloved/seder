@@ -39,6 +39,7 @@ export function Navbar({ user }: NavbarProps) {
 
     const navItems = [
         { label: "הכנסות", href: "/income" },
+        { label: "לקוחות", href: "/clients" },
         { label: "הוצאות", href: "/expenses", comingSoon: true },
         { label: "דוחות", href: "/analytics" },
     ];

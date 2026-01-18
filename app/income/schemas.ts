@@ -10,6 +10,7 @@ export const createIncomeEntrySchema = zfd.formData({
   date: dateSchema,
   description: zfd.text(z.string().min(1, "Description is required")),
   clientName: zfd.text(z.string().min(1, "Client name is required")),
+  clientId: zfd.text(z.string().uuid().optional()), // FK to clients table
   amountGross: amountSchema,
   amountPaid: zfd.numeric(z.number().min(0).optional().default(0)),
   category: zfd.text(z.string().optional()),
@@ -31,6 +32,7 @@ export const updateIncomeEntrySchema = zfd.formData({
   date: dateSchema.optional(),
   description: zfd.text(z.string().optional()),
   clientName: zfd.text(z.string().optional()),
+  clientId: zfd.text(z.string().uuid().optional()), // FK to clients table
   amountGross: zfd.numeric(z.number().min(0).optional()),
   amountPaid: zfd.numeric(z.number().min(0).optional()),
   category: zfd.text(z.string().optional()),

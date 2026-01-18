@@ -25,7 +25,7 @@ import { BatchDeleteDialog } from "./components/BatchDeleteDialog";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import type { IncomeEntryWithCategory } from "./data";
 import { toast } from "sonner";
 import { CategoryManagerDialog } from "@/app/categories/components";
@@ -59,6 +59,7 @@ interface IncomePageClientProps {
   dbEntries: IncomeEntryWithCategory[];
   aggregates: IncomeAggregates;
   clients: string[];
+  clientRecords: Client[];
   categories: Category[];
   monthPaymentStatuses: Record<number, MonthPaymentStatus>;
   isGoogleConnected: boolean;
@@ -71,6 +72,7 @@ export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
     date: dbEntry.date,
     description: dbEntry.description,
     clientName: dbEntry.clientName,
+    clientId: dbEntry.clientId,
     amountGross: parseFloat(dbEntry.amountGross),
     amountPaid: parseFloat(dbEntry.amountPaid),
     vatRate: parseFloat(dbEntry.vatRate),
@@ -95,6 +97,7 @@ export default function IncomePageClient({
   dbEntries,
   aggregates,
   clients: initialClients,
+  clientRecords,
   categories,
   monthPaymentStatuses,
   isGoogleConnected,
@@ -703,6 +706,7 @@ export default function IncomePageClient({
     onDuplicate: duplicateEntry,
     onRowClick: openDialog,
     clients: allClients,
+    clientRecords: clientRecords,
     categories: categories,
     viewMode: viewMode,
     onViewModeChange: handleViewModeChange,
@@ -857,6 +861,7 @@ export default function IncomePageClient({
         editType={batchEditType}
         selectedCount={selectedIds.size}
         clients={allClients}
+        clientRecords={clientRecords}
         categories={categories}
         onConfirm={handleBatchEditConfirm}
         isLoading={isBatchLoading}

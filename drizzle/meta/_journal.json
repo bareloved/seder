@@ -29,6 +29,13 @@
       "when": 1764570000000,
       "tag": "0003_scope_calendar_per_user",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768766741893,
+      "tag": "0004_oval_sue_storm",
+      "breakpoints": true
     }
   ]
 }
