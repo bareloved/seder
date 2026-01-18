@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
-import { account, userSettings } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { userSettings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { listEventsForMonth, CalendarEvent } from "@/lib/googleCalendar";
+import { listEventsForMonth } from "@/lib/googleCalendar";
 import { importIncomeEntriesFromCalendarForMonth } from "@/app/income/data";
 import { classifyByRules, DEFAULT_RULES } from "@/lib/classificationRules";
+import { withGoogleToken, GoogleTokenError } from "@/lib/googleTokens";
 
 const WORK_CONFIDENCE_THRESHOLD = 0.7;
 
@@ -25,25 +26,6 @@ export async function POST() {
 
         const userId = session.user.id;
 
-        // Get Google account
-        const [googleAccount] = await db
-            .select()
-            .from(account)
-            .where(
-                and(
-                    eq(account.userId, userId),
-                    eq(account.providerId, "google")
-                )
-            )
-            .limit(1);
-
-        if (!googleAccount?.accessToken) {
-            return NextResponse.json(
-                { error: "Google Calendar not connected" },
-                { status: 400 }
-            );
-        }
-
         // Get user settings for calendar IDs
         const [settings] = await db
             .select()
@@ -59,56 +41,71 @@ export async function POST() {
         const year = now.getFullYear();
         const month = now.getMonth() + 1;
 
-        // Fetch calendar events
-        const events = await listEventsForMonth(year, month, googleAccount.accessToken, calendarIds);
+        // Use withGoogleToken to handle token refresh automatically
+        const result = await withGoogleToken(userId, async (accessToken) => {
+            // Fetch calendar events
+            const events = await listEventsForMonth(year, month, accessToken, calendarIds);
 
-        // Get classification rules from settings or use defaults
-        const rules = calendarSettings.rules || DEFAULT_RULES;
+            // Get classification rules from settings or use defaults
+            const rules = calendarSettings.rules || DEFAULT_RULES;
 
-        // Classify events
-        const classifications = classifyByRules(
-            events.map((e) => ({ id: e.id, summary: e.summary, calendarId: e.calendarId })),
-            rules
-        );
+            // Classify events
+            const classifications = classifyByRules(
+                events.map((e) => ({ id: e.id, summary: e.summary, calendarId: e.calendarId })),
+                rules
+            );
 
-        // Filter to only work events above confidence threshold
-        const workEventIds = new Set(
-            classifications
-                .filter((c) => c.isWork && c.confidence >= WORK_CONFIDENCE_THRESHOLD)
-                .map((c) => c.eventId)
-        );
+            // Filter to only work events above confidence threshold
+            const workEventIds = new Set(
+                classifications
+                    .filter((c) => c.isWork && c.confidence >= WORK_CONFIDENCE_THRESHOLD)
+                    .map((c) => c.eventId)
+            );
 
-        const workEvents = events.filter((e) => workEventIds.has(e.id));
+            const workEvents = events.filter((e) => workEventIds.has(e.id));
 
-        if (workEvents.length === 0) {
-            // Update lastAutoSync timestamp
-            await updateLastSyncTimestamp(userId, calendarSettings);
+            if (workEvents.length === 0) {
+                return {
+                    imported: 0,
+                    message: "No work events found to import",
+                    totalEvents: events.length,
+                    workEvents: 0,
+                };
+            }
 
-            return NextResponse.json({
-                imported: 0,
-                message: "No work events found to import",
+            // Import only work events
+            const imported = await importIncomeEntriesFromCalendarForMonth({
+                year,
+                month,
+                userId,
+                accessToken,
+                calendarIds,
             });
-        }
 
-        // Import only work events
-        const imported = await importIncomeEntriesFromCalendarForMonth({
-            year,
-            month,
-            userId,
-            accessToken: googleAccount.accessToken,
-            calendarIds,
+            return {
+                imported,
+                totalEvents: events.length,
+                workEvents: workEvents.length,
+            };
         });
 
         // Update lastAutoSync timestamp
         await updateLastSyncTimestamp(userId, calendarSettings);
 
-        return NextResponse.json({
-            imported,
-            totalEvents: events.length,
-            workEvents: workEvents.length,
-        });
+        return NextResponse.json(result);
     } catch (error) {
         console.error("Sync failed:", error);
+
+        if (error instanceof GoogleTokenError) {
+            return NextResponse.json(
+                {
+                    error: error.message,
+                    requiresReconnect: error.requiresReconnect,
+                },
+                { status: error.requiresReconnect ? 401 : 500 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Sync failed" },
             { status: 500 }

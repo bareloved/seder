@@ -34,6 +34,8 @@ interface CalendarImportDialogProps {
   onClose: () => void;
   defaultYear: number;
   defaultMonth: number;
+  onImportStart?: () => void;
+  onImportEnd?: (success: boolean, error?: string) => void;
 }
 
 export function CalendarImportDialog({
@@ -41,6 +43,8 @@ export function CalendarImportDialog({
   onClose,
   defaultYear,
   defaultMonth,
+  onImportStart,
+  onImportEnd,
 }: CalendarImportDialogProps) {
   const [selectedYear, setSelectedYear] = React.useState(defaultYear);
   const [selectedMonth, setSelectedMonth] = React.useState(defaultMonth);
@@ -150,6 +154,8 @@ export function CalendarImportDialog({
   const handleImport = async (
     selectedEvents: Array<{ id: string; summary: string; date: string; clientName: string }>
   ) => {
+    onImportStart?.();
+
     const eventsToImport = selectedEvents.map((e) => ({
       calendarEventId: e.id,
       summary: e.summary,
@@ -164,8 +170,10 @@ export function CalendarImportDialog({
       setIsPreviewOpen(false);
       setFetchedEvents([]);
       setClassifications([]);
+      onImportEnd?.(true);
     } else {
-      toast.error(result.error || "שגיאה בייבוא");
+      // Don't show toast here - parent shows enhanced error
+      onImportEnd?.(false, result.error || "שגיאה לא ידועה");
     }
   };
 

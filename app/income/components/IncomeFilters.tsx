@@ -15,9 +15,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter } from "lucide-react";
+import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2 } from "lucide-react";
 import type { Category } from "@/db/schema";
 import { ViewMode } from "./ViewModeToggle";
+import { CategoryChip } from "./CategoryChip";
 import {
   Sheet,
   SheetContent,
@@ -47,6 +48,12 @@ interface IncomeFiltersProps {
   onMonthChange: (month: number) => void;
   onMonthYearChange?: (month: number, year: number) => void;
   monthPaymentStatuses: Record<number, MonthPaymentStatus>;
+  // Calendar import props
+  isGoogleConnected?: boolean;
+  onImportFromCalendar?: () => void;
+  // Loading states
+  isNavigating?: boolean;
+  isImporting?: boolean;
 }
 
 export function IncomeFilters({
@@ -65,6 +72,10 @@ export function IncomeFilters({
   onMonthChange,
   onMonthYearChange,
   monthPaymentStatuses,
+  isGoogleConnected,
+  onImportFromCalendar,
+  isNavigating,
+  isImporting,
 }: IncomeFiltersProps) {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
 
@@ -177,11 +188,11 @@ export function IncomeFilters({
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedCategories.length === 0 ? "כל הקטגוריות" : `${selectedCategories.length} נבחרו`}
+                {selectedCategories.length === 0 ? "קטגוריות" : `${selectedCategories.length} נבחרו`}
                 <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-40" align="start">
+            <DropdownMenuContent className="w-36" align="start">
               <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-start bg-slate-50">
                 כל הקטגוריות
               </DropdownMenuItem>
@@ -196,7 +207,7 @@ export function IncomeFilters({
                   }}
                   className="justify-between"
                 >
-                  <span>{category.name}</span>
+                  <CategoryChip category={category} size="sm" withIcon={true} />
                   {selectedCategories.includes(category.id) && <span className="text-emerald-500">✓</span>}
                 </DropdownMenuItem>
               ))}
@@ -207,11 +218,11 @@ export function IncomeFilters({
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedClient === "all" ? "כל הלקוחות" : selectedClient}
+                {selectedClient === "all" ? "לקוחות" : selectedClient}
                 <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-40 max-h-[300px] overflow-y-auto" align="start">
+            <DropdownMenuContent className="w-36 max-h-[300px] overflow-y-auto" align="start">
               <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-start bg-slate-50">
                 כל הלקוחות
               </DropdownMenuItem>
@@ -243,6 +254,27 @@ export function IncomeFilters({
       {/* Left Side: Date Selectors (Desktop) - Order: Month Year */}
       <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar">
 
+        {/* Calendar Import Button */}
+        {isGoogleConnected && onImportFromCalendar && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onImportFromCalendar}
+                disabled={isImporting}
+                className="h-9 gap-2 bg-white border-slate-200 text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden md:flex disabled:opacity-50"
+              >
+                {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+                <span className="text-sm">{isImporting ? "מייבא..." : "ייבוא"}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>ייבוא מהיומן</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* Month Selector Dropdown with Arrows */}
         <div className="flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 h-9">
           <Button
@@ -260,8 +292,14 @@ export function IncomeFilters({
                 variant="ghost"
                 className="h-8 min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
-                <span>{monthName}</span>
-                {getStatusDot(currentMonthStatus)}
+                {isNavigating ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                ) : (
+                  <>
+                    <span>{monthName}</span>
+                    {getStatusDot(currentMonthStatus)}
+                  </>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="min-w-[150px]" align="start">
@@ -368,7 +406,7 @@ export function IncomeFilters({
                       onCategoryChange(newCats);
                     }}
                   >
-                    {category.name}
+                    <CategoryChip category={category} size="sm" withIcon={true} />
                   </Button>
                 ))}
               </div>
@@ -396,6 +434,23 @@ export function IncomeFilters({
                     </Button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Mobile Calendar Import Button */}
+            {isGoogleConnected && onImportFromCalendar && (
+              <div className="pt-2 border-t border-slate-100">
+                <Button
+                  onClick={() => {
+                    onImportFromCalendar();
+                    setIsFilterSheetOpen(false);
+                  }}
+                  disabled={isImporting}
+                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+                >
+                  {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+                  <span>{isImporting ? "מייבא..." : "ייבוא מהיומן"}</span>
+                </Button>
               </div>
             )}
           </div>

@@ -153,7 +153,7 @@ export function IncomeTableQuickAdd({
           value={quickAddDescription}
           onChange={(e) => setQuickAddDescription(e.target.value)}
               placeholder="✨ הוסף עבודה חדשה..."
-              className="h-9 w-full text-sm border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 placeholder:text-emerald-400 dark:placeholder:text-emerald-500 rounded-lg transition-shadow"
+              className="h-9 w-full text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg transition-shadow"
           onKeyDown={handleQuickAddKeyDown}
         />
             {/* Keyboard hint - positioned absolutely inside input */}
@@ -179,7 +179,7 @@ export function IncomeTableQuickAdd({
             onChange={(e) => setQuickAddAmount(e.target.value)}
             onKeyDown={handleQuickAddKeyDown}
             placeholder="0"
-              className="h-9 w-full pl-8 text-sm border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 text-right placeholder:text-slate-400 rounded-lg transition-shadow"
+              className="h-9 w-full pl-8 text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-right placeholder:text-slate-400 rounded-lg transition-shadow"
             dir="rtl"
           />
         </div>
@@ -198,7 +198,7 @@ export function IncomeTableQuickAdd({
             }
             onKeyDown={handleQuickAddKeyDown}
             placeholder="שם לקוח"
-              className="h-9 w-full text-sm border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 placeholder:text-slate-400 rounded-lg transition-shadow"
+              className="h-9 w-full text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-slate-400 rounded-lg transition-shadow"
           />
             {/* Client Autocomplete dropdown */}
           {showClientSuggestions && filteredClients.length > 0 && (
@@ -221,7 +221,7 @@ export function IncomeTableQuickAdd({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-9 w-full text-sm border-emerald-200 dark:border-emerald-700/50 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-600 rounded-lg transition-shadow text-right justify-between font-normal px-3"
+                className="h-9 w-full text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-lg transition-shadow text-right justify-between font-normal px-3"
               >
                 <span className={cn("truncate", !quickAddCategory && "text-muted-foreground")}>
                   {quickAddCategory ? (

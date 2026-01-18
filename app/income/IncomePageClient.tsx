@@ -16,7 +16,12 @@ import {
   updateIncomeEntryAction,
   updateEntryStatusAction,
   deleteIncomeEntryAction,
+  batchUpdateEntriesAction,
+  batchDeleteEntriesAction,
 } from "./actions";
+import { BatchActionBar } from "./components/BatchActionBar";
+import { BatchEditDialog } from "./components/BatchEditDialog";
+import { BatchDeleteDialog } from "./components/BatchDeleteDialog";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
@@ -97,6 +102,7 @@ export default function IncomePageClient({
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = React.useTransition();
 
   const initialEntries = React.useMemo(
     () => dbEntries.map(dbEntryToUIEntry),
@@ -138,6 +144,23 @@ export default function IncomePageClient({
 
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
+  const [isImporting, setIsImporting] = React.useState(false);
+
+  const handleImportStart = React.useCallback(() => {
+    setIsImporting(true);
+  }, []);
+
+  const handleImportEnd = React.useCallback((success: boolean, error?: string) => {
+    setIsImporting(false);
+    if (!success && error) {
+      toast.error(
+        <div dir="rtl">
+          <div className="font-medium">הייבוא נכשל</div>
+          <div className="text-sm mt-1">נסה שוב או חבר מחדש את Google Calendar</div>
+        </div>
+      );
+    }
+  }, []);
 
   const [activeFilter, setActiveFilter] = React.useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -150,11 +173,200 @@ export default function IncomePageClient({
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [initialFocusField, setInitialFocusField] = React.useState<"description" | "amount" | "clientName" | undefined>();
 
+  // Selection state for batch operations
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = React.useState(false);
+  const [batchEditType, setBatchEditType] = React.useState<"client" | "category" | null>(null);
+  const [isBatchLoading, setIsBatchLoading] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
   const closeDialog = React.useCallback(() => {
     setIsDialogOpen(false);
     setSelectedEntry(null);
     setInitialFocusField(undefined);
   }, []);
+
+  // Clear selection when month/year changes
+  React.useEffect(() => {
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  }, [month, year]);
+
+  // Selection handlers
+  const toggleSelectionMode = React.useCallback(() => {
+    setIsSelectionMode((prev) => {
+      if (prev) {
+        // Exiting selection mode, clear selection
+        setSelectedIds(new Set());
+      }
+      return !prev;
+    });
+  }, []);
+
+  const toggleSelection = React.useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      // Auto-enter selection mode when first item is selected
+      if (newSet.size > 0 && !isSelectionMode) {
+        setIsSelectionMode(true);
+      }
+      return newSet;
+    });
+  }, [isSelectionMode]);
+
+  const clearSelection = React.useCallback(() => {
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  }, []);
+
+  // Batch action handlers
+  const batchMarkAsPaid = React.useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setIsBatchLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+
+    // Optimistic update
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (!selectedIds.has(e.id)) return e;
+        return {
+          ...e,
+          invoiceStatus: "paid" as const,
+          paymentStatus: "paid" as const,
+          paidDate: today,
+          amountPaid: e.amountGross,
+        };
+      })
+    );
+
+    const result = await batchUpdateEntriesAction(Array.from(selectedIds), { markAsPaid: true });
+
+    if (result.success) {
+      toast.success(`${result.updatedCount} עבודות סומנו כשולמו`);
+      clearSelection();
+    } else {
+      toast.error("שגיאה בעדכון");
+    }
+
+    setIsBatchLoading(false);
+  }, [selectedIds, clearSelection]);
+
+  const batchMarkInvoiceSent = React.useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setIsBatchLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+
+    // Optimistic update
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (!selectedIds.has(e.id)) return e;
+        return {
+          ...e,
+          invoiceStatus: "sent" as const,
+          invoiceSentDate: e.invoiceSentDate || today,
+        };
+      })
+    );
+
+    const result = await batchUpdateEntriesAction(Array.from(selectedIds), { markInvoiceSent: true });
+
+    if (result.success) {
+      toast.success(`${result.updatedCount} חשבוניות סומנו כנשלחו`);
+      clearSelection();
+    } else {
+      toast.error("שגיאה בעדכון");
+    }
+
+    setIsBatchLoading(false);
+  }, [selectedIds, clearSelection]);
+
+  const batchChangeClient = React.useCallback(async (clientName: string | null) => {
+    if (selectedIds.size === 0) return;
+    setIsBatchLoading(true);
+
+    // Optimistic update
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (!selectedIds.has(e.id)) return e;
+        return { ...e, clientName: clientName || "" };
+      })
+    );
+
+    const result = await batchUpdateEntriesAction(Array.from(selectedIds), { clientName: clientName || "" });
+
+    if (result.success) {
+      toast.success(`${result.updatedCount} עבודות עודכנו`);
+      clearSelection();
+    } else {
+      toast.error("שגיאה בעדכון");
+    }
+
+    setIsBatchLoading(false);
+    setBatchEditType(null);
+  }, [selectedIds, clearSelection]);
+
+  const batchChangeCategory = React.useCallback(async (categoryId: string | null) => {
+    if (selectedIds.size === 0) return;
+    setIsBatchLoading(true);
+
+    const selectedCategory = categoryId ? categories.find(c => c.id === categoryId) || null : null;
+
+    // Optimistic update
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (!selectedIds.has(e.id)) return e;
+        return { ...e, categoryId: categoryId, categoryData: selectedCategory };
+      })
+    );
+
+    const result = await batchUpdateEntriesAction(Array.from(selectedIds), { categoryId });
+
+    if (result.success) {
+      toast.success(`${result.updatedCount} עבודות עודכנו`);
+      clearSelection();
+    } else {
+      toast.error("שגיאה בעדכון");
+    }
+
+    setIsBatchLoading(false);
+    setBatchEditType(null);
+  }, [selectedIds, categories, clearSelection]);
+
+  const handleBatchEditConfirm = React.useCallback((value: string | null) => {
+    if (batchEditType === "client") {
+      batchChangeClient(value);
+    } else if (batchEditType === "category") {
+      batchChangeCategory(value);
+    }
+  }, [batchEditType, batchChangeClient, batchChangeCategory]);
+
+  const batchDelete = React.useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setIsBatchLoading(true);
+
+    const idsToDelete = Array.from(selectedIds);
+
+    // Optimistic update - remove entries from state
+    setEntries((prev) => prev.filter((e) => !selectedIds.has(e.id)));
+
+    const result = await batchDeleteEntriesAction(idsToDelete);
+
+    if (result.success) {
+      toast.success(`${result.deletedCount} עבודות נמחקו`);
+      clearSelection();
+    } else {
+      toast.error("שגיאה במחיקה");
+      // Revert on error - this will be handled by the next data refresh
+    }
+
+    setIsBatchLoading(false);
+    setShowDeleteConfirm(false);
+  }, [selectedIds, clearSelection]);
 
   const monthClients = React.useMemo(() => {
     const uniqueClients = new Set(
@@ -256,6 +468,15 @@ export default function IncomePageClient({
     });
   }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortColumn, sortDirection]);
 
+  // Define selectAll after filteredEntries to avoid circular dependency
+  const selectAll = React.useCallback(() => {
+    const allVisibleIds = filteredEntries.map((e) => e.id);
+    setSelectedIds(new Set(allVisibleIds));
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+    }
+  }, [filteredEntries, isSelectionMode]);
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isDialogOpen) closeDialog();
@@ -265,24 +486,30 @@ export default function IncomePageClient({
   }, [isDialogOpen, closeDialog]);
 
   const handleMonthChange = (newMonth: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("month", newMonth.toString());
-    params.set("year", year.toString());
-    router.push(`/income?${params.toString()}`);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("month", newMonth.toString());
+      params.set("year", year.toString());
+      router.push(`/income?${params.toString()}`);
+    });
   };
 
   const handleYearChange = (newYear: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("year", newYear.toString());
-    params.set("month", month.toString());
-    router.push(`/income?${params.toString()}`);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("year", newYear.toString());
+      params.set("month", month.toString());
+      router.push(`/income?${params.toString()}`);
+    });
   };
 
   const handleMonthYearChange = (newMonth: number, newYear: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("month", newMonth.toString());
-    params.set("year", newYear.toString());
-    router.push(`/income?${params.toString()}`);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("month", newMonth.toString());
+      params.set("year", newYear.toString());
+      router.push(`/income?${params.toString()}`);
+    });
   };
 
   const addEntry = React.useCallback(async (entry: any) => {
@@ -494,12 +721,18 @@ export default function IncomePageClient({
     onNewEntry: openNewEntryDialog,
     onEditCategories: () => setIsCategoryDialogOpen(true),
     onInlineEdit: inlineEditEntry,
+    // Selection props
+    isSelectionMode: isSelectionMode,
+    selectedIds: selectedIds,
+    onToggleSelection: toggleSelection,
+    onSelectAll: selectAll,
+    onToggleSelectionMode: toggleSelectionMode,
   };
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
 
-      <Navbar user={user} isGoogleConnected={isGoogleConnected} />
+      <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
 
@@ -527,7 +760,7 @@ export default function IncomePageClient({
               categories={categories}
               selectedCategories={selectedCategories}
               onCategoryChange={setSelectedCategories}
-              onNewEntry={openNewEntryDialog} // We can invoke the dialog or stick to inline
+              onNewEntry={openNewEntryDialog}
               year={year}
               month={month}
               onYearChange={handleYearChange}
@@ -536,6 +769,10 @@ export default function IncomePageClient({
               viewMode={viewMode}
               onViewModeChange={handleViewModeChange}
               monthPaymentStatuses={monthPaymentStatuses}
+              isGoogleConnected={isGoogleConnected}
+              onImportFromCalendar={() => setIsCalendarDialogOpen(true)}
+              isNavigating={isNavigating}
+              isImporting={isImporting}
             />
           </div>
 
@@ -591,12 +828,47 @@ export default function IncomePageClient({
         onClose={() => setIsCalendarDialogOpen(false)}
         defaultYear={year}
         defaultMonth={month}
+        onImportStart={handleImportStart}
+        onImportEnd={handleImportEnd}
       />
 
       <CategoryManagerDialog
         isOpen={isCategoryDialogOpen}
         onClose={() => setIsCategoryDialogOpen(false)}
         initialCategories={categories}
+      />
+
+      {/* Batch Action Bar */}
+      <BatchActionBar
+        selectedCount={selectedIds.size}
+        onMarkAsPaid={batchMarkAsPaid}
+        onMarkInvoiceSent={batchMarkInvoiceSent}
+        onChangeClient={() => setBatchEditType("client")}
+        onChangeCategory={() => setBatchEditType("category")}
+        onDelete={() => setShowDeleteConfirm(true)}
+        onClearSelection={clearSelection}
+        isLoading={isBatchLoading}
+      />
+
+      {/* Batch Edit Dialog */}
+      <BatchEditDialog
+        isOpen={batchEditType !== null}
+        onClose={() => setBatchEditType(null)}
+        editType={batchEditType}
+        selectedCount={selectedIds.size}
+        clients={allClients}
+        categories={categories}
+        onConfirm={handleBatchEditConfirm}
+        isLoading={isBatchLoading}
+      />
+
+      {/* Batch Delete Confirmation */}
+      <BatchDeleteDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        selectedCount={selectedIds.size}
+        onConfirm={batchDelete}
+        isLoading={isBatchLoading}
       />
 
     </div>

@@ -16,11 +16,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import {
@@ -31,9 +26,10 @@ import {
   StickyNote,
   CalendarDays,
   Settings2,
-  Copy,
-  MoreVertical
+  MoreVertical,
+  CheckSquare,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
@@ -65,8 +61,20 @@ export interface IncomeEntryRowProps {
   clients?: string[];
   categories?: Category[];
   columnOrder?: ColumnKey[];
+  columnWidths?: Partial<Record<ColumnKey, number>>;
   onEditCategories?: () => void;
+  // Selection props
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
+  onToggleSelectionMode?: () => void;
 }
+
+// Default widths (matching IncomeListView)
+const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  client: 110,
+  description: 300,
+};
 
 export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   entry,
@@ -80,7 +88,12 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   clients = [],
   categories = [],
   columnOrder,
+  columnWidths,
   onEditCategories,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
+  onToggleSelectionMode,
 }: IncomeEntryRowProps) {
   const effectiveOrder = columnOrder && columnOrder.length ? columnOrder : DEFAULT_COLUMN_ORDER;
   const displayStatus = getDisplayStatus(entry);
@@ -183,13 +196,29 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
   return (
     <div
-      className="group relative border-b border-transparent hover:bg-slate-50/50 transition-colors py-1"
+      className={cn(
+        "group relative border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 transition-colors py-1",
+        isSelected && "bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+      )}
     >
       {/* ═══════════════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (md+)
           match image style: clean white rows
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:flex md:items-center min-h-[50px]">
+        {/* Selection Checkbox - appears first (right side in RTL) when in selection mode */}
+        {isSelectionMode && onToggleSelection && (
+          <div
+            className="shrink-0 w-[40px] px-2 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelection(entry.id)}
+              className="h-5 w-5 border-2 border-slate-300 data-[state=checked]:bg-slate-800 data-[state=checked]:border-slate-800"
+            />
+          </div>
+        )}
         {effectiveOrder.map((colKey) => {
           const columnMap: Record<ColumnKey, React.ReactElement> = {
             date: (
@@ -230,7 +259,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             client: (
               <div
-                className="shrink-0 w-[110px] px-3 flex items-center"
+                className="shrink-0 px-3 flex items-center"
+                style={{ width: columnWidths?.client || DEFAULT_COLUMN_WIDTHS.client }}
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "clientName") {
                     e.stopPropagation();
@@ -249,7 +279,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       }}
                       onBlur={() => setTimeout(() => { setShowClientSuggestions(false); saveEdit(); }, 150)}
                       onKeyDown={handleKeyDown}
-                      className="h-9 text-base px-2 w-full text-right"
+                      className="h-9 text-base px-2 w-full text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                     {showClientSuggestions && filteredClients.length > 0 && (
                       <div className="absolute z-20 top-full right-0 w-40 bg-white shadow-lg rounded border border-slate-100 p-1">
@@ -280,7 +310,10 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             description: (
               <div
-                className="flex-1 min-w-0 max-w-[420px] px-3 flex items-center"
+                className="shrink-0 min-w-0 px-3 flex items-center"
+                style={{
+                  width: columnWidths?.description || DEFAULT_COLUMN_WIDTHS.description,
+                }}
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "description") {
                     e.stopPropagation();
@@ -297,7 +330,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-9 text-base w-full px-2 text-right"
+                    className="h-9 text-base w-full px-2 text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 ) : (
                   <div className="w-full text-right truncate">
@@ -374,7 +407,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             amount: (
               <div
-                className="shrink-0 w-[105px] px-3 flex items-center justify-start"
+                className="shrink-0 w-[120px] px-3 flex items-center justify-start"
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "amountGross") {
                     e.stopPropagation();
@@ -390,11 +423,11 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-9 text-base w-full px-2 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="h-9 text-base w-full px-2 text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     dir="rtl"
                   />
                 ) : (
-                  <span className="text-lg font-normal font-numbers text-slate-900" dir="ltr">
+                  <span className="text-lg font-normal font-numbers text-slate-900 whitespace-nowrap" dir="ltr">
                     <span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}
                   </span>
                 )}
@@ -406,7 +439,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <Badge variant="outline" className="text-xs font-normal border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 px-2.5 py-0.5 rounded-full">
+                        <Badge variant="outline" className={`text-xs font-normal px-2.5 py-0.5 rounded-full ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
                           {statusConfig.label}
                         </Badge>
                       </button>
@@ -425,31 +458,43 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               </div>
             ),
             actions: (
-              <div className="shrink-0 w-[110px] px-1.5 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}>
-                      <Trash2 className="h-3.5 w-3.5" />
+              <div className="shrink-0 w-[50px] px-1.5 flex items-center justify-end">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>מחיקה</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onMarkAsPaid(entry.id); }}>
-                      <Check className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>סמן כשולם</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); onDuplicate(entry); }}>
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent><p>שכפל</p></TooltipContent>
-                </Tooltip>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[150px]">
+                    <DropdownMenuItem onClick={() => onClick(entry)} className="gap-2 justify-end whitespace-nowrap">
+                      <span>עריכה</span>
+                      <Pencil className="h-3.5 w-3.5 shrink-0" />
+                    </DropdownMenuItem>
+                    {!isPaid && (
+                      <DropdownMenuItem onClick={() => onMarkAsPaid(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+                        <span>סמן כשולם</span>
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    {isDraft && (
+                      <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+                        <span>נשלחה חשבונית</span>
+                        <FileText className="h-3.5 w-3.5 shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    {onToggleSelectionMode && (
+                      <DropdownMenuItem onClick={onToggleSelectionMode} className="gap-2 justify-end whitespace-nowrap">
+                        <span>{isSelectionMode ? "בטל בחירה" : "בחר עבודות"}</span>
+                        <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onDelete(entry.id)} className="gap-2 justify-end whitespace-nowrap text-red-600 focus:text-red-600">
+                      <span>מחיקה</span>
+                      <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )
           };
@@ -476,7 +521,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             <span className="text-sm text-slate-500">{entry.clientName}</span>
           </div>
           {statusConfig && (
-            <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-slate-50 text-slate-500 border-slate-200">
+            <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
               {statusConfig.label}
             </Badge>
           )}

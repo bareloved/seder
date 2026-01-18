@@ -24,6 +24,7 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       scope: ["https://www.googleapis.com/auth/calendar.readonly"],
       accessType: "offline",
+      prompt: "consent", // Always request consent to ensure refresh token is provided
     },
   },
 });

@@ -67,19 +67,19 @@ export const STATUS_CONFIG: Record<DisplayStatus, {
 }> = {
   "בוצע": {
     label: "בוצע",
-    bgClass: "bg-slate-100 dark:bg-slate-800",
-    textClass: "text-slate-600 dark:text-slate-400",
-    borderClass: "border-slate-200 dark:border-slate-700",
+    bgClass: "bg-blue-50/60 dark:bg-blue-900/20",
+    textClass: "text-blue-600 dark:text-blue-400",
+    borderClass: "border-blue-200 dark:border-blue-800",
   },
   "נשלחה": {
     label: "נשלחה",
-    bgClass: "bg-amber-50 dark:bg-amber-900/30",
+    bgClass: "bg-amber-50/60 dark:bg-amber-900/20",
     textClass: "text-amber-700 dark:text-amber-400",
     borderClass: "border-amber-200 dark:border-amber-800",
   },
   "שולם": {
     label: "שולם",
-    bgClass: "bg-emerald-50 dark:bg-emerald-900/30",
+    bgClass: "bg-emerald-50/60 dark:bg-emerald-900/20",
     textClass: "text-emerald-700 dark:text-emerald-400",
     borderClass: "border-emerald-200 dark:border-emerald-800",
   },

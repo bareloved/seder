@@ -68,7 +68,7 @@ export function IncomeTableHeader({
             תיאור
           </SortableHeader>
         </TableHead>
-        <TableHead className="w-[90px] py-3 px-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+        <TableHead className="w-[120px] py-3 px-2 text-xs font-medium text-slate-600 dark:text-slate-400">
           <div className="flex justify-end">
             <SortableHeader column="amount" currentColumn={sortColumn} direction={sortDirection} onSort={onSort}>
               סכום

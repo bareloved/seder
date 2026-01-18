@@ -65,12 +65,12 @@ export function IncomeDetailDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
+        className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto font-sans"
         dir="rtl"
       >
-        <DialogHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
+        <DialogHeader className="pb-3 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {isNew ? "עבודה חדשה" : "פרטי עבודה"}
             </DialogTitle>
             {statusConfig && !isNew && (
