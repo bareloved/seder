@@ -150,20 +150,20 @@ export function QuickAddCard({
             value={quickAddDescription}
             onChange={(e) => setQuickAddDescription(e.target.value)}
             placeholder="הוסף עבודה חדשה..."
-            className="h-9 w-full border-transparent bg-transparent placeholder:text-slate-300 focus:bg-white focus:shadow-sm focus:border-slate-200 transition-all text-right text-base"
+            className="h-9 w-full border-transparent hover:border-slate-200 bg-white placeholder:text-slate-400 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-right text-base"
             onKeyDown={handleQuickAddKeyDown}
           />
         </div>
 
         {/* AMOUNT */}
-        <div className="shrink-0 w-[105px] px-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <div className="shrink-0 w-[120px] px-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₪</span>
             <Input
               value={quickAddAmount}
               onChange={(e) => setQuickAddAmount(e.target.value)}
               placeholder="0"
-              className="h-8 w-full border-transparent bg-transparent focus:bg-white focus:border-slate-200 text-right pl-6 text-base"
+              className="h-8 w-full border-transparent bg-transparent focus:bg-white focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-right pl-6 text-base"
               onKeyDown={handleQuickAddKeyDown}
               dir="rtl"
             />
@@ -186,7 +186,7 @@ export function QuickAddCard({
                 <Input
                   value={quickAddClient}
                   onChange={(e) => setQuickAddClient(e.target.value)}
-                  className="h-8 text-base mb-1"
+                  className="h-8 text-base mb-1 border-slate-200 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   placeholder="חפש לקוח..."
                   autoFocus
                   onBlur={() => setTimeout(() => setShowClientSuggestions(false), 200)}
@@ -215,7 +215,7 @@ export function QuickAddCard({
                   : "קטגוריה"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start" dir="rtl">
               {categories.filter(c => !c.isArchived).map(cat => (
                 <DropdownMenuItem key={cat.id} onClick={() => setQuickAddCategoryId(cat.id)}>
                   <CategoryChip category={cat} size="sm" withIcon={true} />

@@ -86,9 +86,9 @@ export function IncomeDetailEdit({
 
   const displayStatus = getDisplayStatus(editedEntry);
 
-  // Common input style for "editable text" feel
-  const inputClassName = "h-auto py-1 px-2 -mx-2 text-base font-semibold text-slate-900 dark:text-slate-100 bg-transparent border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:bg-white dark:focus:bg-slate-900 focus:ring-0 focus:border-slate-300 dark:focus:border-slate-600 focus-visible:ring-0 focus-visible:ring-offset-0 rounded transition-all shadow-none text-right";
-  const labelClassName = "text-xs font-medium text-slate-400 dark:text-slate-500 mb-1 flex items-center gap-1.5";
+  // Common input style - clearly editable with visible border
+  const inputClassName = "h-10 px-3 text-base font-sans text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-md transition-all shadow-none text-right placeholder:text-slate-400";
+  const labelClassName = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5";
 
   React.useEffect(() => {
     if (entry.id === "new" && initialFocusField) {
@@ -107,10 +107,10 @@ export function IncomeDetailEdit({
   }, [entry.id, initialFocusField]);
 
   return (
-    <div className="space-y-6 py-4">
-      
-      {/* Top Section: Main Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4 py-3 font-sans">
+
+      {/* Top Section: Client & Date */}
+      <div className="grid grid-cols-2 gap-4">
         {/* Client */}
         <div>
           <label className={labelClassName}>
@@ -134,10 +134,10 @@ export function IncomeDetailEdit({
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
                 className={cn(
                   inputClassName,
-                  "w-full justify-start text-right",
+                  "w-full justify-start text-right font-normal",
                   !editedEntry.date && "text-slate-400"
                 )}
               >
@@ -176,25 +176,29 @@ export function IncomeDetailEdit({
         />
       </div>
 
-      {/* Middle Section: Payment & Category */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Amount */}
+      {/* Amount & Category */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Amount with currency symbol */}
         <div>
           <label className={labelClassName}>
             <CreditCard className="h-3.5 w-3.5" />
             סכום
           </label>
-          <Input
-            ref={amountRef}
-            type="text"
-            inputMode="decimal"
-            pattern="[0-9]*"
-            value={editedEntry.amountGross}
-            onChange={(e) => handleChange({ amountGross: parseFloat(e.target.value) || 0 })}
-            onFocus={(e) => e.target.select()}
-            className={cn(inputClassName, "text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none")}
-            dir="rtl"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">₪</span>
+            <Input
+              ref={amountRef}
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*"
+              value={editedEntry.amountGross || ""}
+              onChange={(e) => handleChange({ amountGross: parseFloat(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
+              className={cn(inputClassName, "pl-8 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none")}
+              dir="rtl"
+            />
+          </div>
         </div>
 
         {/* Category */}
@@ -206,17 +210,17 @@ export function IncomeDetailEdit({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
+                variant="outline"
                 className={cn(
                   inputClassName,
-                  "w-full justify-between font-normal px-2"
+                  "w-full justify-between font-normal"
                 )}
               >
                 <span className="flex-1 text-right">
                   {editedEntry.categoryData ? (
-                    <CategoryChip category={editedEntry.categoryData} size="sm" withIcon={true} className="mr-1" />
+                    <CategoryChip category={editedEntry.categoryData} size="sm" withIcon={true} />
                   ) : editedEntry.category ? (
-                    <CategoryChip legacyCategory={editedEntry.category} size="sm" withIcon={true} className="mr-1" />
+                    <CategoryChip legacyCategory={editedEntry.category} size="sm" withIcon={true} />
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500">בחר קטגוריה</span>
                   )}
@@ -224,7 +228,7 @@ export function IncomeDetailEdit({
                 <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="end">
+            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="start" dir="rtl">
               {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
                   key={cat.id}
@@ -247,13 +251,12 @@ export function IncomeDetailEdit({
         <textarea
           value={editedEntry.notes || ""}
           onChange={(e) => handleChange({ notes: e.target.value })}
-          placeholder="הוסף הערות..."
-          className="w-full h-20 text-base p-3 border-transparent bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md resize-none focus:outline-none focus:ring-0 transition-colors"
+          className="w-full h-20 text-base font-sans p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 rounded-md resize-none focus:outline-none focus:ring-0 transition-all"
         />
       </div>
 
       {/* Footer Actions */}
-      <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
         {/* Save Changes (only if dirty) */}
         {isDirty && (
           <Button

@@ -252,7 +252,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       }}
                       onBlur={() => setTimeout(() => { setShowClientSuggestions(false); saveEdit(); }, 150)}
                       onKeyDown={handleKeyDown}
-                      className="h-9 text-base px-2 w-full text-right"
+                      className="h-9 text-base px-2 w-full text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
                     {showClientSuggestions && filteredClients.length > 0 && (
                       <div className="absolute z-20 top-full right-0 w-40 bg-white shadow-lg rounded border border-slate-100 p-1">
@@ -303,7 +303,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-9 text-base w-full px-2 text-right"
+                    className="h-9 text-base w-full px-2 text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 ) : (
                   <div className="w-full text-right truncate">
@@ -380,7 +380,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             amount: (
               <div
-                className="shrink-0 w-[105px] px-3 flex items-center justify-start"
+                className="shrink-0 w-[120px] px-3 flex items-center justify-start"
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "amountGross") {
                     e.stopPropagation();
@@ -396,11 +396,11 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveEdit}
                     onKeyDown={handleKeyDown}
-                    className="h-9 text-base w-full px-2 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="h-9 text-base w-full px-2 text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     dir="rtl"
                   />
                 ) : (
-                  <span className="text-lg font-normal font-numbers text-slate-900" dir="ltr">
+                  <span className="text-lg font-normal font-numbers text-slate-900 whitespace-nowrap" dir="ltr">
                     <span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}
                   </span>
                 )}
