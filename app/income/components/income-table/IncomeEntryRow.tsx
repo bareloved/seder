@@ -185,7 +185,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
   return (
     <div
-      className="group relative border-b border-transparent hover:bg-slate-50/50 transition-colors py-1"
+      className="group relative border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 transition-colors py-1"
     >
       {/* ═══════════════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (md+)
@@ -412,7 +412,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button className="focus:outline-none">
-                        <Badge variant="outline" className="text-xs font-normal border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100 px-2.5 py-0.5 rounded-full">
+                        <Badge variant="outline" className={`text-xs font-normal px-2.5 py-0.5 rounded-full ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
                           {statusConfig.label}
                         </Badge>
                       </button>
@@ -488,7 +488,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             <span className="text-sm text-slate-500">{entry.clientName}</span>
           </div>
           {statusConfig && (
-            <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-slate-50 text-slate-500 border-slate-200">
+            <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
               {statusConfig.label}
             </Badge>
           )}
