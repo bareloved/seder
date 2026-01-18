@@ -661,6 +661,10 @@ export default function IncomePageClient({
           const selectedCategory = categories.find(c => c.id === value) || null;
           return { ...e, categoryId: value as string || null, categoryData: selectedCategory };
         }
+        if (field === "clientId") {
+          // Convert empty string to null for clientId
+          return { ...e, clientId: value as string || null };
+        }
         return { ...e, [field]: value };
       })
     );
@@ -824,6 +828,7 @@ export default function IncomePageClient({
         onMarkAsPaid={markAsPaid}
         onMarkInvoiceSent={markInvoiceSent}
         categories={categories}
+        clients={clientRecords}
         initialFocusField={initialFocusField}
       />
 

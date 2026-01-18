@@ -585,6 +585,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 onDelete={onDelete}
                 onInlineEdit={onInlineEdit}
                 clients={clients}
+                clientRecords={clientRecords}
                 categories={categories}
                 columnOrder={columnOrder}
                 columnWidths={columnWidths}

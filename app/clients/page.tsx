@@ -22,6 +22,7 @@ export default async function ClientsPage() {
     <ClientsPageClient
       initialClients={clients}
       initialDuplicates={duplicates}
+      user={session.user}
     />
   );
 }

@@ -33,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import {
   formatCurrency,
   formatDate,
@@ -44,6 +44,7 @@ import {
   getWeekday,
 } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
+import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
 
 type EditableField = "date" | "description" | "amountGross" | "clientName" | "category" | null;
 type ColumnKey = "date" | "description" | "client" | "category" | "amount" | "status" | "actions";
@@ -59,6 +60,7 @@ export interface IncomeEntryRowProps {
   onDelete: (id: string) => void;
   onInlineEdit?: (id: string, field: string, value: string | number) => void;
   clients?: string[];
+  clientRecords?: Client[];
   categories?: Category[];
   columnOrder?: ColumnKey[];
   columnWidths?: Partial<Record<ColumnKey, number>>;
@@ -86,6 +88,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   onDelete,
   onInlineEdit,
   clients = [],
+  clientRecords = [],
   categories = [],
   columnOrder,
   columnWidths,
@@ -261,47 +264,27 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               <div
                 className="shrink-0 px-3 flex items-center"
                 style={{ width: columnWidths?.client || DEFAULT_COLUMN_WIDTHS.client }}
-                onClick={(e) => {
-                  if (onInlineEdit && editingField !== "clientName") {
-                    e.stopPropagation();
-                    startEditing("clientName", entry.clientName);
-                  }
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
-                {editingField === "clientName" ? (
-                  <div className="relative w-full">
-                    <Input
-                      ref={inputRef}
-                      value={editValue}
-                      onChange={(e) => {
-                        setEditValue(e.target.value);
-                        setShowClientSuggestions(true);
-                      }}
-                      onBlur={() => setTimeout(() => { setShowClientSuggestions(false); saveEdit(); }, 150)}
-                      onKeyDown={handleKeyDown}
-                      className="h-9 text-base px-2 w-full text-right border-slate-200 focus:border-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                    {showClientSuggestions && filteredClients.length > 0 && (
-                      <div className="absolute z-20 top-full right-0 w-40 bg-white shadow-lg rounded border border-slate-100 p-1">
-                        {filteredClients.map((client) => (
-                          <div
-                            key={client}
-                            className="px-2 py-1 text-xs hover:bg-slate-50 cursor-pointer text-right"
-                            onClick={(e) => { e.stopPropagation(); selectClient(client); }}
-                          >
-                            {client}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {onInlineEdit && clientRecords.length > 0 ? (
+                  <ClientDropdown
+                    clients={clientRecords}
+                    selectedClientId={entry.clientId}
+                    selectedClientName={entry.clientName}
+                    onSelect={(client, name) => {
+                      onInlineEdit(entry.id, "clientId", client?.id ?? "");
+                      onInlineEdit(entry.id, "clientName", name);
+                    }}
+                    className="h-8 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
+                    compact={true}
+                    allowCreate={true}
+                  />
                 ) : (
                   <span className={cn(
                     "text-base truncate block w-full text-right",
                     entry.clientName
                       ? "text-slate-900"
-                      : "text-slate-400 dark:text-slate-500 opacity-50",
-                    onInlineEdit && entry.clientName && "hover:text-slate-600 cursor-pointer"
+                      : "text-slate-400 dark:text-slate-500 opacity-50"
                   )}>
                     {entry.clientName || "-"}
                   </span>
