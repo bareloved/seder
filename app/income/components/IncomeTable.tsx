@@ -44,6 +44,12 @@ interface IncomeTableProps {
   // View mode props
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  // Selection props
+  isSelectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
+  onSelectAll?: () => void;
+  onToggleSelectionMode?: () => void;
 }
 
 export const IncomeTable = React.memo(function IncomeTable({
@@ -77,6 +83,12 @@ export const IncomeTable = React.memo(function IncomeTable({
   // View mode
   viewMode,
   onViewModeChange,
+  // Selection props
+  isSelectionMode,
+  selectedIds,
+  onToggleSelection,
+  onSelectAll,
+  onToggleSelectionMode,
 }: IncomeTableProps) {
   // Common props for both views
   const viewProps = {
@@ -108,6 +120,12 @@ export const IncomeTable = React.memo(function IncomeTable({
     onEditCategories,
     viewMode,
     onViewModeChange,
+    // Selection props
+    isSelectionMode,
+    selectedIds,
+    onToggleSelection,
+    onSelectAll,
+    onToggleSelectionMode,
   };
 
   // Render the appropriate view based on viewMode

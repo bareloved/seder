@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { User, ClipboardList, Settings, LogOut, CalendarPlus } from "lucide-react";
+import { User, ClipboardList, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,9 +13,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { CalendarImportDialog } from "@/app/income/components/CalendarImportDialog";
 
 interface NavbarProps {
     user?: {
@@ -23,17 +21,11 @@ interface NavbarProps {
         email?: string;
         image?: string | null;
     };
-    isGoogleConnected?: boolean;
 }
 
-export function Navbar({ user, isGoogleConnected }: NavbarProps) {
+export function Navbar({ user }: NavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [isCalendarDialogOpen, setIsCalendarDialogOpen] = React.useState(false);
-
-    const currentDate = new Date();
-    const defaultYear = currentDate.getFullYear();
-    const defaultMonth = currentDate.getMonth() + 1;
 
     const handleLogout = async () => {
         await authClient.signOut({
@@ -46,13 +38,12 @@ export function Navbar({ user, isGoogleConnected }: NavbarProps) {
     };
 
     const navItems = [
-        { label: "תשלומים", href: "/income" },
+        { label: "הכנסות", href: "/income" },
         { label: "הוצאות", href: "/expenses", comingSoon: true },
-        { label: "אנליטיקה", href: "/analytics" },
+        { label: "דוחות", href: "/analytics" },
     ];
 
     return (
-    <>
         <header className="bg-brand-primary text-white shadow-sm sticky top-0 z-50 h-[80px]" dir="rtl">
             <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 h-full flex items-center justify-between">
 
@@ -98,19 +89,8 @@ export function Navbar({ user, isGoogleConnected }: NavbarProps) {
                     </nav>
                 </div>
 
-                {/* Left Side: Import Button & User Profile Dropdown */}
+                {/* Left Side: User Profile Dropdown */}
                 <div className="flex items-center gap-4 pl-2">
-                    {isGoogleConnected && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsCalendarDialogOpen(true)}
-                            className="text-white/80 hover:text-white hover:bg-white/10"
-                        >
-                            <CalendarPlus className="h-4 w-4 ml-2" />
-                            ייבוא מיומן
-                        </Button>
-                    )}
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                             <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
@@ -158,13 +138,5 @@ export function Navbar({ user, isGoogleConnected }: NavbarProps) {
             </div>
 
         </header>
-
-        <CalendarImportDialog
-            isOpen={isCalendarDialogOpen}
-            onClose={() => setIsCalendarDialogOpen(false)}
-            defaultYear={defaultYear}
-            defaultMonth={defaultMonth}
-        />
-    </>
     );
 }

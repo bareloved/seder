@@ -4,7 +4,14 @@ import * as React from "react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, ListX, Plus, X, GripVertical, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CalendarDays, ListX, Plus, X, GripVertical, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, CheckSquare } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
 import type { Category } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
@@ -49,7 +56,7 @@ const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   description: "shrink-0 min-w-0 px-3", // Width set via inline style
   client: "shrink-0 px-3", // Width set via inline style
   category: "w-[100px] shrink-0 px-2",
-  amount: "w-[105px] shrink-0 px-3",
+  amount: "w-[120px] shrink-0 px-3",
   status: "w-[100px] shrink-0 px-2",
   actions: "w-[110px] shrink-0 px-1.5",
 };
@@ -95,6 +102,12 @@ interface IncomeListViewProps {
   // View mode props
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  // Selection props
+  isSelectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
+  onSelectAll?: () => void;
+  onToggleSelectionMode?: () => void;
 }
 
 // Empty state component (shared between mobile and desktop)
@@ -195,6 +208,12 @@ export const IncomeListView = React.memo(function IncomeListView({
   // View mode props
   viewMode,
   onViewModeChange,
+  // Selection props
+  isSelectionMode = false,
+  selectedIds = new Set(),
+  onToggleSelection,
+  onSelectAll,
+  onToggleSelectionMode,
 }: IncomeListViewProps) {
   const hasNoData = entries.length === 0 && !hasActiveFilter;
   const hasFilteredAway = entries.length === 0 && hasActiveFilter;
@@ -437,7 +456,26 @@ export const IncomeListView = React.memo(function IncomeListView({
     category: <SortableColumnHeader columnKey="category" label="קטגוריה" />,
     amount: <SortableColumnHeader columnKey="amount" label="סכום" className="justify-start" />,
     status: <SortableColumnHeader columnKey="status" label="סטטוס" className="justify-center" />,
-    actions: <div className="text-center">פעולות</div>,
+    actions: (
+      <div className="flex items-center justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+              <span>פעולות</span>
+              <MoreVertical className="h-3 w-3 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {onToggleSelectionMode && (
+              <DropdownMenuItem onClick={onToggleSelectionMode} className="gap-2 justify-end">
+                <span>{isSelectionMode ? "בטל בחירה" : "בחר עבודות"}</span>
+                <CheckSquare className="h-4 w-4" />
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    ),
   };
 
   return (
@@ -460,6 +498,16 @@ export const IncomeListView = React.memo(function IncomeListView({
 
         {/* Column Headers - draggable (desktop only) */}
         <div className={`flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none ${resizing ? "cursor-col-resize" : ""}`}>
+          {/* Select All Checkbox */}
+          {isSelectionMode && onSelectAll && (
+            <div className="shrink-0 w-[40px] px-2 flex items-center justify-center">
+              <Checkbox
+                checked={selectedIds.size > 0 && selectedIds.size === entries.length ? true : selectedIds.size > 0 ? "indeterminate" : false}
+                onCheckedChange={onSelectAll}
+                className="h-4 w-4 border-2 border-slate-300 data-[state=checked]:bg-slate-800 data-[state=checked]:border-slate-800 data-[state=indeterminate]:bg-slate-400 data-[state=indeterminate]:border-slate-400"
+              />
+            </div>
+          )}
           {columnOrder.map((key) => {
             const isResizable = RESIZABLE_COLUMNS.includes(key);
             const dynamicWidth = isResizable ? columnWidths[key] || DEFAULT_COLUMN_WIDTHS[key] : undefined;
@@ -539,6 +587,10 @@ export const IncomeListView = React.memo(function IncomeListView({
                 columnOrder={columnOrder}
                 columnWidths={columnWidths}
                 onEditCategories={onEditCategories}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedIds.has(entry.id)}
+                onToggleSelection={onToggleSelection}
+                onToggleSelectionMode={onToggleSelectionMode}
               />
             ))}
 

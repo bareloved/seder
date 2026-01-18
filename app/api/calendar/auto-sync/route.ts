@@ -1,10 +1,11 @@
 import { db } from "@/db/client";
-import { account, userSettings, incomeEntries, type NewIncomeEntry } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { userSettings, incomeEntries, type NewIncomeEntry } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { listEventsForMonth, GoogleCalendarAuthError } from "@/lib/googleCalendar";
+import { listEventsForMonth } from "@/lib/googleCalendar";
 import { classifyByRules, DEFAULT_RULES, type ClassificationRule } from "@/lib/classificationRules";
 import { DEFAULT_VAT_RATE } from "@/app/income/types";
+import { withGoogleToken, GoogleTokenError } from "@/lib/googleTokens";
 
 const WORK_CONFIDENCE_THRESHOLD = 0.7;
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -88,26 +89,6 @@ async function syncUserCalendar(
     userId: string,
     calendarSettings: Record<string, unknown>
 ): Promise<SyncResult> {
-    // Get user's Google account
-    const [googleAccount] = await db
-        .select()
-        .from(account)
-        .where(
-            and(
-                eq(account.userId, userId),
-                eq(account.providerId, "google")
-            )
-        )
-        .limit(1);
-
-    if (!googleAccount?.accessToken) {
-        return {
-            userId,
-            imported: 0,
-            error: "No Google account connected",
-        };
-    }
-
     const calendarIds = (calendarSettings.selectedCalendarIds as string[]) || ["primary"];
     const rules = (calendarSettings.rules as ClassificationRule[]) || DEFAULT_RULES;
 
@@ -117,74 +98,77 @@ async function syncUserCalendar(
     const month = now.getMonth() + 1;
 
     try {
-        // Fetch calendar events
-        const events = await listEventsForMonth(year, month, googleAccount.accessToken, calendarIds);
+        // Use withGoogleToken to handle token refresh automatically
+        const imported = await withGoogleToken(userId, async (accessToken) => {
+            // Fetch calendar events
+            const events = await listEventsForMonth(year, month, accessToken, calendarIds);
 
-        if (events.length === 0) {
-            await updateLastSyncTimestamp(userId, calendarSettings);
-            return { userId, imported: 0 };
-        }
+            if (events.length === 0) {
+                return 0;
+            }
 
-        // Classify events
-        const classifications = classifyByRules(
-            events.map((e) => ({ id: e.id, summary: e.summary, calendarId: e.calendarId })),
-            rules
-        );
+            // Classify events
+            const classifications = classifyByRules(
+                events.map((e) => ({ id: e.id, summary: e.summary, calendarId: e.calendarId })),
+                rules
+            );
 
-        // Filter to only work events above confidence threshold
-        const workEventIds = new Set(
-            classifications
-                .filter((c) => c.isWork && c.confidence >= WORK_CONFIDENCE_THRESHOLD)
-                .map((c) => c.eventId)
-        );
+            // Filter to only work events above confidence threshold
+            const workEventIds = new Set(
+                classifications
+                    .filter((c) => c.isWork && c.confidence >= WORK_CONFIDENCE_THRESHOLD)
+                    .map((c) => c.eventId)
+            );
 
-        const workEvents = events.filter((e) => workEventIds.has(e.id));
+            const workEvents = events.filter((e) => workEventIds.has(e.id));
 
-        if (workEvents.length === 0) {
-            await updateLastSyncTimestamp(userId, calendarSettings);
-            return { userId, imported: 0 };
-        }
+            if (workEvents.length === 0) {
+                return 0;
+            }
 
-        // Prepare rows to insert
-        const rowsToInsert: NewIncomeEntry[] = workEvents.map((event) => {
-            const dateString = event.start.toISOString().split("T")[0];
-            return {
-                date: dateString,
-                description: event.summary || "אירוע מהיומן",
-                clientName: "",
-                amountGross: "0",
-                amountPaid: "0",
-                vatRate: DEFAULT_VAT_RATE.toString(),
-                includesVat: true,
-                invoiceStatus: "draft" as const,
-                paymentStatus: "unpaid" as const,
-                calendarEventId: event.id,
-                notes: "יובא אוטומטית מהיומן",
-                userId,
-            };
+            // Prepare rows to insert
+            const rowsToInsert: NewIncomeEntry[] = workEvents.map((event) => {
+                const dateString = event.start.toISOString().split("T")[0];
+                return {
+                    date: dateString,
+                    description: event.summary || "אירוע מהיומן",
+                    clientName: "",
+                    amountGross: "0",
+                    amountPaid: "0",
+                    vatRate: DEFAULT_VAT_RATE.toString(),
+                    includesVat: true,
+                    invoiceStatus: "draft" as const,
+                    paymentStatus: "unpaid" as const,
+                    calendarEventId: event.id,
+                    notes: "יובא אוטומטית מהיומן",
+                    userId,
+                };
+            });
+
+            // Insert with deduplication
+            const result = await db
+                .insert(incomeEntries)
+                .values(rowsToInsert)
+                .onConflictDoNothing({
+                    target: [incomeEntries.userId, incomeEntries.calendarEventId],
+                })
+                .returning({ id: incomeEntries.id });
+
+            return result.length;
         });
-
-        // Insert with deduplication
-        const result = await db
-            .insert(incomeEntries)
-            .values(rowsToInsert)
-            .onConflictDoNothing({
-                target: [incomeEntries.userId, incomeEntries.calendarEventId],
-            })
-            .returning({ id: incomeEntries.id });
-
-        const imported = result.length;
 
         // Update lastAutoSync timestamp
         await updateLastSyncTimestamp(userId, calendarSettings);
 
         return { userId, imported };
     } catch (error) {
-        if (error instanceof GoogleCalendarAuthError) {
+        if (error instanceof GoogleTokenError) {
             return {
                 userId,
                 imported: 0,
-                error: "Token expired or revoked",
+                error: error.requiresReconnect
+                    ? "Token expired or revoked - user needs to reconnect"
+                    : error.message,
             };
         }
         throw error;

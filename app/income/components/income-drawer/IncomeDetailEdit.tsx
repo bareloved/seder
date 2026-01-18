@@ -228,7 +228,7 @@ export function IncomeDetailEdit({
                 <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="start" dir="rtl">
+            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="start">
               {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
                   key={cat.id}

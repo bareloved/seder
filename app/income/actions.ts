@@ -3,9 +3,6 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { db } from "@/db/client";
-import { account } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
 import {
   createIncomeEntry,
   updateIncomeEntry,
@@ -14,10 +11,14 @@ import {
   revertToDraft,
   revertToSent,
   deleteIncomeEntry,
+  batchUpdateIncomeEntries,
+  batchDeleteIncomeEntries,
   type CreateIncomeEntryInput,
   type UpdateIncomeEntryInput,
+  type BatchUpdateInput,
 } from "./data";
 import { createIncomeEntrySchema, updateIncomeEntrySchema } from "./schemas";
+import { getValidGoogleAccessToken, GoogleTokenError } from "@/lib/googleTokens";
 
 // Helper to get authenticated user
 async function getUserId() {
@@ -25,22 +26,6 @@ async function getUserId() {
     headers: await headers(),
   });
   return session?.user?.id;
-}
-
-// Helper to get Google Access Token
-async function getGoogleAccessToken(userId: string) {
-  // Find the Google account linked to this user
-  const [googleAccount] = await db
-    .select()
-    .from(account)
-    .where(and(eq(account.userId, userId), eq(account.providerId, "google")))
-    .limit(1);
-
-  if (!googleAccount || !googleAccount.accessToken) {
-    return null;
-  }
-
-  return googleAccount.accessToken;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -254,14 +239,12 @@ export async function fetchCalendarEventsAction(
   calendarIds: string[] = ["primary"]
 ) {
   const userId = await getUserId();
-  if (!userId) return { success: false, error: "Unauthorized", events: [] };
-
-  const accessToken = await getGoogleAccessToken(userId);
-  if (!accessToken) {
-    return { success: false, error: "Google Calendar not connected", events: [] };
-  }
+  if (!userId) return { success: false, error: "Unauthorized", events: [], requiresReconnect: false };
 
   try {
+    // Get a valid access token (with auto-refresh)
+    const accessToken = await getValidGoogleAccessToken(userId);
+
     const { listEventsForMonth } = await import("@/lib/googleCalendar");
     const events = await listEventsForMonth(year, month, accessToken, calendarIds);
 
@@ -274,13 +257,24 @@ export async function fetchCalendarEventsAction(
       calendarId: e.calendarId,
     }));
 
-    return { success: true, events: serializedEvents };
+    return { success: true, events: serializedEvents, requiresReconnect: false };
   } catch (error) {
     console.error("Failed to fetch calendar events:", error);
+
+    if (error instanceof GoogleTokenError) {
+      return {
+        success: false,
+        error: error.message,
+        events: [],
+        requiresReconnect: error.requiresReconnect,
+      };
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch events",
-      events: []
+      events: [],
+      requiresReconnect: false,
     };
   }
 }
@@ -319,6 +313,7 @@ export async function importSelectedEventsAction(
           includesVat: true,
           invoiceStatus: "draft",
           paymentStatus: "unpaid",
+          calendarEventId: event.calendarEventId,
           notes: "יובא מהיומן",
           userId,
         });
@@ -339,6 +334,98 @@ export async function importSelectedEventsAction(
       success: false,
       error: error instanceof Error ? error.message : "Import failed",
       count: 0
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Batch Update Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BatchUpdatePayload {
+  clientName?: string;
+  categoryId?: string | null;
+  markAsPaid?: boolean;
+  markInvoiceSent?: boolean;
+}
+
+/**
+ * Batch update multiple income entries
+ */
+export async function batchUpdateEntriesAction(
+  ids: string[],
+  updates: BatchUpdatePayload
+): Promise<{ success: boolean; updatedCount: number; error?: string }> {
+  const userId = await getUserId();
+  if (!userId) return { success: false, updatedCount: 0, error: "Unauthorized" };
+
+  if (ids.length === 0) {
+    return { success: true, updatedCount: 0 };
+  }
+
+  try {
+    // Transform payload to BatchUpdateInput
+    const batchUpdates: BatchUpdateInput = {};
+
+    if (updates.clientName !== undefined) {
+      batchUpdates.clientName = updates.clientName;
+    }
+
+    if (updates.categoryId !== undefined) {
+      batchUpdates.categoryId = updates.categoryId;
+    }
+
+    if (updates.markAsPaid) {
+      batchUpdates.paymentStatus = "paid";
+      batchUpdates.invoiceStatus = "paid";
+    }
+
+    if (updates.markInvoiceSent && !updates.markAsPaid) {
+      batchUpdates.invoiceStatus = "sent";
+    }
+
+    const updatedCount = await batchUpdateIncomeEntries(ids, userId, batchUpdates);
+
+    revalidatePath("/income");
+    updateTag("income-data");
+
+    return { success: true, updatedCount };
+  } catch (error) {
+    console.error("Failed to batch update entries:", error);
+    return {
+      success: false,
+      updatedCount: 0,
+      error: error instanceof Error ? error.message : "Batch update failed"
+    };
+  }
+}
+
+/**
+ * Batch delete multiple income entries
+ */
+export async function batchDeleteEntriesAction(
+  ids: string[]
+): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+  const userId = await getUserId();
+  if (!userId) return { success: false, deletedCount: 0, error: "Unauthorized" };
+
+  if (ids.length === 0) {
+    return { success: true, deletedCount: 0 };
+  }
+
+  try {
+    const deletedCount = await batchDeleteIncomeEntries(ids, userId);
+
+    revalidatePath("/income");
+    updateTag("income-data");
+
+    return { success: true, deletedCount };
+  } catch (error) {
+    console.error("Failed to batch delete entries:", error);
+    return {
+      success: false,
+      deletedCount: 0,
+      error: error instanceof Error ? error.message : "Batch delete failed"
     };
   }
 }

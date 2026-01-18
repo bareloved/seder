@@ -1,6 +1,6 @@
 import { db } from "@/db/client";
 import { incomeEntries, account, categories, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
-import { eq, and, gte, lte, asc, desc, sql, count, lt } from "drizzle-orm";
+import { eq, and, gte, lte, asc, desc, sql, count, lt, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { Currency } from "./currency";
 import { DEFAULT_VAT_RATE } from "./types";
@@ -397,6 +397,7 @@ export interface CreateIncomeEntryInput {
   paymentStatus?: "unpaid" | "partial" | "paid";
   category?: string; // Legacy - kept for backward compatibility
   categoryId?: string; // New FK to categories table
+  calendarEventId?: string; // Google Calendar event ID for deduplication
   notes?: string;
   invoiceSentDate?: string;
   paidDate?: string;
@@ -418,6 +419,7 @@ export async function createIncomeEntry(input: CreateIncomeEntryInput): Promise<
       paymentStatus: input.paymentStatus ?? "unpaid",
       category: input.category, // Legacy
       categoryId: input.categoryId, // New FK
+      calendarEventId: input.calendarEventId,
       notes: input.notes,
       invoiceSentDate: input.invoiceSentDate,
       paidDate: input.paidDate,
@@ -646,4 +648,140 @@ export async function importIncomeEntriesFromCalendarForMonth({
       error instanceof Error ? error.message : "Unknown error during calendar import"
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Batch Operations
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BatchUpdateInput {
+  clientName?: string;
+  categoryId?: string | null;
+  invoiceStatus?: "sent" | "paid";
+  paymentStatus?: "paid";
+  invoiceSentDate?: string | null;
+  paidDate?: string | null;
+}
+
+/**
+ * Batch update multiple income entries
+ * Returns the count of updated rows
+ */
+export async function batchUpdateIncomeEntries(
+  ids: string[],
+  userId: string,
+  updates: BatchUpdateInput
+): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const today = getTodayString();
+  const updateData: Partial<NewIncomeEntry> = {};
+
+  // Apply updates based on what's provided
+  if (updates.clientName !== undefined) {
+    updateData.clientName = updates.clientName;
+  }
+
+  if (updates.categoryId !== undefined) {
+    updateData.categoryId = updates.categoryId ?? undefined;
+  }
+
+  if (updates.invoiceStatus !== undefined) {
+    updateData.invoiceStatus = updates.invoiceStatus;
+
+    // If marking as sent, set invoiceSentDate
+    if (updates.invoiceStatus === "sent" && updates.invoiceSentDate === undefined) {
+      updateData.invoiceSentDate = today;
+    }
+  }
+
+  if (updates.paymentStatus !== undefined) {
+    updateData.paymentStatus = updates.paymentStatus;
+  }
+
+  if (updates.invoiceSentDate !== undefined) {
+    updateData.invoiceSentDate = updates.invoiceSentDate ?? undefined;
+  }
+
+  if (updates.paidDate !== undefined) {
+    updateData.paidDate = updates.paidDate ?? undefined;
+  }
+
+  updateData.updatedAt = new Date();
+
+  // For "mark as paid", we need special handling to set amountPaid = amountGross
+  // This requires fetching entries first if paymentStatus is being set to "paid"
+  if (updates.paymentStatus === "paid") {
+    // Fetch the entries to get their amountGross values
+    const entries = await db
+      .select({ id: incomeEntries.id, amountGross: incomeEntries.amountGross })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          inArray(incomeEntries.id, ids)
+        )
+      );
+
+    // Update each entry individually to set amountPaid = amountGross
+    let updatedCount = 0;
+    for (const entry of entries) {
+      const result = await db
+        .update(incomeEntries)
+        .set({
+          ...updateData,
+          amountPaid: entry.amountGross,
+          invoiceStatus: "paid",
+          paidDate: today,
+        })
+        .where(
+          and(
+            eq(incomeEntries.id, entry.id),
+            eq(incomeEntries.userId, userId)
+          )
+        )
+        .returning({ id: incomeEntries.id });
+
+      if (result.length > 0) updatedCount++;
+    }
+
+    return updatedCount;
+  }
+
+  // Standard batch update (no amountPaid changes)
+  const result = await db
+    .update(incomeEntries)
+    .set(updateData)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        inArray(incomeEntries.id, ids)
+      )
+    )
+    .returning({ id: incomeEntries.id });
+
+  return result.length;
+}
+
+/**
+ * Batch delete multiple income entries
+ * Returns the count of deleted rows
+ */
+export async function batchDeleteIncomeEntries(
+  ids: string[],
+  userId: string
+): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const result = await db
+    .delete(incomeEntries)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        inArray(incomeEntries.id, ids)
+      )
+    )
+    .returning({ id: incomeEntries.id });
+
+  return result.length;
 }

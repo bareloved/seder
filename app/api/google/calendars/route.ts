@@ -1,10 +1,8 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db/client";
-import { account } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { listUserCalendars } from "@/lib/googleCalendar";
+import { withGoogleToken, GoogleTokenError } from "@/lib/googleTokens";
 
 export async function GET() {
     try {
@@ -19,30 +17,25 @@ export async function GET() {
             );
         }
 
-        // Get the user's Google account
-        const [googleAccount] = await db
-            .select()
-            .from(account)
-            .where(
-                and(
-                    eq(account.userId, session.user.id),
-                    eq(account.providerId, "google")
-                )
-            )
-            .limit(1);
-
-        if (!googleAccount?.accessToken) {
-            return NextResponse.json(
-                { error: "Google Calendar not connected" },
-                { status: 404 }
-            );
-        }
-
-        const calendars = await listUserCalendars(googleAccount.accessToken);
+        const calendars = await withGoogleToken(
+            session.user.id,
+            (accessToken) => listUserCalendars(accessToken)
+        );
 
         return NextResponse.json({ calendars });
     } catch (error) {
         console.error("Failed to fetch calendars:", error);
+
+        if (error instanceof GoogleTokenError) {
+            return NextResponse.json(
+                {
+                    error: error.message,
+                    requiresReconnect: error.requiresReconnect,
+                },
+                { status: error.requiresReconnect ? 401 : 500 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to fetch calendars" },
             { status: 500 }

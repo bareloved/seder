@@ -18,6 +18,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -303,8 +308,8 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
         )}
       </TableCell>
 
-      {/* Amount - w-[90px] to match header */}
-      <TableCell className="font-semibold tabular-nums py-3 w-[90px] px-2">
+      {/* Amount - w-[120px] to match header */}
+      <TableCell className="font-semibold tabular-nums py-3 w-[120px] px-2">
         <div className="flex justify-end">
           {editingField === "amountGross" ? (
             <Input

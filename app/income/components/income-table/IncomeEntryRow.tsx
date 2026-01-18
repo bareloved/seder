@@ -26,8 +26,10 @@ import {
   StickyNote,
   CalendarDays,
   Settings2,
-  MoreVertical
+  MoreVertical,
+  CheckSquare,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
@@ -61,6 +63,11 @@ export interface IncomeEntryRowProps {
   columnOrder?: ColumnKey[];
   columnWidths?: Partial<Record<ColumnKey, number>>;
   onEditCategories?: () => void;
+  // Selection props
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
+  onToggleSelectionMode?: () => void;
 }
 
 // Default widths (matching IncomeListView)
@@ -83,6 +90,10 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   columnOrder,
   columnWidths,
   onEditCategories,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
+  onToggleSelectionMode,
 }: IncomeEntryRowProps) {
   const effectiveOrder = columnOrder && columnOrder.length ? columnOrder : DEFAULT_COLUMN_ORDER;
   const displayStatus = getDisplayStatus(entry);
@@ -185,13 +196,29 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
   return (
     <div
-      className="group relative border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 transition-colors py-1"
+      className={cn(
+        "group relative border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 transition-colors py-1",
+        isSelected && "bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+      )}
     >
       {/* ═══════════════════════════════════════════════════════════════════════
           DESKTOP LAYOUT (md+)
           match image style: clean white rows
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:flex md:items-center min-h-[50px]">
+        {/* Selection Checkbox - appears first (right side in RTL) when in selection mode */}
+        {isSelectionMode && onToggleSelection && (
+          <div
+            className="shrink-0 w-[40px] px-2 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelection(entry.id)}
+              className="h-5 w-5 border-2 border-slate-300 data-[state=checked]:bg-slate-800 data-[state=checked]:border-slate-800"
+            />
+          </div>
+        )}
         {effectiveOrder.map((colKey) => {
           const columnMap: Record<ColumnKey, React.ReactElement> = {
             date: (
@@ -453,6 +480,12 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
                         <span>נשלחה חשבונית</span>
                         <FileText className="h-3.5 w-3.5 shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    {onToggleSelectionMode && (
+                      <DropdownMenuItem onClick={onToggleSelectionMode} className="gap-2 justify-end whitespace-nowrap">
+                        <span>{isSelectionMode ? "בטל בחירה" : "בחר עבודות"}</span>
+                        <CheckSquare className="h-3.5 w-3.5 shrink-0" />
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
