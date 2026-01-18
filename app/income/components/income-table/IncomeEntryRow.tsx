@@ -59,8 +59,15 @@ export interface IncomeEntryRowProps {
   clients?: string[];
   categories?: Category[];
   columnOrder?: ColumnKey[];
+  columnWidths?: Partial<Record<ColumnKey, number>>;
   onEditCategories?: () => void;
 }
+
+// Default widths (matching IncomeListView)
+const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  client: 110,
+  description: 300,
+};
 
 export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   entry,
@@ -74,6 +81,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   clients = [],
   categories = [],
   columnOrder,
+  columnWidths,
   onEditCategories,
 }: IncomeEntryRowProps) {
   const effectiveOrder = columnOrder && columnOrder.length ? columnOrder : DEFAULT_COLUMN_ORDER;
@@ -224,7 +232,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             client: (
               <div
-                className="shrink-0 w-[110px] px-3 flex items-center"
+                className="shrink-0 px-3 flex items-center"
+                style={{ width: columnWidths?.client || DEFAULT_COLUMN_WIDTHS.client }}
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "clientName") {
                     e.stopPropagation();
@@ -274,7 +283,10 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             ),
             description: (
               <div
-                className="flex-1 min-w-0 max-w-[420px] px-3 flex items-center"
+                className="shrink-0 min-w-0 px-3 flex items-center"
+                style={{
+                  width: columnWidths?.description || DEFAULT_COLUMN_WIDTHS.description,
+                }}
                 onClick={(e) => {
                   if (onInlineEdit && editingField !== "description") {
                     e.stopPropagation();

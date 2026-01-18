@@ -29,10 +29,25 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 type ColumnKey = "date" | "client" | "category" | "description" | "amount" | "status" | "actions";
 const DEFAULT_COLUMN_ORDER: ColumnKey[] = ["date", "client", "category", "description", "amount", "status", "actions"];
 const LOCAL_STORAGE_KEY = "income-list-column-order";
+const COLUMN_WIDTHS_STORAGE_KEY = "income-list-column-widths";
+
+// Default and minimum widths for resizable columns
+const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  client: 110,
+  description: 300,
+};
+const MIN_COLUMN_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  client: 80,
+  description: 150,
+};
+const RESIZABLE_COLUMNS: ColumnKey[] = ["client", "description"];
+
+// Static widths for non-resizable columns
+// Note: resizable columns (client, description) use shrink-0 + inline style for width
 const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   date: "w-[70px] shrink-0 px-2",
-  description: "flex-1 min-w-0 max-w-[420px] px-3",
-  client: "w-[110px] shrink-0 px-3",
+  description: "shrink-0 min-w-0 px-3", // Width set via inline style
+  client: "shrink-0 px-3", // Width set via inline style
   category: "w-[100px] shrink-0 px-2",
   amount: "w-[105px] shrink-0 px-3",
   status: "w-[100px] shrink-0 px-2",
@@ -188,6 +203,14 @@ export const IncomeListView = React.memo(function IncomeListView({
   const [draggedKey, setDraggedKey] = useState<ColumnKey | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
+  // Column width state for resizable columns
+  const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnKey, number>>>(DEFAULT_COLUMN_WIDTHS);
+  const [resizing, setResizing] = useState<{
+    column: ColumnKey;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
   const handleAddClick = () => {
     const input = document.querySelector(
       'input[placeholder="הוסף עבודה חדשה"]'
@@ -231,6 +254,75 @@ export const IncomeListView = React.memo(function IncomeListView({
       // ignore
     }
   };
+
+  // Load saved column widths (desktop only)
+  useEffect(() => {
+    try {
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(COLUMN_WIDTHS_STORAGE_KEY) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (typeof parsed === "object" && parsed !== null) {
+          setColumnWidths({ ...DEFAULT_COLUMN_WIDTHS, ...parsed });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const persistWidths = (widths: Partial<Record<ColumnKey, number>>) => {
+    setColumnWidths(widths);
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(widths));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Resize handlers
+  const handleResizeStart = (e: React.MouseEvent, columnKey: ColumnKey) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentWidth = columnWidths[columnKey] || DEFAULT_COLUMN_WIDTHS[columnKey] || 100;
+    setResizing({
+      column: columnKey,
+      startX: e.clientX,
+      startWidth: currentWidth,
+    });
+  };
+
+  // Document-level resize handlers
+  useEffect(() => {
+    if (!resizing) return;
+
+    const handleResizeMove = (e: MouseEvent) => {
+      if (!resizing) return;
+      // In RTL, moving mouse left (negative delta) should increase width
+      // Moving mouse right (positive delta) should decrease width
+      const delta = resizing.startX - e.clientX;
+      const minWidth = MIN_COLUMN_WIDTHS[resizing.column] || 80;
+      const maxWidth = resizing.column === "description" ? 600 : 250;
+      const newWidth = Math.max(minWidth, Math.min(maxWidth, resizing.startWidth + delta));
+      setColumnWidths((prev) => ({ ...prev, [resizing.column]: newWidth }));
+    };
+
+    const handleResizeEnd = () => {
+      if (resizing) {
+        persistWidths(columnWidths);
+      }
+      setResizing(null);
+    };
+
+    document.addEventListener("mousemove", handleResizeMove);
+    document.addEventListener("mouseup", handleResizeEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleResizeMove);
+      document.removeEventListener("mouseup", handleResizeEnd);
+    };
+  }, [resizing, columnWidths]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, key: ColumnKey) => {
     setDraggedKey(key);
@@ -367,34 +459,49 @@ export const IncomeListView = React.memo(function IncomeListView({
         </div>
 
         {/* Column Headers - draggable (desktop only) */}
-        <div className="flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none">
-          {columnOrder.map((key) => (
-            <div
-              key={key}
-              draggable
-              onDragStart={(e) => handleDragStart(e, key)}
-              onDragOver={(e) => handleDragOver(e, key)}
-              onDragLeave={handleDragLeave}
-              onDragEnd={handleDragEnd}
-              onDrop={(e) => handleDrop(e, key)}
-              className={`
-                ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
-                ${dropTarget?.key === key ? "bg-slate-50 dark:bg-slate-800/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
-                ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-slate-800/50 dashed border border-site-300" : "cursor-grab active:cursor-grabbing"}
-              `}
-            >
-              {/* Drop candidate indicator line */}
-              {dropTarget?.key === key && (
-                <div
-                  className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-slate-600 z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
-                />
-              )}
-              {headerContent[key]}
-              <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-3 w-3" />
+        <div className={`flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none ${resizing ? "cursor-col-resize" : ""}`}>
+          {columnOrder.map((key) => {
+            const isResizable = RESIZABLE_COLUMNS.includes(key);
+            const dynamicWidth = isResizable ? columnWidths[key] || DEFAULT_COLUMN_WIDTHS[key] : undefined;
+
+            return (
+              <div
+                key={key}
+                draggable={!resizing}
+                onDragStart={(e) => handleDragStart(e, key)}
+                onDragOver={(e) => handleDragOver(e, key)}
+                onDragLeave={handleDragLeave}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => handleDrop(e, key)}
+                style={dynamicWidth ? { width: dynamicWidth } : undefined}
+                className={`
+                  ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
+                  ${dropTarget?.key === key ? "bg-slate-50 dark:bg-slate-800/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
+                  ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-slate-800/50 dashed border border-site-300" : !resizing ? "cursor-grab active:cursor-grabbing" : ""}
+                `}
+              >
+                {/* Resize handle on left edge (end in RTL) for resizable columns */}
+                {isResizable && (
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 group/resize flex items-center justify-center"
+                    onMouseDown={(e) => handleResizeStart(e, key)}
+                  >
+                    <div className="w-0.5 h-3 bg-transparent group-hover/resize:bg-slate-400 dark:group-hover/resize:bg-slate-500 rounded-full transition-colors" />
+                  </div>
+                )}
+                {/* Drop candidate indicator line */}
+                {dropTarget?.key === key && (
+                  <div
+                    className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-slate-600 z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
+                  />
+                )}
+                {headerContent[key]}
+                <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GripVertical className="h-3 w-3" />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty States */}
@@ -430,6 +537,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 clients={clients}
                 categories={categories}
                 columnOrder={columnOrder}
+                columnWidths={columnWidths}
                 onEditCategories={onEditCategories}
               />
             ))}
