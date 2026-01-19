@@ -55,7 +55,7 @@ export function IncomeTableHeader({
 }: IncomeTableHeaderProps) {
   return (
     <TableHeader>
-      <TableRow className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+      <TableRow className="bg-slate-50 dark:bg-muted/50 border-b border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-muted/50">
         <TableHead className="w-[50px] text-right text-xs font-medium text-slate-600 dark:text-slate-400 py-3 pr-3">
           <div className="flex items-center justify-end">
             <SortableHeader column="date" currentColumn={sortColumn} direction={sortDirection} onSort={onSort}>

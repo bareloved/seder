@@ -200,8 +200,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   return (
     <div
       className={cn(
-        "group relative border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 transition-colors py-1",
-        isSelected && "bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+        "group relative border-b border-slate-100 dark:border-border/50 hover:bg-slate-50/50 dark:hover:bg-muted/30 transition-colors py-1",
+        isSelected && "bg-slate-100/80 dark:bg-muted/40 hover:bg-slate-100 dark:hover:bg-muted/50"
       )}
     >
       {/* ═══════════════════════════════════════════════════════════════════════
@@ -231,7 +231,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <button
-                          className="text-base text-slate-900 font-medium hover:bg-slate-100 rounded px-1 transition-colors block text-right w-full"
+                          className="text-base text-slate-900 dark:text-slate-200 font-medium hover:bg-slate-100 dark:hover:bg-muted/50 rounded px-1 transition-colors block text-right w-full"
                         >
                           {format(new Date(entry.date), "dd.MM", { locale: he })}
                         </button>
@@ -253,7 +253,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       </PopoverContent>
                     </Popover>
                   ) : (
-                    <span className="text-base text-slate-900 font-medium">
+                    <span className="text-base text-slate-900 dark:text-slate-200 font-medium">
                       {format(new Date(entry.date), "dd.MM", { locale: he })}
                     </span>
                   )}
@@ -275,7 +275,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       onInlineEdit(entry.id, "clientId", client?.id ?? "");
                       onInlineEdit(entry.id, "clientName", name);
                     }}
-                    className="h-8 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="h-8 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-muted/50"
                     compact={true}
                     allowCreate={true}
                   />
@@ -283,7 +283,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   <span className={cn(
                     "text-base truncate block w-full text-right",
                     entry.clientName
-                      ? "text-slate-900"
+                      ? "text-slate-900 dark:text-slate-200"
                       : "text-slate-400 dark:text-slate-500 opacity-50"
                   )}>
                     {entry.clientName || "-"}
@@ -319,7 +319,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                   <div className="w-full text-right truncate">
                     <span className={cn(
                       "text-base text-slate-700 truncate block",
-                      onInlineEdit && "hover:text-slate-900 cursor-pointer"
+                      onInlineEdit && "hover:text-slate-900 dark:text-slate-200 cursor-pointer"
                     )}>
                       {entry.description}
                     </span>
@@ -410,7 +410,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     dir="rtl"
                   />
                 ) : (
-                  <span className="text-lg font-normal font-numbers text-slate-900 whitespace-nowrap" dir="ltr">
+                  <span className="text-lg font-normal font-numbers text-slate-900 dark:text-slate-200 whitespace-nowrap" dir="ltr">
                     <span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}
                   </span>
                 )}
@@ -495,12 +495,12 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="md:hidden p-3 border-b border-slate-100" onClick={() => onClick(entry)}>
         <div className="flex justify-between items-start mb-1">
-          <span className="text-base font-medium text-slate-900">{formatDate(entry.date)}</span>
-          <span className="text-base font-bold text-slate-900" dir="ltr"><span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}</span>
+          <span className="text-base font-medium text-slate-900 dark:text-slate-200">{formatDate(entry.date)}</span>
+          <span className="text-base font-bold text-slate-900 dark:text-slate-200" dir="ltr"><span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}</span>
         </div>
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
-            <span className="text-base text-slate-800">{entry.description}</span>
+            <span className="text-base text-slate-800 dark:text-slate-200">{entry.description}</span>
             <span className="text-sm text-slate-500">{entry.clientName}</span>
           </div>
           {statusConfig && (

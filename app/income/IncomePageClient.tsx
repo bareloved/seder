@@ -10,7 +10,7 @@ import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
-import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, getTodayDateString } from "./utils";
+import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry } from "./utils";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -64,6 +64,7 @@ interface IncomePageClientProps {
   monthPaymentStatuses: Record<number, MonthPaymentStatus>;
   isGoogleConnected: boolean;
   user: { name: string | null; email: string; image: string | null };
+  todayDateString: string;
 }
 
 export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
@@ -102,6 +103,7 @@ export default function IncomePageClient({
   monthPaymentStatuses,
   isGoogleConnected,
   user,
+  todayDateString,
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -113,13 +115,12 @@ export default function IncomePageClient({
   );
 
   const defaultNewEntryDate = React.useMemo(() => {
-    const todayString = getTodayDateString();
-    const today = new Date(todayString);
+    const today = new Date(todayDateString);
     if (today.getFullYear() === year && today.getMonth() + 1 === month) {
-      return todayString;
+      return todayDateString;
     }
     return `${year}-${String(month).padStart(2, "0")}-01`;
-  }, [month, year]);
+  }, [month, year, todayDateString]);
 
   const [entries, setEntries] = React.useState<IncomeEntry[]>(initialEntries);
 
@@ -379,12 +380,22 @@ export default function IncomePageClient({
   }, [entries]);
 
   const allClients = React.useMemo(() => {
-    const uniqueClients = new Set([
-      ...initialClients,
-      ...entries.map((e) => e.clientName),
-    ]);
-    return Array.from(uniqueClients).filter((name) => name && name.trim() !== "").sort();
-  }, [initialClients, entries]);
+    // Client records are already sorted by job frequency (most used first)
+    const clientNamesFromRecords = clientRecords.map((c) => c.name);
+    const seenNames = new Set(clientNamesFromRecords.map(n => n.toLowerCase()));
+
+    // Collect additional client names from entries and initialClients
+    // that aren't already in clientRecords (legacy entries without client record)
+    const additionalNames: string[] = [];
+    for (const name of [...initialClients, ...entries.map((e) => e.clientName)]) {
+      if (name && name.trim() !== "" && !seenNames.has(name.toLowerCase())) {
+        seenNames.add(name.toLowerCase());
+        additionalNames.push(name);
+      }
+    }
+
+    return [...clientNamesFromRecords, ...additionalNames];
+  }, [clientRecords, initialClients, entries]);
 
   const kpis: KPIData = React.useMemo(() => {
     const localKPIs = calculateKPIs(entries, month, year, aggregates.previousMonthPaid);
@@ -521,6 +532,7 @@ export default function IncomePageClient({
       formData.append("date", entry.date);
       formData.append("description", entry.description);
       formData.append("clientName", entry.clientName);
+      formData.append("clientId", entry.clientId || "");
       formData.append("amountGross", entry.amountGross.toString());
       formData.append("amountPaid", entry.amountPaid.toString());
       if (entry.category) formData.append("category", entry.category);
@@ -563,6 +575,7 @@ export default function IncomePageClient({
       formData.append("date", updatedEntry.date);
       formData.append("description", updatedEntry.description);
       formData.append("clientName", updatedEntry.clientName);
+      formData.append("clientId", updatedEntry.clientId || "");
       formData.append("amountGross", updatedEntry.amountGross.toString());
       formData.append("amountPaid", updatedEntry.amountPaid.toString());
       formData.append("category", updatedEntry.category || "");
@@ -654,6 +667,8 @@ export default function IncomePageClient({
   }, [addEntry, defaultNewEntryDate]);
 
   const inlineEditEntry = React.useCallback(async (id: string, field: string, value: string | number) => {
+    // Optimistic update
+    const previousEntries = entries;
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
@@ -668,11 +683,20 @@ export default function IncomePageClient({
         return { ...e, [field]: value };
       })
     );
+
+    // Send update to server
     const formData = new FormData();
     formData.append("id", id);
     formData.append(field, String(value));
-    await updateIncomeEntryAction(formData);
-  }, [categories]);
+    const result = await updateIncomeEntryAction(formData);
+
+    // Handle errors - revert optimistic update if save failed
+    if (!result.success) {
+      setEntries(previousEntries);
+      toast.error("לא הצלחנו לשמור את השינוי");
+      console.error("Inline edit failed:", result.error);
+    }
+  }, [categories, entries]);
 
   const openDialog = (entry: IncomeEntry) => {
     setSelectedEntry(entry);
@@ -738,7 +762,7 @@ export default function IncomePageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
 
       <Navbar user={user} />
 
@@ -755,10 +779,10 @@ export default function IncomePageClient({
         </section>
 
         {/* Main Content Card - Filters + Table in one white container */}
-        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
 
           {/* Toolbar / Filters Area */}
-          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-2 border-b border-slate-100 dark:border-border">
             <IncomeFilters
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}

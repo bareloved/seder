@@ -114,14 +114,14 @@ export function QuickAddCard({
   };
 
   return (
-    <div className="group border-b border-transparent hover:border-slate-100 transition-colors py-1">
+    <div className="group border-b border-transparent hover:border-slate-100 dark:hover:border-border transition-colors py-1">
       <div className="hidden md:flex md:items-center min-h-[46px]">
         {/* DATE */}
         <div className="shrink-0 w-[70px] px-2">
           <div className="text-right">
             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
               <PopoverTrigger asChild>
-                <button className="text-base text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded px-1 transition-colors">
+                <button className="text-base text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-muted/50 rounded px-1 transition-colors">
                   {newEntryDate
                     ? format(newEntryDate, "dd.MM", { locale: he })
                     : format(new Date(), "dd.MM", { locale: he })}
@@ -150,7 +150,7 @@ export function QuickAddCard({
             value={quickAddDescription}
             onChange={(e) => setQuickAddDescription(e.target.value)}
             placeholder="הוסף עבודה חדשה..."
-            className="h-9 w-full border-transparent hover:border-slate-200 bg-white placeholder:text-slate-400 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-right text-base"
+            className="h-9 w-full border-transparent hover:border-slate-200 dark:hover:border-border bg-transparent dark:bg-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-400 dark:focus:border-border focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-right text-base"
             onKeyDown={handleQuickAddKeyDown}
           />
         </div>
@@ -163,7 +163,7 @@ export function QuickAddCard({
               value={quickAddAmount}
               onChange={(e) => setQuickAddAmount(e.target.value)}
               placeholder="0"
-              className="h-8 w-full border-transparent bg-transparent focus:bg-white focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-right pl-6 text-base"
+              className="h-8 w-full border-transparent bg-transparent focus:bg-transparent focus:border-slate-400 dark:focus:border-border focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-right pl-6 text-base"
               onKeyDown={handleQuickAddKeyDown}
               dir="rtl"
             />
@@ -175,14 +175,14 @@ export function QuickAddCard({
           <div className="relative">
             <Button
               variant="ghost"
-              className="h-8 w-full justify-between text-slate-400 font-normal px-2 hover:bg-slate-50 text-base"
+              className="h-8 w-full justify-between text-slate-400 font-normal px-2 hover:bg-slate-50 dark:hover:bg-muted/50 text-base"
               onClick={() => setShowClientSuggestions(true)}
             >
               {quickAddClient || "לקוח"}
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
             {showClientSuggestions && (
-              <div className="absolute z-20 top-full right-0 mt-1 w-40 bg-white shadow-lg rounded-md border border-slate-100 p-1">
+              <div className="absolute z-20 top-full right-0 mt-1 w-40 bg-white dark:bg-card shadow-lg rounded-md border border-slate-100 dark:border-border p-1">
                 <Input
                   value={quickAddClient}
                   onChange={(e) => setQuickAddClient(e.target.value)}
@@ -194,7 +194,7 @@ export function QuickAddCard({
                 {filteredClients.map((client) => (
                   <div
                     key={client}
-                    className="px-2 py-1.5 text-xs hover:bg-slate-50 cursor-pointer rounded-sm"
+                    className="px-2 py-1.5 text-xs hover:bg-slate-50 dark:hover:bg-muted cursor-pointer rounded-sm"
                     onClick={() => selectClient(client)}
                   >
                     {client}

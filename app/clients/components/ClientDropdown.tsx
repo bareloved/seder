@@ -125,7 +125,7 @@ export function ClientDropdown({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[250px] p-0" align="start">
-        <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="p-2 border-b border-slate-100 dark:border-border">
           <Input
             ref={inputRef}
             value={searchValue}
@@ -141,7 +141,7 @@ export function ClientDropdown({
           <button
             type="button"
             onClick={() => handleSelect(null, "")}
-            className="w-full px-2 py-1.5 text-sm text-right rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
+            className="w-full px-2 py-1.5 text-sm text-right rounded-md hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors text-slate-500"
           >
             ללא לקוח
           </button>
@@ -153,7 +153,7 @@ export function ClientDropdown({
               type="button"
               onClick={() => handleSelect(client, client.name)}
               className={cn(
-                "w-full px-2 py-1.5 text-sm text-right rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between",
+                "w-full px-2 py-1.5 text-sm text-right rounded-md hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors flex items-center justify-between",
                 selectedClientId === client.id && "bg-blue-50 dark:bg-blue-900/20"
               )}
             >
@@ -177,7 +177,7 @@ export function ClientDropdown({
           {/* Create New Option */}
           {allowCreate && searchValue.trim() && !exactMatch && (
             <>
-              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+              <div className="border-t border-slate-100 dark:border-border my-1" />
               <button
                 type="button"
                 onClick={handleCreateNew}

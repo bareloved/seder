@@ -155,12 +155,12 @@ export function MobileQuickAdd({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="תיאור העבודה"
-        className="h-10 text-sm bg-white dark:bg-slate-800"
+        className="h-10 text-sm bg-white dark:bg-card"
       />
 
       {/* Category */}
       <Select value={categoryId} onValueChange={setCategoryId}>
-        <SelectTrigger className="h-10 w-full text-sm bg-white dark:bg-slate-800 text-right justify-between" dir="rtl">
+        <SelectTrigger className="h-10 w-full text-sm bg-white dark:bg-card text-right justify-between" dir="rtl">
           <SelectValue placeholder="בחר קטגוריה">
             {categoryId && (
               <CategoryChip
@@ -191,7 +191,7 @@ export function MobileQuickAdd({
             onChange={(e) => setAmount(e.target.value)}
             placeholder="סכום"
             type="number"
-            className="h-10 pl-8 text-sm bg-white dark:bg-slate-800 text-right"
+            className="h-10 pl-8 text-sm bg-white dark:bg-card text-right"
             dir="rtl"
           />
         </div>
@@ -205,15 +205,15 @@ export function MobileQuickAdd({
             onFocus={() => setShowClientSuggestions(true)}
             onBlur={() => setTimeout(() => setShowClientSuggestions(false), 200)}
             placeholder="שם לקוח"
-            className="h-10 text-sm bg-white dark:bg-slate-800"
+            className="h-10 text-sm bg-white dark:bg-card"
           />
           {/* Client Autocomplete */}
           {showClientSuggestions && filteredClients.length > 0 && (
-            <div className="absolute z-10 top-full mt-1 w-full bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 py-1">
+            <div className="absolute z-10 top-full mt-1 w-full bg-white dark:bg-card rounded-md shadow-lg border border-slate-200 dark:border-border py-1">
               {filteredClients.map((client) => (
                 <button
                   key={client}
-                  className="w-full px-3 py-2 text-right text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className="w-full px-3 py-2 text-right text-sm hover:bg-slate-100 dark:hover:bg-muted/50"
                   onClick={() => selectClient(client)}
                 >
                   {client}

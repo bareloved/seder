@@ -16,7 +16,7 @@ export function AnalyticsKPICards({ kpi }: AnalyticsKPICardsProps) {
       title: "הכנסה כוללת",
       amount: kpi.totalIncome,
       icon: TrendingUp,
-      amountColor: "text-slate-900",
+      amountColor: "text-slate-900 dark:text-slate-100",
       iconColor: "text-emerald-500",
     },
     {
@@ -43,12 +43,12 @@ export function AnalyticsKPICards({ kpi }: AnalyticsKPICardsProps) {
       {cards.map((card) => (
         <Card
           key={card.id}
-          className="bg-white shadow-sm hover:shadow-md border border-slate-100 relative overflow-hidden h-[120px] transition-all"
+          className="bg-white dark:bg-card shadow-sm hover:shadow-md border border-slate-100 dark:border-border relative overflow-hidden h-[120px] transition-all"
         >
           <CardContent className="p-4 h-full flex flex-col justify-between">
             {/* Top Right: Title */}
             <div className="text-right">
-              <span className="text-base text-slate-600 font-normal block">
+              <span className="text-base text-slate-600 dark:text-slate-400 font-normal block">
                 {card.title}
               </span>
               {/* Bottom Right: Amount */}

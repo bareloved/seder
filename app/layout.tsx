@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const ploni = localFont({
@@ -30,11 +31,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${ploni.variable} font-sans antialiased text-slate-900 bg-slate-50 dark:bg-slate-950`}>
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
-        <Toaster />
+      <body className={`${ploni.variable} font-sans antialiased bg-background text-foreground`} suppressHydrationWarning>
+        <ThemeProvider>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

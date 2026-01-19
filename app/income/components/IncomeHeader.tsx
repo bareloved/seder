@@ -85,7 +85,7 @@ export function IncomeHeader({
   };
 
   return (
-    <header className="rounded-2xl bg-white/80 dark:bg-slate-900/80 px-3 sm:px-4 py-3 shadow-sm backdrop-blur border border-slate-100 dark:border-slate-800 print:shadow-none print:border-slate-200">
+    <header className="rounded-2xl bg-white/80 dark:bg-card/80 px-3 sm:px-4 py-3 shadow-sm backdrop-blur border border-slate-100 dark:border-border print:shadow-none print:border-slate-200">
       {/* Mobile: Stack layout, Desktop: Row layout */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {/* Row 1: Logo + Title + Mobile Actions */}
@@ -116,7 +116,7 @@ export function IncomeHeader({
                 variant="outline"
                 size="icon"
                 onClick={handlePreviousMonth}
-                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-card border-slate-200 dark:border-border"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -125,7 +125,7 @@ export function IncomeHeader({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[80px] sm:w-[110px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 justify-between px-3 font-semibold"
+                    className="w-[80px] sm:w-[110px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-card border-slate-200 dark:border-border justify-between px-3 font-semibold"
                   >
                     <span className="flex items-center gap-1.5 sm:gap-2">
                       {MONTH_NAMES[selectedMonth]}
@@ -182,7 +182,7 @@ export function IncomeHeader({
                 variant="outline"
                 size="icon"
                 onClick={handleNextMonth}
-                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-card border-slate-200 dark:border-border"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -192,7 +192,7 @@ export function IncomeHeader({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[70px] sm:w-[90px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 justify-between px-3 font-semibold font-numbers"
+                  className="w-[70px] sm:w-[90px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-card border-slate-200 dark:border-border justify-between px-3 font-semibold font-numbers"
                 >
                   {selectedYear}
                   <ChevronDown className="h-4 w-4 opacity-50" />

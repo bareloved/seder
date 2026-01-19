@@ -29,23 +29,25 @@ export const createIncomeEntrySchema = zfd.formData({
 });
 
 // Update Entry Schema
+// For partial updates (inline editing), we need to handle missing fields properly
+// Using zfd.text().optional() at the zfd level, not inside the schema
 export const updateIncomeEntrySchema = zfd.formData({
   id: zfd.text(z.string().uuid()),
-  date: dateSchema.optional(),
-  description: zfd.text(z.string().optional()),
-  clientName: zfd.text(z.string().optional()),
-  clientId: zfd.text(optionalUuidSchema), // FK to clients table (empty string → undefined)
-  amountGross: zfd.numeric(z.number().min(0).optional()),
-  amountPaid: zfd.numeric(z.number().min(0).optional()),
-  category: zfd.text(z.string().optional()),
-  categoryId: zfd.text(optionalUuidSchema), // FK to categories table (empty string → undefined)
-  notes: zfd.text(z.string().optional()),
-  vatRate: zfd.numeric(z.number().min(0).optional()),
+  date: zfd.text(dateSchema).optional(),
+  description: zfd.text(z.string()).optional(),
+  clientName: zfd.text(z.string()).optional(),
+  clientId: zfd.text(optionalUuidSchema).optional(), // FK to clients table (empty string → undefined)
+  amountGross: zfd.numeric(z.number().min(0)).optional(),
+  amountPaid: zfd.numeric(z.number().min(0)).optional(),
+  category: zfd.text(z.string()).optional(),
+  categoryId: zfd.text(optionalUuidSchema).optional(), // FK to categories table (empty string → undefined)
+  notes: zfd.text(z.string()).optional(),
+  vatRate: zfd.numeric(z.number().min(0)).optional(),
   includesVat: zfd.text(z.string().transform((val) => val === "true")).optional(),
-  invoiceStatus: zfd.text(z.enum(invoiceStatusValues).optional()),
-  paymentStatus: zfd.text(z.enum(paymentStatusValues).optional()),
-  invoiceSentDate: zfd.text(z.string().optional().nullable()),
-  paidDate: zfd.text(z.string().optional().nullable()),
+  invoiceStatus: zfd.text(z.enum(invoiceStatusValues)).optional(),
+  paymentStatus: zfd.text(z.enum(paymentStatusValues)).optional(),
+  invoiceSentDate: zfd.text(z.string().nullable()).optional(),
+  paidDate: zfd.text(z.string().nullable()).optional(),
 });
 
 export type CreateIncomeEntrySchema = z.infer<typeof createIncomeEntrySchema>;

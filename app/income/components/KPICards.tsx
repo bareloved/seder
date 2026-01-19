@@ -33,10 +33,10 @@ export function KPICards({
       title: `סה״כ ${monthName}`,
       amount: kpis.thisMonth,
       icon: Calendar,
-      amountColor: "text-slate-900",
+      amountColor: "text-slate-900 dark:text-slate-100",
       filter: "all" as FilterType,
       highlight: false,
-      iconColor: "text-slate-400",
+      iconColor: "text-slate-400 dark:text-slate-500",
       iconBg: "bg-slate-50"
     },
     {
@@ -44,10 +44,10 @@ export function KPICards({
       title: "לשלוח חשבונית",
       amount: kpis.readyToInvoice,
       icon: FileText,
-      amountColor: "text-slate-900",
+      amountColor: "text-slate-900 dark:text-slate-100",
       filter: "ready-to-invoice" as FilterType,
       highlight: false, // Special blue border
-      iconColor: "text-sky-500",
+      iconColor: "text-sky-500 dark:text-sky-400",
       iconBg: "bg-sky-50"
     },
     {
@@ -55,10 +55,10 @@ export function KPICards({
       title: "מחכה לתשלום",
       amount: kpis.outstanding,
       icon: Wallet,
-      amountColor: "text-slate-900",
+      amountColor: "text-slate-900 dark:text-slate-100",
       filter: "invoiced" as FilterType,
       highlight: false,
-      iconColor: "text-orange-400",
+      iconColor: "text-orange-400 dark:text-orange-400",
       iconBg: "bg-orange-50"
     },
     {
@@ -85,16 +85,16 @@ export function KPICards({
         if (isActive) {
           switch (card.filter) {
             case "all":
-              activeClass = "ring-1 ring-slate-900 bg-white";
+              activeClass = "ring-1 ring-slate-900 dark:ring-slate-400 bg-white dark:bg-card";
               break;
             case "ready-to-invoice":
-              activeClass = "ring-1 ring-sky-500 bg-white";
+              activeClass = "ring-1 ring-sky-500 bg-white dark:bg-card";
               break;
             case "invoiced":
-              activeClass = "ring-1 ring-orange-500 bg-white";
+              activeClass = "ring-1 ring-orange-500 bg-white dark:bg-card";
               break;
             case "paid":
-              activeClass = "ring-1 ring-emerald-500 bg-white";
+              activeClass = "ring-1 ring-emerald-500 bg-white dark:bg-card";
               break;
           }
         }
@@ -103,15 +103,15 @@ export function KPICards({
           <Card
             key={card.id}
             className={cn(
-              "cursor-pointer transition-all shadow-sm hover:shadow-md border border-slate-100 relative overflow-hidden h-[120px]",
-              isActive ? activeClass : "bg-white hover:bg-slate-50/50"
+              "cursor-pointer transition-all shadow-sm hover:shadow-md border border-slate-100 dark:border-border relative overflow-hidden h-[120px]",
+              isActive ? activeClass : "bg-white dark:bg-card hover:bg-slate-50/50 dark:hover:bg-muted"
             )}
             onClick={() => onFilterClick?.(card.filter)}
           >
             <CardContent className="p-4 h-full flex flex-col justify-between">
               {/* Top Right: Title */}
               <div className="text-right">
-                <span className="text-base text-slate-600 font-normal block">
+                <span className="text-base text-slate-600 dark:text-slate-400 font-normal block">
                   {card.title}
                 </span>
                 {/* Bottom Right: Amount */}

@@ -80,8 +80,8 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
     <div
       className={cn(
         // Compact card with clean shadow
-        "rounded-xl border bg-white dark:bg-slate-900 p-3.5 shadow-sm transition-all active:scale-[0.99] relative overflow-hidden",
-        "border-slate-200/80 dark:border-slate-800",
+        "rounded-xl border bg-white dark:bg-card p-3.5 shadow-sm transition-all active:scale-[0.99] relative overflow-hidden",
+        "border-slate-200/80 dark:border-border",
         // Subtle left accent for status
         !isPaid && "border-r-[3px] border-r-orange-300 dark:border-r-orange-700",
         overdue && "border-r-[3px] border-r-red-400 dark:border-r-red-600",
@@ -226,7 +226,7 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
       {/* ════════════════════════════════════════════════════════════════════════
           ACTIONS ROW - Larger touch targets for mobile
           ════════════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-border">
         {/* Quick action buttons - larger touch targets */}
         <div className="flex items-center gap-1.5">
           <Button
@@ -276,7 +276,7 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
               variant="ghost"
               size="icon"
               // Larger touch target: h-10 w-10
-              className="h-10 w-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              className="h-10 w-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-muted/50 rounded-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-5 w-5" />

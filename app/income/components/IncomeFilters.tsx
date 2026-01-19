@@ -170,7 +170,7 @@ export function IncomeFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="חיפוש..."
-            className="h-9 w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-slate-300 pr-9 text-slate-700 text-right placeholder:text-slate-400"
+            className="h-9 w-full bg-white dark:bg-card border-slate-200 dark:border-border focus:border-slate-300 pr-9 text-slate-700 text-right placeholder:text-slate-400"
           />
           {searchQuery && (
             <button
@@ -193,7 +193,7 @@ export function IncomeFilters({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-36" align="start">
-              <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-start bg-slate-50">
+              <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-start bg-slate-50 dark:bg-transparent">
                 כל הקטגוריות
               </DropdownMenuItem>
               {categories.filter(c => !c.isArchived).map((category) => (
@@ -223,7 +223,7 @@ export function IncomeFilters({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-36 max-h-[300px] overflow-y-auto" align="start">
-              <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-start bg-slate-50">
+              <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-start bg-slate-50 dark:bg-transparent">
                 כל הלקוחות
               </DropdownMenuItem>
               {clients.map((client) => (
@@ -263,7 +263,7 @@ export function IncomeFilters({
                 size="sm"
                 onClick={onImportFromCalendar}
                 disabled={isImporting}
-                className="h-9 gap-2 bg-white border-slate-200 text-blue-600 hover:text-blue-700 hover:bg-blue-50 hidden md:flex disabled:opacity-50"
+                className="h-9 gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hidden md:flex disabled:opacity-50"
               >
                 {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
                 <span className="text-sm">{isImporting ? "מייבא..." : "ייבוא"}</span>
@@ -276,7 +276,7 @@ export function IncomeFilters({
         )}
 
         {/* Month Selector Dropdown with Arrows */}
-        <div className="flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 h-9">
+        <div className="flex items-center bg-white dark:bg-card rounded-md border border-slate-200 dark:border-border p-0.5 h-9">
           <Button
             variant="ghost"
             size="icon"
@@ -312,7 +312,7 @@ export function IncomeFilters({
                     onClick={() => onMonthChange(m)}
                     className={cn(
                       "flex items-center justify-between gap-4 cursor-pointer",
-                      month === m && "bg-slate-50 dark:bg-slate-800 font-medium"
+                      month === m && "bg-slate-50 dark:bg-card font-medium"
                     )}
                   >
                     <span>{mName}</span>
@@ -335,14 +335,14 @@ export function IncomeFilters({
         {/* Year Dropdown */}
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 px-3 justify-center gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-normal">
+            <Button variant="outline" className="h-9 px-3 justify-center gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-slate-700 dark:text-slate-300 font-normal">
               <span>{year}</span>
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="min-w-0" align="center">
             {/* Load Earlier Button */}
-            <div className="flex justify-center p-1 border-b border-slate-100 dark:border-slate-800 mb-1">
+            <div className="flex justify-center p-1 border-b border-slate-100 dark:border-border mb-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -360,7 +360,7 @@ export function IncomeFilters({
                   onClick={() => onYearChange(y)}
                   className={cn(
                     "justify-center text-center px-4 cursor-pointer",
-                    year === y && "bg-slate-50 dark:bg-slate-800 font-medium"
+                    year === y && "bg-slate-50 dark:bg-card font-medium"
                   )}
                 >
                   {y}
@@ -369,7 +369,7 @@ export function IncomeFilters({
             </div>
 
             {/* Load Later Button */}
-            <div className="flex justify-center p-1 border-t border-slate-100 dark:border-slate-800 mt-1">
+            <div className="flex justify-center p-1 border-t border-slate-100 dark:border-border mt-1">
               <Button
                 variant="ghost"
                 size="sm"

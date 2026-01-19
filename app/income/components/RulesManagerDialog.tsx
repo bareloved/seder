@@ -142,11 +142,11 @@ export function RulesManagerDialog({ isOpen, onClose }: RulesManagerDialogProps)
 
                 <div className="py-4 space-y-4">
                     {/* Tab Switcher */}
-                    <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <div className="flex p-1 bg-slate-100 dark:bg-card rounded-lg">
                         <button
                             onClick={() => { setActiveTab("work"); setIsExpanded(false); }}
                             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${activeTab === "work"
-                                ? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm"
+                                ? "bg-white dark:bg-muted text-emerald-700 dark:text-emerald-400 shadow-sm"
                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                                 }`}
                         >
@@ -155,7 +155,7 @@ export function RulesManagerDialog({ isOpen, onClose }: RulesManagerDialogProps)
                         <button
                             onClick={() => { setActiveTab("personal"); setIsExpanded(false); }}
                             className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${activeTab === "personal"
-                                ? "bg-white dark:bg-slate-700 text-rose-700 dark:text-rose-400 shadow-sm"
+                                ? "bg-white dark:bg-muted text-rose-700 dark:text-rose-400 shadow-sm"
                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                                 }`}
                         >
@@ -180,7 +180,7 @@ export function RulesManagerDialog({ isOpen, onClose }: RulesManagerDialogProps)
                                     <Badge
                                         key={keyword}
                                         variant="secondary"
-                                        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 gap-1 px-2 py-1 text-xs"
+                                        className="bg-slate-100 dark:bg-card text-slate-700 dark:text-slate-300 gap-1 px-2 py-1 text-xs"
                                     >
                                         <span className={isHebrew(keyword) ? "" : "font-mono text-[11px]"}>
                                             {keyword}
