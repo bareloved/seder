@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
 import { getUserCategories } from "@/app/categories/data";
-import { getUserClients } from "@/app/clients/data";
+import { getClientsWithAnalytics } from "@/app/clients/data";
 import IncomePageClient from "./IncomePageClient";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
@@ -38,6 +38,7 @@ async function IncomePageContent({
   user,
   limit,
   offset,
+  todayDateString,
 }: {
   year: number;
   month: number;
@@ -45,13 +46,16 @@ async function IncomePageContent({
   user: { name: string | null; email: string; image: string | null };
   limit?: number;
   offset?: number;
+  todayDateString: string;
 }) {
   // Fetch data in parallel
   const [entries, aggregates, clientNames, clientRecords, categories, monthStatuses, isGoogleConnected] = await Promise.all([
     getIncomeEntriesForMonth({ year, month, userId, limit, offset }),
     getIncomeAggregatesForMonth({ year, month, userId }),
     getUniqueClients(userId),
-    getUserClients(userId),
+    getClientsWithAnalytics(userId).then(clients =>
+      clients.sort((a, b) => b.jobCount - a.jobCount)
+    ),
     getUserCategories(userId),
     getMonthPaymentStatuses(year, userId),
     hasGoogleCalendarConnection(userId),
@@ -69,6 +73,7 @@ async function IncomePageContent({
       monthPaymentStatuses={monthStatuses}
       isGoogleConnected={isGoogleConnected}
       user={user}
+      todayDateString={todayDateString}
     />
   );
 }
@@ -98,6 +103,7 @@ export default async function IncomePage({
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // 1-indexed
+  const todayDateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // Parse year and month from search params, with defaults
   const year = params.year ? parseInt(params.year, 10) : currentYear;
@@ -124,6 +130,7 @@ export default async function IncomePage({
         }}
         limit={pageSize}
         offset={offset}
+        todayDateString={todayDateString}
       />
     </Suspense>
   );

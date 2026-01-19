@@ -71,8 +71,33 @@ export function ClientsPageClient({
   const [editingClient, setEditingClient] = React.useState<ClientWithAnalytics | null>(null);
   const [isMergeToolOpen, setIsMergeToolOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [sortBy, setSortBy] = React.useState<"name" | "jobs" | "outstanding" | "total">("name");
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = React.useState<"name" | "jobs" | "outstanding" | "total">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("clients-sort-by");
+      if (saved && ["name", "jobs", "outstanding", "total"].includes(saved)) {
+        return saved as "name" | "jobs" | "outstanding" | "total";
+      }
+    }
+    return "name";
+  });
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("clients-sort-direction");
+      if (saved && ["asc", "desc"].includes(saved)) {
+        return saved as "asc" | "desc";
+      }
+    }
+    return "asc";
+  });
+
+  // Persist sorting preferences to localStorage
+  React.useEffect(() => {
+    localStorage.setItem("clients-sort-by", sortBy);
+  }, [sortBy]);
+
+  React.useEffect(() => {
+    localStorage.setItem("clients-sort-direction", sortDirection);
+  }, [sortDirection]);
 
   const sortOptions = [
     { value: "name" as const, label: "שם" },
