@@ -24,8 +24,8 @@ const COLORS = [
 export function IncomeByCategoryChart({ data, metricType }: IncomeByCategoryChartProps) {
   if (data.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border">
           <h3 className="font-semibold text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</h3>
         </div>
         <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
@@ -38,8 +38,8 @@ export function IncomeByCategoryChart({ data, metricType }: IncomeByCategoryChar
   const dataKey = metricType === "amount" ? "amount" : "count";
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden transition-all hover:shadow-md">
-      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden transition-all hover:shadow-md">
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-border">
         <h3 className="font-semibold text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</h3>
       </div>
       <div className="p-4">

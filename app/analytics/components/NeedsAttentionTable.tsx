@@ -24,8 +24,8 @@ export function NeedsAttentionTable({ jobs }: NeedsAttentionTableProps) {
 
   if (jobs.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-border">
           <h3 className="font-semibold text-slate-800 dark:text-slate-100">דורש טיפול</h3>
         </div>
         <div className="flex flex-col items-center justify-center py-12 text-slate-500 dark:text-slate-400">
@@ -41,8 +41,8 @@ export function NeedsAttentionTable({ jobs }: NeedsAttentionTableProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-border">
         <h3 className="font-semibold text-slate-800 dark:text-slate-100">
           דורש טיפול <span className="text-slate-500 font-normal">({jobs.length})</span>
         </h3>
@@ -53,7 +53,7 @@ export function NeedsAttentionTable({ jobs }: NeedsAttentionTableProps) {
         {jobs.map((job) => (
           <div
             key={job.id}
-            className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700"
+            className="bg-slate-50 dark:bg-muted/50 rounded-lg p-4 border border-slate-100 dark:border-border"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
@@ -99,7 +99,7 @@ export function NeedsAttentionTable({ jobs }: NeedsAttentionTableProps) {
           </TableHeader>
           <TableBody>
             {jobs.map((job) => (
-              <TableRow key={job.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <TableRow key={job.id} className="hover:bg-slate-50 dark:hover:bg-muted/50">
                 <TableCell className="font-medium text-slate-800 dark:text-slate-100">{job.clientName}</TableCell>
                 <TableCell className="max-w-[200px] truncate text-slate-600 dark:text-slate-300">{job.description}</TableCell>
                 <TableCell className="font-semibold text-slate-800 dark:text-slate-100 font-numbers">{formatCurrency(job.amount)}</TableCell>

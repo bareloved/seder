@@ -152,7 +152,7 @@ export function ClientMergeTool({
                       "border rounded-lg transition-colors",
                       isMerged
                         ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20"
-                        : "border-slate-200 dark:border-slate-700"
+                        : "border-slate-200 dark:border-border"
                     )}
                   >
                     {/* Group Header */}
@@ -202,7 +202,7 @@ export function ClientMergeTool({
                                 "w-full p-2 rounded-md text-right text-sm flex items-center justify-between transition-colors",
                                 selectedTarget === client.name
                                   ? "bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700"
-                                  : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  : "bg-slate-50 dark:bg-muted hover:bg-slate-100 dark:hover:bg-slate-700"
                               )}
                             >
                               <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export function ClientMergeTool({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <DialogFooter className="gap-2 sm:gap-0 border-t border-slate-200 dark:border-border pt-4">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             {pendingGroups.length === 0 ? "סגור" : "ביטול"}
           </Button>

@@ -30,7 +30,7 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
 
   if (!client) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-muted rounded-xl shadow-sm border border-slate-200 dark:border-border p-6">
         <div className="text-center text-slate-500 dark:text-slate-400">
           <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>בחר לקוח כדי לראות את הנתונים שלו</p>
@@ -40,9 +40,9 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div className="bg-white dark:bg-muted rounded-xl shadow-sm border border-slate-200 dark:border-border overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="p-4 border-b border-slate-200 dark:border-border">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           {client.name}
         </h2>
@@ -109,7 +109,7 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
           </span>
         </div>
 
-        <div className="border-t border-slate-100 dark:border-slate-700 pt-4" />
+        <div className="border-t border-slate-100 dark:border-border pt-4" />
 
         {/* Job Count */}
         <div className="flex items-center justify-between">
@@ -149,7 +149,7 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
         {/* Outstanding & Overdue */}
         {(client.outstandingAmount > 0 || client.overdueInvoices > 0) && (
           <>
-            <div className="border-t border-slate-100 dark:border-slate-700 pt-4" />
+            <div className="border-t border-slate-100 dark:border-border pt-4" />
 
             {client.outstandingAmount > 0 && (
               <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
 
       {/* Notes */}
       {client.notes && (
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="p-4 border-t border-slate-200 dark:border-border">
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
             <FileText className="h-4 w-4" />
             הערות

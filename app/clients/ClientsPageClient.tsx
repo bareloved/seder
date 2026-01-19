@@ -240,14 +240,14 @@ export function ClientsPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background/50 pb-20 font-sans" dir="rtl">
       <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
         {/* Main Content Card */}
-        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
           {/* Toolbar */}
-          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-2 border-b border-slate-100 dark:border-border">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* Search & Sort */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -275,7 +275,7 @@ export function ClientsPageClient({
                         key={option.value}
                         onClick={() => setSortBy(option.value)}
                         className={cn(
-                          sortBy === option.value && "bg-slate-100 dark:bg-slate-800"
+                          sortBy === option.value && "bg-slate-100 dark:bg-muted"
                         )}
                       >
                         {option.label}
@@ -349,7 +349,7 @@ export function ClientsPageClient({
             <div className="lg:col-span-2">
               {sortedAndFilteredClients.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 px-4">
-                  <div className="h-14 w-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                  <div className="h-14 w-14 rounded-full bg-slate-100 dark:bg-muted flex items-center justify-center mb-4">
                     <Users className="h-7 w-7 text-slate-400" />
                   </div>
                   <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -378,7 +378,7 @@ export function ClientsPageClient({
                       key={client.id}
                       onClick={() => setSelectedClient(client)}
                       className={cn(
-                        "p-4 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                        "p-4 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-muted/50",
                         selectedClient?.id === client.id &&
                           "bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 border-s-2 border-s-blue-500"
                       )}
@@ -447,11 +447,11 @@ export function ClientsPageClient({
             </div>
 
             {/* Analytics Panel - Embedded */}
-            <div className="lg:col-span-1 bg-slate-50/50 dark:bg-slate-800/20">
+            <div className="lg:col-span-1 bg-slate-50/50 dark:bg-muted/20">
               {selectedClient ? (
                 <div className="p-4 space-y-4">
                   {/* Header */}
-                  <div className="pb-4 border-b border-slate-200/60 dark:border-slate-700">
+                  <div className="pb-4 border-b border-slate-200/60 dark:border-border">
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                       {selectedClient.name}
                     </h2>
@@ -513,7 +513,7 @@ export function ClientsPageClient({
                       </span>
                     </div>
 
-                    <div className="border-t border-slate-200/60 dark:border-slate-700 pt-3" />
+                    <div className="border-t border-slate-200/60 dark:border-border pt-3" />
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -549,7 +549,7 @@ export function ClientsPageClient({
 
                     {(selectedClient.outstandingAmount > 0 || selectedClient.overdueInvoices > 0) && (
                       <>
-                        <div className="border-t border-slate-200/60 dark:border-slate-700 pt-3" />
+                        <div className="border-t border-slate-200/60 dark:border-border pt-3" />
 
                         {selectedClient.outstandingAmount > 0 && (
                           <div className="flex items-center justify-between">
@@ -580,7 +580,7 @@ export function ClientsPageClient({
 
                   {/* Notes */}
                   {selectedClient.notes && (
-                    <div className="pt-3 border-t border-slate-200/60 dark:border-slate-700">
+                    <div className="pt-3 border-t border-slate-200/60 dark:border-border">
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
                         <FileText className="h-4 w-4" />
                         הערות
@@ -593,7 +593,7 @@ export function ClientsPageClient({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 px-4">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
+                  <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-muted flex items-center justify-center mb-3">
                     <Briefcase className="h-6 w-6 text-slate-400 dark:text-slate-500" />
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 text-center">

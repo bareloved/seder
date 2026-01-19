@@ -65,12 +65,12 @@ export default function AnalyticsPageClient({
   }, [initialEntries, dateRangePreset, customRange, selectedMonth, selectedYear]);
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
       <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
         {/* Filters Toolbar */}
-        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
           <div className="p-4">
             <AnalyticsHeader
               dateRangePreset={dateRangePreset}

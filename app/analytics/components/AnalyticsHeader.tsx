@@ -65,7 +65,7 @@ export function AnalyticsHeader({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="w-[140px] h-9 justify-between font-normal text-sm border-slate-200 dark:border-slate-700"
+              className="w-[140px] h-9 justify-between font-normal text-sm border-slate-200 dark:border-border"
             >
               <span className="truncate">
                 {dateRangePreset === "this-month" && "החודש"}
@@ -100,7 +100,7 @@ export function AnalyticsHeader({
               variant="outline"
               size="icon"
               onClick={handlePreviousMonth}
-              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+              className="h-9 w-9 border-slate-200 dark:border-border"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -109,7 +109,7 @@ export function AnalyticsHeader({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[100px] h-9 text-sm justify-between px-3 font-medium border-slate-200 dark:border-slate-700"
+                  className="w-[100px] h-9 text-sm justify-between px-3 font-medium border-slate-200 dark:border-border"
                 >
                   <span>{MONTH_NAMES[selectedMonth]}</span>
                   <ChevronDown className="h-4 w-4 opacity-50" />
@@ -138,7 +138,7 @@ export function AnalyticsHeader({
               variant="outline"
               size="icon"
               onClick={handleNextMonth}
-              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+              className="h-9 w-9 border-slate-200 dark:border-border"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -147,7 +147,7 @@ export function AnalyticsHeader({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-slate-700"
+                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-border"
                 >
                   {selectedYear}
                   <ChevronDown className="h-4 w-4 opacity-50" />
@@ -178,7 +178,7 @@ export function AnalyticsHeader({
               variant="outline"
               size="icon"
               onClick={() => onYearChange(selectedYear - 1)}
-              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+              className="h-9 w-9 border-slate-200 dark:border-border"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -187,7 +187,7 @@ export function AnalyticsHeader({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-slate-700"
+                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-border"
                 >
                   {selectedYear}
                   <ChevronDown className="h-4 w-4 opacity-50" />
@@ -213,7 +213,7 @@ export function AnalyticsHeader({
               variant="outline"
               size="icon"
               onClick={() => onYearChange(selectedYear + 1)}
-              className="h-9 w-9 border-slate-200 dark:border-slate-700"
+              className="h-9 w-9 border-slate-200 dark:border-border"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -224,7 +224,7 @@ export function AnalyticsHeader({
       {/* Metric Toggle */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">מדד:</span>
-        <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden" role="group">
+        <div className="inline-flex rounded-lg border border-slate-200 dark:border-border overflow-hidden" role="group">
           <Button
             variant={metricType === "amount" ? "default" : "ghost"}
             size="sm"
@@ -233,7 +233,7 @@ export function AnalyticsHeader({
               "rounded-none h-9 px-4",
               metricType === "amount"
                 ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                : "hover:bg-slate-50 dark:hover:bg-muted/50"
             )}
           >
             סכום
@@ -246,7 +246,7 @@ export function AnalyticsHeader({
               "rounded-none h-9 px-4",
               metricType === "count"
                 ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                : "hover:bg-slate-50 dark:hover:bg-muted/50"
             )}
           >
             כמות
