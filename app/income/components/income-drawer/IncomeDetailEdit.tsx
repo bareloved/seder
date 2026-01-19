@@ -36,10 +36,13 @@ import {
 import type { Category } from "@/db/schema";
 import { formatFullDate, getDisplayStatus, getVatTypeFromEntry } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
+import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
+import type { Client } from "@/db/schema";
 
 interface IncomeDetailEditProps {
   entry: IncomeEntry;
   categories: Category[];
+  clients: Client[];
   onSave: (entry: IncomeEntry & { status?: DisplayStatus; vatType?: VatType }) => void;
   onClose: () => void;
   onMarkAsPaid: (id: string) => void;
@@ -55,6 +58,7 @@ type EditableIncomeEntry = IncomeEntry & {
 export function IncomeDetailEdit({
   entry,
   categories,
+  clients,
   onSave,
   onClose,
   onMarkAsPaid,
@@ -72,7 +76,6 @@ export function IncomeDetailEdit({
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const descriptionRef = React.useRef<HTMLInputElement>(null);
   const amountRef = React.useRef<HTMLInputElement>(null);
-  const clientRef = React.useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave(editedEntry);
@@ -97,7 +100,7 @@ export function IncomeDetailEdit({
           ? descriptionRef.current
           : initialFocusField === "amount"
             ? amountRef.current
-            : clientRef.current;
+            : null; // Client dropdown handles its own focus
 
       target?.focus();
       if (target instanceof HTMLInputElement) {
@@ -117,11 +120,18 @@ export function IncomeDetailEdit({
             <User className="h-3.5 w-3.5" />
             לקוח
           </label>
-          <Input
-            ref={clientRef}
-            value={editedEntry.clientName}
-            onChange={(e) => handleChange({ clientName: e.target.value })}
-            className={inputClassName}
+          <ClientDropdown
+            clients={clients}
+            selectedClientId={editedEntry.clientId}
+            selectedClientName={editedEntry.clientName}
+            onSelect={(client, name) => {
+              handleChange({
+                clientId: client?.id ?? null,
+                clientName: name,
+              });
+            }}
+            className={cn(inputClassName, "w-full")}
+            allowCreate={true}
           />
         </div>
 

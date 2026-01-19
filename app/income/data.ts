@@ -89,6 +89,7 @@ export async function getIncomeEntriesForMonth({
       date: incomeEntries.date,
       description: incomeEntries.description,
       clientName: incomeEntries.clientName,
+      clientId: incomeEntries.clientId,
       amountGross: incomeEntries.amountGross,
       amountPaid: incomeEntries.amountPaid,
       vatRate: incomeEntries.vatRate,
@@ -132,6 +133,7 @@ export async function getAllIncomeEntries(userId: string): Promise<IncomeEntryWi
       date: incomeEntries.date,
       description: incomeEntries.description,
       clientName: incomeEntries.clientName,
+      clientId: incomeEntries.clientId,
       amountGross: incomeEntries.amountGross,
       amountPaid: incomeEntries.amountPaid,
       vatRate: incomeEntries.vatRate,
@@ -389,6 +391,7 @@ export interface CreateIncomeEntryInput {
   date: string;
   description: string;
   clientName: string;
+  clientId?: string; // FK to clients table
   amountGross: number;
   amountPaid?: number;
   vatRate?: number;
@@ -411,6 +414,7 @@ export async function createIncomeEntry(input: CreateIncomeEntryInput): Promise<
       date: input.date,
       description: input.description,
       clientName: input.clientName,
+      clientId: input.clientId,
       amountGross: input.amountGross.toFixed(2),
       amountPaid: (input.amountPaid ?? 0).toFixed(2),
       vatRate: (input.vatRate ?? DEFAULT_VAT_RATE).toFixed(2),
@@ -437,6 +441,7 @@ export interface UpdateIncomeEntryInput {
   date?: string;
   description?: string;
   clientName?: string;
+  clientId?: string | null; // FK to clients table
   amountGross?: number;
   amountPaid?: number;
   vatRate?: number;
@@ -457,6 +462,7 @@ export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<
   if (updates.date !== undefined) updateData.date = updates.date;
   if (updates.description !== undefined) updateData.description = updates.description;
   if (updates.clientName !== undefined) updateData.clientName = updates.clientName;
+  if (updates.clientId !== undefined) updateData.clientId = updates.clientId ?? undefined;
   if (updates.amountGross !== undefined) updateData.amountGross = updates.amountGross.toFixed(2);
   if (updates.amountPaid !== undefined) updateData.amountPaid = updates.amountPaid.toFixed(2);
   if (updates.vatRate !== undefined) updateData.vatRate = updates.vatRate.toFixed(2);

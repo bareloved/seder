@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ListX, Plus, X } from "lucide-react";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeFilters } from "./IncomeFilters";
@@ -22,6 +22,7 @@ import { formatCurrency } from "../utils";
 interface IncomeCardsViewProps {
   entries: IncomeEntry[];
   clients: string[];
+  clientRecords?: Client[];
   categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
@@ -177,6 +178,7 @@ function DesktopCardsTotals({ entries }: { entries: IncomeEntry[] }) {
 export const IncomeCardsView = React.memo(function IncomeCardsView({
   entries,
   clients,
+  clientRecords,
   categories,
   defaultDate,
   onRowClick,

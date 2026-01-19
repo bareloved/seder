@@ -5,15 +5,18 @@ import { invoiceStatusValues, paymentStatusValues } from "@/db/schema";
 // Basic field schemas
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)");
 const amountSchema = zfd.numeric(z.number().min(0));
+// UUID that allows empty string (converts to undefined)
+const optionalUuidSchema = z.string().transform((val) => val === "" ? undefined : val).pipe(z.string().uuid().optional());
 // Create Entry Schema
 export const createIncomeEntrySchema = zfd.formData({
   date: dateSchema,
   description: zfd.text(z.string().min(1, "Description is required")),
   clientName: zfd.text(z.string().min(1, "Client name is required")),
+  clientId: zfd.text(optionalUuidSchema), // FK to clients table (empty string → undefined)
   amountGross: amountSchema,
   amountPaid: zfd.numeric(z.number().min(0).optional().default(0)),
   category: zfd.text(z.string().optional()),
-  categoryId: zfd.text(z.string().uuid().optional()), // New FK to categories table
+  categoryId: zfd.text(optionalUuidSchema), // FK to categories table (empty string → undefined)
   notes: zfd.text(z.string().optional()),
   vatRate: zfd.numeric(z.number().min(0).default(18)),
   // Handle boolean string "true"/"false" or checkbox value
@@ -31,10 +34,11 @@ export const updateIncomeEntrySchema = zfd.formData({
   date: dateSchema.optional(),
   description: zfd.text(z.string().optional()),
   clientName: zfd.text(z.string().optional()),
+  clientId: zfd.text(optionalUuidSchema), // FK to clients table (empty string → undefined)
   amountGross: zfd.numeric(z.number().min(0).optional()),
   amountPaid: zfd.numeric(z.number().min(0).optional()),
   category: zfd.text(z.string().optional()),
-  categoryId: zfd.text(z.string().uuid().optional()), // New FK to categories table
+  categoryId: zfd.text(optionalUuidSchema), // FK to categories table (empty string → undefined)
   notes: zfd.text(z.string().optional()),
   vatRate: zfd.numeric(z.number().min(0).optional()),
   includesVat: zfd.text(z.string().transform((val) => val === "true")).optional(),

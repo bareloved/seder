@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IncomeEntry, DisplayStatus, VatType } from "../types";
-import type { Category } from "@/db/schema";
+import type { Category, Client } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeFilters } from "./IncomeFilters";
@@ -74,6 +74,7 @@ const COLUMN_LABELS: Record<ColumnKey, string> = {
 interface IncomeListViewProps {
   entries: IncomeEntry[];
   clients: string[];
+  clientRecords?: Client[];
   categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
@@ -180,6 +181,7 @@ type Totals = {
 export const IncomeListView = React.memo(function IncomeListView({
   entries,
   clients,
+  clientRecords,
   categories,
   defaultDate,
   onRowClick,
@@ -583,6 +585,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 onDelete={onDelete}
                 onInlineEdit={onInlineEdit}
                 clients={clients}
+                clientRecords={clientRecords}
                 categories={categories}
                 columnOrder={columnOrder}
                 columnWidths={columnWidths}

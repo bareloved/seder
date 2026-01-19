@@ -46,6 +46,8 @@ import {
   getWeekday,
 } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
+import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
+import type { Client } from "@/db/schema";
 
 type EditableField = "date" | "description" | "amountGross" | "clientName" | "category" | null;
 
@@ -53,6 +55,7 @@ interface IncomeTableRowProps {
   entry: IncomeEntry;
   index: number;
   clients?: string[];
+  clientRecords?: Client[];
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
   onMarkAsPaid: (id: string) => void;
@@ -66,6 +69,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
   entry,
   index,
   clients = [],
+  clientRecords = [],
   onRowClick,
   onStatusChange,
   onMarkAsPaid,
@@ -343,35 +347,28 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
 
       {/* Client */}
       <TableCell className="py-3 overflow-hidden">
-        {editingField === "clientName" ? (
-          <Input
-            ref={inputRef}
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={saveEdit}
-            onKeyDown={handleKeyDown}
-            className="h-7 text-sm w-full px-2 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-            dir="rtl"
-            list="clients-list"
+        {onInlineEdit && clientRecords.length > 0 ? (
+          <ClientDropdown
+            clients={clientRecords}
+            selectedClientId={entry.clientId}
+            selectedClientName={entry.clientName}
+            onSelect={(client, name) => {
+              onInlineEdit(entry.id, "clientId", client?.id ?? "");
+              onInlineEdit(entry.id, "clientName", name);
+            }}
+            className="h-7 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
+            compact={true}
+            allowCreate={true}
           />
         ) : (
           <span
             className={cn(
-              "text-sm text-slate-600 dark:text-slate-400 font-medium truncate block rounded-md px-2 py-1 -mx-2 -my-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[28px]",
-              onInlineEdit && "cursor-text"
+              "text-sm text-slate-600 dark:text-slate-400 font-medium truncate block rounded-md px-2 py-1 -mx-2 -my-1 min-h-[28px]"
             )}
-            onClick={() => onInlineEdit && startEditing("clientName", entry.clientName)}
           >
             {entry.clientName}
           </span>
         )}
-        {/* Client suggestions datalist */}
-        <datalist id="clients-list">
-          {clients.map((client) => (
-            <option key={client} value={client} />
-          ))}
-        </datalist>
       </TableCell>
 
       {/* Category */}
