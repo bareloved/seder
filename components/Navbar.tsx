@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { User, ClipboardList, Settings, LogOut } from "lucide-react";
+import { User, ClipboardList, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -26,6 +27,12 @@ interface NavbarProps {
 export function Navbar({ user }: NavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleLogout = async () => {
         await authClient.signOut({
@@ -45,7 +52,7 @@ export function Navbar({ user }: NavbarProps) {
     ];
 
     return (
-        <header className="bg-brand-primary text-white shadow-sm sticky top-0 z-50 h-[80px]" dir="rtl">
+        <header className="bg-brand-primary dark:bg-[#1a3a2a] text-white shadow-sm sticky top-0 z-50 h-[80px] dark:border-b dark:border-border" dir="rtl">
             <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 h-full flex items-center justify-between">
 
                 {/* Right Side: Logo & Navigation */}
@@ -90,8 +97,25 @@ export function Navbar({ user }: NavbarProps) {
                     </nav>
                 </div>
 
-                {/* Left Side: User Profile Dropdown */}
+                {/* Left Side: Theme Toggle & User Profile */}
                 <div className="flex items-center gap-4 pl-2">
+                    {/* Theme Toggle */}
+                    <button
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                        aria-label="החלף ערכת נושא"
+                    >
+                        {mounted ? (
+                            theme === "dark" ? (
+                                <Sun className="w-5 h-5 text-white" />
+                            ) : (
+                                <Moon className="w-5 h-5 text-white" />
+                            )
+                        ) : (
+                            <div className="w-5 h-5" />
+                        )}
+                    </button>
+
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                             <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">

@@ -66,7 +66,7 @@ function EmptyState({
   if (type === "no-data") {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
-        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
           <CalendarDays className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
         </div>
         <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -88,7 +88,7 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
-      <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+      <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
         <ListX className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
       </div>
       <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -118,7 +118,7 @@ function MobileTotals({ entries }: { entries: IncomeEntry[] }) {
   if (entries.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-3 mt-3">
+    <div className="rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-card/50 p-3 mt-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-600 dark:text-slate-400 font-medium">
           סה״כ ({entries.length} עבודות)
@@ -150,7 +150,7 @@ function DesktopCardsTotals({ entries }: { entries: IncomeEntry[] }) {
   if (entries.length === 0) return null;
 
   return (
-    <div className="mt-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+    <div className="mt-4 p-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-card/50">
       <div className="grid grid-cols-3 items-center text-center gap-4">
         <div className="flex flex-col items-center">
           <span className="text-sm text-slate-500 dark:text-slate-400 block">סה״כ ({entries.length} עבודות)</span>
@@ -218,13 +218,13 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
 
         {/* Empty States */}
         {hasNoData && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="no-data" onAddClick={onNewEntry} />
           </Card>
         )}
 
         {hasFilteredAway && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="filtered" onClearFilter={onClearFilter} />
           </Card>
         )}
@@ -265,13 +265,13 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
 
         {/* Empty States for Mobile */}
         {hasNoData && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="no-data" onAddClick={() => { }} />
           </Card>
         )}
 
         {hasFilteredAway && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="filtered" onClearFilter={onClearFilter} />
           </Card>
         )}

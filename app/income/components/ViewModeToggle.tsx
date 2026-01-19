@@ -31,7 +31,7 @@ export function ViewModeToggle({
   return (
     <div
       className={cn(
-        "flex items-center gap-0.5 p-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm",
+        "flex items-center gap-0.5 p-1 bg-white dark:bg-card rounded-full border border-slate-200 dark:border-border shadow-sm",
         className
       )}
     >

@@ -762,7 +762,7 @@ export default function IncomePageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
 
       <Navbar user={user} />
 
@@ -779,10 +779,10 @@ export default function IncomePageClient({
         </section>
 
         {/* Main Content Card - Filters + Table in one white container */}
-        <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
 
           {/* Toolbar / Filters Area */}
-          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-2 border-b border-slate-100 dark:border-border">
             <IncomeFilters
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}

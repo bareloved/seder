@@ -90,7 +90,7 @@ export function IncomeDetailEdit({
   const displayStatus = getDisplayStatus(editedEntry);
 
   // Common input style - clearly editable with visible border
-  const inputClassName = "h-10 px-3 text-base font-sans text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-md transition-all shadow-none text-right placeholder:text-slate-400";
+  const inputClassName = "h-10 px-3 text-base font-sans text-slate-900 dark:text-slate-100 bg-white dark:bg-card border border-slate-200 dark:border-border hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-md transition-all shadow-none text-right placeholder:text-slate-400";
   const labelClassName = "text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5";
 
   React.useEffect(() => {
@@ -261,12 +261,12 @@ export function IncomeDetailEdit({
         <textarea
           value={editedEntry.notes || ""}
           onChange={(e) => handleChange({ notes: e.target.value })}
-          className="w-full h-20 text-base font-sans p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 rounded-md resize-none focus:outline-none focus:ring-0 transition-all"
+          className="w-full h-20 text-base font-sans p-3 border border-slate-200 dark:border-border bg-white dark:bg-card hover:border-slate-300 dark:hover:border-slate-600 focus:border-slate-400 rounded-md resize-none focus:outline-none focus:ring-0 transition-all"
         />
       </div>
 
       {/* Footer Actions */}
-      <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-border">
         {/* Save Changes (only if dirty) */}
         {isDirty && (
           <Button

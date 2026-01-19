@@ -70,7 +70,7 @@ export function IncomeDetailDialog({
         className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto font-sans"
         dir="rtl"
       >
-        <DialogHeader className="pb-3 border-b border-slate-200 dark:border-slate-700">
+        <DialogHeader className="pb-3 border-b border-slate-200 dark:border-border">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {isNew ? "עבודה חדשה" : "פרטי עבודה"}

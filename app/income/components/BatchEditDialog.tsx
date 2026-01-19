@@ -113,7 +113,7 @@ export function BatchEditDialog({
                   dir="rtl"
                 />
                 {showSuggestions && filteredClients.length > 0 && (
-                  <div className="absolute z-20 top-full right-0 left-0 mt-1 bg-white dark:bg-slate-800 shadow-lg rounded-md border border-slate-200 dark:border-slate-700 max-h-[200px] overflow-y-auto">
+                  <div className="absolute z-20 top-full right-0 left-0 mt-1 bg-white dark:bg-card shadow-lg rounded-md border border-slate-200 dark:border-border max-h-[200px] overflow-y-auto">
                     {filteredClients.map((client) => (
                       <button
                         key={client}
@@ -147,8 +147,8 @@ export function BatchEditDialog({
                   className={cn(
                     "p-3 rounded-lg border text-sm text-right transition-colors",
                     selectedCategoryId === null
-                      ? "border-slate-400 bg-slate-50 dark:bg-slate-800"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      ? "border-slate-400 bg-slate-50 dark:bg-card"
+                      : "border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
                   <span className="text-slate-500">ללא קטגוריה</span>
@@ -163,8 +163,8 @@ export function BatchEditDialog({
                     className={cn(
                       "p-3 rounded-lg border text-sm text-right transition-colors",
                       selectedCategoryId === category.id
-                        ? "border-slate-400 bg-slate-50 dark:bg-slate-800"
-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        ? "border-slate-400 bg-slate-50 dark:bg-card"
+                        : "border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-slate-800"
                     )}
                   >
                     <CategoryChip category={category} size="sm" withIcon />

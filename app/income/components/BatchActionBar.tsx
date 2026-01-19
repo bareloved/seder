@@ -43,7 +43,7 @@ export function BatchActionBar({
         isVisible ? "translate-y-0" : "translate-y-full"
       )}
     >
-      <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-lg">
+      <div className="bg-white dark:bg-card border-t border-slate-200 dark:border-border shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4" dir="rtl">
             {/* Right side: Selected count */}

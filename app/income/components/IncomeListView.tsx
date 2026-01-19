@@ -124,7 +124,7 @@ function EmptyState({
   if (type === "no-data") {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
-        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+        <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
           <CalendarDays className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
         </div>
         <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -146,7 +146,7 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
-      <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+      <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
         <ListX className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
       </div>
       <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -526,8 +526,8 @@ export const IncomeListView = React.memo(function IncomeListView({
                 style={dynamicWidth ? { width: dynamicWidth } : undefined}
                 className={`
                   ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
-                  ${dropTarget?.key === key ? "bg-slate-50 dark:bg-slate-800/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
-                  ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-slate-800/50 dashed border border-site-300" : !resizing ? "cursor-grab active:cursor-grabbing" : ""}
+                  ${dropTarget?.key === key ? "bg-slate-50 dark:bg-card/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
+                  ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-card/50 dashed border border-site-300" : !resizing ? "cursor-grab active:cursor-grabbing" : ""}
                 `}
               >
                 {/* Resize handle on left edge (end in RTL) for resizable columns */}
@@ -542,7 +542,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 {/* Drop candidate indicator line */}
                 {dropTarget?.key === key && (
                   <div
-                    className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-slate-600 z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
+                    className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-border z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
                   />
                 )}
                 {headerContent[key]}
@@ -556,13 +556,13 @@ export const IncomeListView = React.memo(function IncomeListView({
 
         {/* Empty States */}
         {hasNoData && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="no-data" onAddClick={handleAddClick} />
           </Card>
         )}
 
         {hasFilteredAway && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="filtered" onClearFilter={onClearFilter} />
           </Card>
         )}
@@ -614,13 +614,13 @@ export const IncomeListView = React.memo(function IncomeListView({
 
         {/* Empty States for Mobile */}
         {hasNoData && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="no-data" onAddClick={() => { }} />
           </Card>
         )}
 
         {hasFilteredAway && (
-          <Card className="bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm">
+          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
             <EmptyState type="filtered" onClearFilter={onClearFilter} />
           </Card>
         )}
@@ -655,7 +655,7 @@ export const IncomeListView = React.memo(function IncomeListView({
       {/* Custom Drag Preview Element (Hidden off-screen) */}
       <div
         ref={dragPreviewRef}
-        className="fixed top-[-1000px] left-[-1000px] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1.5 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 font-medium text-xs flex items-center gap-1.5 pointer-events-none z-50 whitespace-nowrap"
+        className="fixed top-[-1000px] left-[-1000px] bg-white dark:bg-card text-slate-900 dark:text-slate-100 px-2 py-1.5 rounded-md shadow-lg border border-slate-200 dark:border-border font-medium text-xs flex items-center gap-1.5 pointer-events-none z-50 whitespace-nowrap"
       >
         <GripVertical className="h-3 w-3 text-slate-400" />
         <span id="drag-preview-text"></span>

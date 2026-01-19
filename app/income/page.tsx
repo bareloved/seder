@@ -15,10 +15,10 @@ export const dynamic = "force-dynamic";
 // Loading component for Suspense
 function IncomePageSkeleton() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950" dir="rtl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-background" dir="rtl">
       <div className="flex flex-col items-center gap-6">
         <div className="relative">
-          <div className="w-16 h-16 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+          <div className="w-16 h-16 rounded-full border-4 border-slate-200 dark:border-border" />
           <div className="absolute top-0 left-0 w-16 h-16 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
         </div>
         <div className="flex flex-col items-center gap-1">

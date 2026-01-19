@@ -201,11 +201,11 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
   return (
     <TableRow
       className={cn(
-        "border-b border-slate-200 dark:border-slate-700 transition-colors group",
+        "border-b border-slate-200 dark:border-border transition-colors group",
         isEven
-          ? "bg-white dark:bg-slate-900"
-          : "bg-slate-50/40 dark:bg-slate-800/20",
-        "hover:bg-slate-50/60 dark:hover:bg-slate-800/40",
+          ? "bg-white dark:bg-card"
+          : "bg-slate-50/40 dark:bg-muted/20",
+        "hover:bg-slate-50/60 dark:hover:bg-muted/30",
         // Highlight unpaid past jobs with red tint and shadow
         isUnpaidPast && "bg-red-50/60 dark:bg-red-900/20 shadow-[inset_0_0_0_1px_rgba(239,68,68,0.2),0_1px_2px_rgba(239,68,68,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(239,68,68,0.3),0_1px_2px_rgba(239,68,68,0.18)]",
         // Stronger highlight for overdue (invoice sent > 30 days)
@@ -220,7 +220,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
             <PopoverTrigger asChild>
               <div
                 className={cn(
-                  "flex items-center gap-1 cursor-pointer rounded-md px-0.5 py-1 -mx-0.5 -my-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-numbers"
+                  "flex items-center gap-1 cursor-pointer rounded-md px-0.5 py-1 -mx-0.5 -my-1 hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors font-numbers"
                 )}
               >
                 <span className="text-sm text-slate-800 dark:text-slate-200">
@@ -275,7 +275,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
         ) : (
           <div
             className={cn(
-              "relative flex flex-col gap-0.5 overflow-hidden rounded-md px-2 py-1 -mx-2 -my-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[28px] justify-center",
+              "relative flex flex-col gap-0.5 overflow-hidden rounded-md px-2 py-1 -mx-2 -my-1 hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors min-h-[28px] justify-center",
               onInlineEdit && "cursor-text"
             )}
             onClick={() => onInlineEdit && startEditing("description", entry.description)}
@@ -330,7 +330,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
           ) : (
             <span
               className={cn(
-                "text-sm rounded-md px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-numbers",
+                "text-sm rounded-md px-2 py-1 hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors font-numbers",
                 displayStatus === "שולם"
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-orange-600 dark:text-orange-400",
@@ -356,7 +356,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
               onInlineEdit(entry.id, "clientId", client?.id ?? "");
               onInlineEdit(entry.id, "clientName", name);
             }}
-            className="h-7 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="h-7 text-sm w-full border-0 bg-transparent hover:bg-slate-100 dark:hover:bg-muted/50"
             compact={true}
             allowCreate={true}
           />
@@ -387,7 +387,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-7 w-full text-sm px-2 py-1 justify-start font-normal text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-7 w-full text-sm px-2 py-1 justify-start font-normal text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-muted/50"
               >
                 {editValue || "בחר קטגוריה..."}
               </Button>
@@ -428,7 +428,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
         ) : (
           <div
             className={cn(
-              "rounded-md px-2 py-1 -mx-2 -my-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[28px]",
+              "rounded-md px-2 py-1 -mx-2 -my-1 hover:bg-slate-100 dark:hover:bg-muted/50 transition-colors min-h-[28px]",
               onInlineEdit && "cursor-pointer"
             )}
             onClick={() => onInlineEdit && startEditing("category", entry.category || "")}
@@ -517,7 +517,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="h-7 w-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-muted/50"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />
