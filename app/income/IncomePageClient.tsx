@@ -531,8 +531,8 @@ export default function IncomePageClient({
       const formData = new FormData();
       formData.append("date", entry.date);
       formData.append("description", entry.description);
-      formData.append("clientName", entry.clientName);
-      formData.append("clientId", entry.clientId || "");
+      formData.append("clientName", entry.clientName || "");
+      if (entry.clientId) formData.append("clientId", entry.clientId);
       formData.append("amountGross", entry.amountGross.toString());
       formData.append("amountPaid", entry.amountPaid.toString());
       if (entry.category) formData.append("category", entry.category);
