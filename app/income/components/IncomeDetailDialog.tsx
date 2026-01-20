@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -75,6 +76,9 @@ export function IncomeDetailDialog({
             <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {isNew ? "עבודה חדשה" : "פרטי עבודה"}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {isNew ? "הוספת רשומת הכנסה חדשה" : "צפייה ועריכת פרטי הכנסה"}
+            </DialogDescription>
             {statusConfig && !isNew && (
               <Badge
                 className={cn(
