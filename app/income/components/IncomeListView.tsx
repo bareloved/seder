@@ -607,11 +607,6 @@ export const IncomeListView = React.memo(function IncomeListView({
           Same IncomeEntryRow component, stacked vertically (no inline editing)
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="md:hidden print:hidden">
-        {/* Mobile Quick Add */}
-        <div className="mb-3">
-          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} categories={categories} defaultDate={defaultDate} />
-        </div>
-
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
@@ -630,7 +625,7 @@ export const IncomeListView = React.memo(function IncomeListView({
             No inline editing on mobile - uses same component but without handlers
             ═══════════════════════════════════════════════════════════════════ */}
         {entries.length > 0 && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0">
             {entries.map((entry) => (
               <IncomeEntryRow
                 key={entry.id}

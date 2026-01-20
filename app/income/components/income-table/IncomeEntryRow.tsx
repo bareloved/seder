@@ -491,25 +491,54 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          MOBILE LAYOUT (<md) - Kept mostly same but cleaner
+          MOBILE LAYOUT (<md) - Description on top, client below, date+amount at bottom
+          Tap anywhere on card to open actions menu
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="md:hidden p-3 border-b border-slate-100" onClick={() => onClick(entry)}>
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-base font-medium text-slate-900 dark:text-slate-200">{formatDate(entry.date)}</span>
-          <span className="text-base font-bold text-slate-900 dark:text-slate-200" dir="ltr"><span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="text-base text-slate-800 dark:text-slate-200">{entry.description}</span>
-            <span className="text-sm text-slate-500">{entry.clientName}</span>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <div className="md:hidden px-2 py-2 border-b border-slate-100 dark:border-border/50 cursor-pointer active:bg-slate-50 dark:active:bg-muted/30">
+            {/* Top row: Description (right) + Status badge (left) */}
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2">{entry.description}</span>
+              {statusConfig && (
+                <Badge variant="outline" className={`text-[10px] px-2 py-0.5 shrink-0 ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
+                  {statusConfig.label}
+                </Badge>
+              )}
+            </div>
+            {/* Middle row: Client name */}
+            <span className="text-xs text-slate-500 dark:text-slate-400">{entry.clientName}</span>
+            {/* Bottom row: Date (right) | Amount (left) */}
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400 dark:text-slate-500 font-numbers">{formatDate(entry.date)}</span>
+              <span className="text-base font-medium text-slate-900 dark:text-slate-200 font-numbers" dir="ltr">₪ {entry.amountGross.toLocaleString("he-IL")}</span>
+            </div>
           </div>
-          {statusConfig && (
-            <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
-              {statusConfig.label}
-            </Badge>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[150px]">
+          <DropdownMenuItem onClick={() => onClick(entry)} className="gap-2 justify-end whitespace-nowrap">
+            <span>עריכה</span>
+            <Pencil className="h-3.5 w-3.5 shrink-0" />
+          </DropdownMenuItem>
+          {!isPaid && (
+            <DropdownMenuItem onClick={() => onMarkAsPaid(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+              <span>סמן כשולם</span>
+              <Check className="h-3.5 w-3.5 shrink-0" />
+            </DropdownMenuItem>
           )}
-        </div>
-      </div>
+          {isDraft && (
+            <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
+              <span>נשלחה חשבונית</span>
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onDelete(entry.id)} className="gap-2 justify-end whitespace-nowrap text-red-600 focus:text-red-600">
+            <span>מחיקה</span>
+            <Trash2 className="h-3.5 w-3.5 shrink-0" />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
     </div>
   );

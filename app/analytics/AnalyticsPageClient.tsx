@@ -110,7 +110,7 @@ export default function AnalyticsPageClient({
           <a href="#" className="hover:text-slate-600 transition-colors">מדיניות פרטיות</a>
           <a href="#" className="hover:text-slate-600 transition-colors">תנאי שימוש</a>
         </div>
-        <p>© 2026 סדר - יוצאים לעצמאות</p>
+        <p>© 2026 סדר</p>
       </footer>
 
       {/* Mobile Bottom Navigation */}

@@ -258,11 +258,6 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
           Full card layout with rich details - existing design
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="md:hidden print:hidden">
-        {/* Mobile Quick Add */}
-        <div className="mb-3">
-          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} categories={categories} defaultDate={defaultDate} />
-        </div>
-
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">

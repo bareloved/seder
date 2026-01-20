@@ -92,31 +92,21 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
       onClick={() => onCardClick(entry)}
     >
       {/* ════════════════════════════════════════════════════════════════════════
-          MAIN CONTENT AREA - 3 Column Layout (RTL: Right→Left)
-          Right: Date + Status (stacked)
-          Center: Description + Client/Category
-          Left: Amount (large, vertically centered)
+          MAIN CONTENT AREA - Stacked Layout
+          Top: Description (with status badge, calendar icon, etc.)
+          Middle: Client name
+          Bottom: Date (right, smaller) | Amount (left)
           ════════════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-stretch gap-3">
-        
-        {/* RIGHT COLUMN: Date + Status (stacked) */}
-        <div className="flex flex-col items-start gap-1.5 min-w-[65px]">
-          {/* Date */}
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold font-numbers text-slate-700 dark:text-slate-200">
-              {formatDate(entry.date)}
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              {getWeekday(new Date(entry.date))}
-            </span>
-          </div>
-          
+      <div className="flex flex-col gap-1.5">
+
+        {/* TOP ROW: Status badge + Description */}
+        <div className="flex items-start gap-2">
           {/* Status Badge - Tappable dropdown */}
           {statusConfig && (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="focus:outline-none"
+                  className="focus:outline-none flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Badge
@@ -168,22 +158,19 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
 
           {/* Overdue badge */}
           {overdue && (
-            <Badge className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 border-0 dark:bg-red-900/40 dark:text-red-200 animate-pulse">
+            <Badge className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 border-0 dark:bg-red-900/40 dark:text-red-200 animate-pulse flex-shrink-0">
               מאחר
             </Badge>
           )}
-        </div>
 
-        {/* CENTER COLUMN: Description + Client/Category */}
-        <div className="flex-1 flex flex-col justify-center min-w-0 gap-1">
           {/* Description with calendar icon if imported */}
-          <div className="flex items-start gap-1.5">
+          <div className="flex items-start gap-1.5 flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-snug line-clamp-2 flex-1">
               {entry.description}
             </p>
             {isFromCalendar && (
-              <CalendarDays 
-                className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" 
+              <CalendarDays
+                className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5"
                 aria-label="יובא מהיומן"
               />
             )}
@@ -193,32 +180,38 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
               </Badge>
             )}
           </div>
-          
-          {/* Client + Category + Notes indicator */}
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <span className="font-medium truncate max-w-[120px]">{entry.clientName}</span>
-            {(entry.categoryData || entry.category) && (
-              <>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={true} />
-              </>
-            )}
-            {hasNotes && (
-              <StickyNote className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
-            )}
-          </div>
         </div>
 
-        {/* LEFT COLUMN: Amount (large, scannable) */}
-        <div className="flex items-center justify-end min-w-[85px]">
+        {/* MIDDLE ROW: Client + Category + Notes indicator */}
+        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-medium truncate max-w-[180px]">{entry.clientName}</span>
+          {(entry.categoryData || entry.category) && (
+            <>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={true} />
+            </>
+          )}
+          {hasNotes && (
+            <StickyNote className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+          )}
+        </div>
+
+        {/* BOTTOM ROW: Date (right) | Amount (left) */}
+        <div className="flex items-center justify-between mt-1">
+          {/* Date - smaller */}
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-numbers">
+            {formatDate(entry.date)}
+          </span>
+
+          {/* Amount */}
           <span
             className={cn(
-              "text-2xl font-normal font-numbers whitespace-nowrap",
+              "text-lg font-medium font-numbers whitespace-nowrap",
               getAmountColor()
             )}
             dir="ltr"
           >
-            <span className="text-sm">₪</span> {entry.amountGross.toLocaleString("he-IL")}
+            ₪ {entry.amountGross.toLocaleString("he-IL")}
           </span>
         </div>
       </div>
