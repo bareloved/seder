@@ -10,7 +10,7 @@ import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
-import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry } from "./utils";
+import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, getWorkStatus, getMoneyStatus, mapMoneyStatusToDb } from "./utils";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -22,7 +22,10 @@ import {
 import { BatchActionBar } from "./components/BatchActionBar";
 import { BatchEditDialog } from "./components/BatchEditDialog";
 import { BatchDeleteDialog } from "./components/BatchDeleteDialog";
-import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import type { IncomeEntry, DisplayStatus, FilterType, KPIData, MoneyStatus } from "./types";
 import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
 import type { Category, Client } from "@/db/schema";
@@ -417,15 +420,19 @@ export default function IncomePageClient({
 
     switch (activeFilter) {
       case "ready-to-invoice":
-        result = result.filter((e) => getDisplayStatus(e) === "בוצע");
+        // Work done + no invoice sent yet
+        result = result.filter((e) => getWorkStatus(e) === "done" && getMoneyStatus(e) === "no_invoice");
         break;
       case "invoiced":
-        result = result.filter((e) => getDisplayStatus(e) === "נשלחה");
+        // Invoice sent, waiting for payment
+        result = result.filter((e) => getMoneyStatus(e) === "invoice_sent");
         break;
       case "paid":
-        result = result.filter((e) => getDisplayStatus(e) === "שולם");
+        // Paid
+        result = result.filter((e) => getMoneyStatus(e) === "paid");
         break;
       case "overdue":
+        // Invoice sent > 30 days ago, not paid
         result = result.filter((e) => isOverdue(e));
         break;
     }
@@ -650,6 +657,23 @@ export default function IncomePageClient({
   const markAsPaid = React.useCallback(async (id: string) => { await updateStatus(id, "שולם"); }, [updateStatus]);
   const markInvoiceSent = React.useCallback(async (id: string) => { await updateStatus(id, "נשלחה"); }, [updateStatus]);
 
+  // Handler for money status changes from SplitStatusPill
+  const updateMoneyStatus = React.useCallback(async (id: string, moneyStatus: MoneyStatus) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Map money status to display status for the existing updateStatus function
+    let displayStatus: DisplayStatus;
+    if (moneyStatus === "paid") {
+      displayStatus = "שולם";
+    } else if (moneyStatus === "invoice_sent") {
+      displayStatus = "נשלחה";
+    } else {
+      displayStatus = "בוצע";
+    }
+
+    await updateStatus(id, displayStatus);
+  }, [updateStatus]);
+
   const duplicateEntry = React.useCallback(async (entry: IncomeEntry) => {
     const defaultDate = defaultNewEntryDate ? new Date(defaultNewEntryDate) : new Date();
     const newEntry = {
@@ -729,6 +753,7 @@ export default function IncomePageClient({
     entries: filteredEntries,
     onDelete: deleteEntry,
     onStatusChange: updateStatus,
+    onMoneyStatusChange: updateMoneyStatus,
     onMarkAsPaid: markAsPaid,
     onMarkInvoiceSent: markInvoiceSent,
     onDuplicate: duplicateEntry,
@@ -762,11 +787,11 @@ export default function IncomePageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20 font-sans" dir="rtl">
 
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-3 sm:space-y-6">
 
         {/* KPI Section */}
         <section>
@@ -840,7 +865,7 @@ export default function IncomePageClient({
           <a href="#" className="hover:text-slate-600 transition-colors">מדיניות פרטיות</a>
           <a href="#" className="hover:text-slate-600 transition-colors">תנאי שימוש</a>
         </div>
-        <p>© 2026 סדר - יוצאים לעצמאות</p>
+        <p>© 2026 סדר</p>
       </footer>
 
       <IncomeDetailDialog
@@ -904,6 +929,19 @@ export default function IncomePageClient({
         onConfirm={batchDelete}
         isLoading={isBatchLoading}
       />
+
+      {/* Mobile Floating Add Button */}
+      <Button
+        size="icon"
+        onClick={openNewEntryDialog}
+        className="md:hidden fixed bottom-20 right-4 h-9 w-9 rounded-full shadow-sm bg-[#2ecc71] hover:bg-[#27ae60] text-white z-40"
+        style={{ display: selectedIds.size > 0 ? 'none' : 'flex' }}
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav hidden={selectedIds.size > 0} />
 
     </div>
   );

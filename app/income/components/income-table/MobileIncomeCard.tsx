@@ -19,7 +19,7 @@ import {
   MoreVertical,
   StickyNote,
 } from "lucide-react";
-import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
+import { IncomeEntry, DisplayStatus, STATUS_CONFIG, MoneyStatus } from "../../types";
 import {
   formatCurrency,
   formatDate,
@@ -27,13 +27,17 @@ import {
   getDisplayStatus,
   isPastDate,
   getWeekday,
+  getWorkStatus,
+  getMoneyStatus,
 } from "../../utils";
+import { SplitStatusPill } from "../SplitStatusPill";
 import { CategoryChip } from "../CategoryChip";
 
 interface MobileIncomeCardProps {
   entry: IncomeEntry;
   onCardClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -44,6 +48,7 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
   entry,
   onCardClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -51,13 +56,15 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
 }: MobileIncomeCardProps) {
   const displayStatus = getDisplayStatus(entry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
+  const workStatus = getWorkStatus(entry);
+  const moneyStatus = getMoneyStatus(entry);
   const overdue = isOverdue(entry);
   const isFutureGig = !isPastDate(entry.date);
   const isUnpaidPast = !isFutureGig && entry.paymentStatus !== "paid";
   const rawNotes = (entry.notes || "").trim();
   const hasNotes = rawNotes.length > 0 && rawNotes !== "יובא מהיומן";
-  const isPaid = displayStatus === "שולם";
-  const isWaiting = displayStatus === "נשלחה";
+  const isPaid = moneyStatus === "paid";
+  const isWaiting = moneyStatus === "invoice_sent";
   
   // Check if imported from calendar (show icon next to description)
   const isFromCalendar = Boolean(entry.calendarEventId);
@@ -92,98 +99,44 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
       onClick={() => onCardClick(entry)}
     >
       {/* ════════════════════════════════════════════════════════════════════════
-          MAIN CONTENT AREA - 3 Column Layout (RTL: Right→Left)
-          Right: Date + Status (stacked)
-          Center: Description + Client/Category
-          Left: Amount (large, vertically centered)
+          MAIN CONTENT AREA - Stacked Layout
+          Top: Description (with status badge, calendar icon, etc.)
+          Middle: Client name
+          Bottom: Date (right, smaller) | Amount (left)
           ════════════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-stretch gap-3">
-        
-        {/* RIGHT COLUMN: Date + Status (stacked) */}
-        <div className="flex flex-col items-start gap-1.5 min-w-[65px]">
-          {/* Date */}
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold font-numbers text-slate-700 dark:text-slate-200">
-              {formatDate(entry.date)}
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              {getWeekday(new Date(entry.date))}
-            </span>
+      <div className="flex flex-col gap-1.5">
+
+        {/* TOP ROW: Status pill + Description */}
+        <div className="flex items-start gap-2">
+          {/* Split Status Pill - Compact with icons only on mobile */}
+          <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <SplitStatusPill
+              workStatus={workStatus}
+              moneyStatus={moneyStatus}
+              isInteractive={true}
+              onMoneyStatusChange={(newStatus) => {
+                if (onMoneyStatusChange) {
+                  onMoneyStatusChange(entry.id, newStatus);
+                }
+              }}
+            />
+
+            {/* Overdue badge */}
+            {overdue && (
+              <Badge className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 border-0 dark:bg-red-900/40 dark:text-red-200 animate-pulse">
+                מאחר
+              </Badge>
+            )}
           </div>
-          
-          {/* Status Badge - Tappable dropdown */}
-          {statusConfig && (
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="focus:outline-none"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Badge
-                    className={cn(
-                      "text-[10px] px-2.5 py-1 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap",
-                      statusConfig.bgClass,
-                      statusConfig.textClass,
-                      statusConfig.borderClass
-                    )}
-                  >
-                    {statusConfig.label}
-                  </Badge>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="p-1.5 min-w-[140px]"
-                sideOffset={4}
-              >
-                {(["בוצע", "נשלחה", "שולם"] as DisplayStatus[])
-                  .filter((status) => status !== displayStatus)
-                  .map((status) => {
-                    const config = STATUS_CONFIG[status];
-                    return (
-                      <DropdownMenuItem
-                        key={status}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(entry.id, status);
-                        }}
-                        className="p-1 focus:bg-transparent"
-                      >
-                        <Badge
-                          className={cn(
-                            "w-full justify-center text-[10px] px-2.5 py-1 rounded-full font-medium border cursor-pointer",
-                            config.bgClass,
-                            config.textClass,
-                            config.borderClass
-                          )}
-                        >
-                          {config.label}
-                        </Badge>
-                      </DropdownMenuItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
 
-          {/* Overdue badge */}
-          {overdue && (
-            <Badge className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 border-0 dark:bg-red-900/40 dark:text-red-200 animate-pulse">
-              מאחר
-            </Badge>
-          )}
-        </div>
-
-        {/* CENTER COLUMN: Description + Client/Category */}
-        <div className="flex-1 flex flex-col justify-center min-w-0 gap-1">
           {/* Description with calendar icon if imported */}
-          <div className="flex items-start gap-1.5">
+          <div className="flex items-start gap-1.5 flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-snug line-clamp-2 flex-1">
               {entry.description}
             </p>
             {isFromCalendar && (
-              <CalendarDays 
-                className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" 
+              <CalendarDays
+                className="h-4 w-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5"
                 aria-label="יובא מהיומן"
               />
             )}
@@ -193,32 +146,38 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
               </Badge>
             )}
           </div>
-          
-          {/* Client + Category + Notes indicator */}
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-            <span className="font-medium truncate max-w-[120px]">{entry.clientName}</span>
-            {(entry.categoryData || entry.category) && (
-              <>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={true} />
-              </>
-            )}
-            {hasNotes && (
-              <StickyNote className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
-            )}
-          </div>
         </div>
 
-        {/* LEFT COLUMN: Amount (large, scannable) */}
-        <div className="flex items-center justify-end min-w-[85px]">
+        {/* MIDDLE ROW: Client + Category + Notes indicator */}
+        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-medium truncate max-w-[180px]">{entry.clientName}</span>
+          {(entry.categoryData || entry.category) && (
+            <>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <CategoryChip category={entry.categoryData} legacyCategory={entry.category} size="sm" withIcon={true} />
+            </>
+          )}
+          {hasNotes && (
+            <StickyNote className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0" />
+          )}
+        </div>
+
+        {/* BOTTOM ROW: Date (right) | Amount (left) */}
+        <div className="flex items-center justify-between mt-1">
+          {/* Date - smaller */}
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-numbers">
+            {formatDate(entry.date)}
+          </span>
+
+          {/* Amount */}
           <span
             className={cn(
-              "text-2xl font-normal font-numbers whitespace-nowrap",
+              "text-lg font-medium font-numbers whitespace-nowrap",
               getAmountColor()
             )}
             dir="ltr"
           >
-            <span className="text-sm">₪</span> {entry.amountGross.toLocaleString("he-IL")}
+            ₪ {entry.amountGross.toLocaleString("he-IL")}
           </span>
         </div>
       </div>

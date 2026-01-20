@@ -32,6 +32,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { ClientWithAnalytics, DuplicateGroup } from "./types";
 import { ClientForm } from "./components/ClientForm";
@@ -46,6 +52,7 @@ import {
   createClientsFromExistingAction,
   linkEntriesToClientsAction,
 } from "./actions";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 interface ClientsPageClientProps {
   initialClients: ClientWithAnalytics[];
@@ -74,6 +81,7 @@ export function ClientsPageClient({
   const [sortBy, setSortBy] = React.useState<"name" | "jobs" | "outstanding" | "total">("name");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = React.useState(false);
 
   // Load sorting preferences from localStorage after hydration
   React.useEffect(() => {
@@ -240,10 +248,10 @@ export function ClientsPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background/50 pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background/50 pb-24 md:pb-20 font-sans" dir="rtl">
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-8 space-y-6">
         {/* Main Content Card */}
         <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
           {/* Toolbar */}
@@ -288,7 +296,7 @@ export function ClientsPageClient({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 shrink-0"
+                  className="h-10 w-10 shrink-0"
                   onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
                 >
                   {sortDirection === "asc" ? (
@@ -376,7 +384,13 @@ export function ClientsPageClient({
                   {sortedAndFilteredClients.map((client) => (
                     <div
                       key={client.id}
-                      onClick={() => setSelectedClient(client)}
+                      onClick={() => {
+                        setSelectedClient(client);
+                        // Open drawer on mobile (< lg breakpoint)
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                          setIsMobileDrawerOpen(true);
+                        }
+                      }}
                       className={cn(
                         "p-4 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-muted/50",
                         selectedClient?.id === client.id &&
@@ -446,8 +460,8 @@ export function ClientsPageClient({
               )}
             </div>
 
-            {/* Analytics Panel - Embedded */}
-            <div className="lg:col-span-1 bg-slate-50/50 dark:bg-muted/20">
+            {/* Analytics Panel - Desktop only */}
+            <div className="hidden lg:block lg:col-span-1 bg-slate-50/50 dark:bg-muted/20">
               {selectedClient ? (
                 <div className="p-4 space-y-4">
                   {/* Header */}
@@ -613,8 +627,156 @@ export function ClientsPageClient({
           <a href="#" className="hover:text-slate-600 transition-colors">מדיניות פרטיות</a>
           <a href="#" className="hover:text-slate-600 transition-colors">תנאי שימוש</a>
         </div>
-        <p>© 2026 סדר - יוצאים לעצמאות</p>
+        <p>© 2026 סדר</p>
       </footer>
+
+      {/* Mobile Client Analytics Sheet */}
+      <Sheet open={isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl overflow-y-auto" dir="rtl">
+          <SheetHeader className="pb-4 border-b border-slate-200/60 dark:border-border">
+            <SheetTitle className="text-lg font-semibold text-slate-900 dark:text-white">
+              {selectedClient?.name}
+            </SheetTitle>
+            {selectedClient && (
+              <div className="mt-2 space-y-1">
+                {selectedClient.email && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <Mail className="h-3.5 w-3.5" />
+                    <a href={`mailto:${selectedClient.email}`} className="hover:text-blue-600" dir="ltr">
+                      {selectedClient.email}
+                    </a>
+                  </div>
+                )}
+                {selectedClient.phone && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <Phone className="h-3.5 w-3.5" />
+                    <a href={`tel:${selectedClient.phone}`} className="hover:text-blue-600" dir="ltr">
+                      {selectedClient.phone}
+                    </a>
+                  </div>
+                )}
+                {selectedClient.defaultRate && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <DollarSign className="h-3.5 w-3.5" />
+                    <span>תעריף: {formatCurrency(parseFloat(selectedClient.defaultRate))}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </SheetHeader>
+
+          {selectedClient && (
+            <div className="py-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <TrendingUp className="h-4 w-4" />
+                  סה״כ הכנסות
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white font-numbers" dir="ltr">
+                  {formatCurrency(selectedClient.totalEarned)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <Calendar className="h-4 w-4" />
+                  החודש
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white font-numbers" dir="ltr">
+                  {formatCurrency(selectedClient.thisMonthRevenue)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <Calendar className="h-4 w-4" />
+                  השנה
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white font-numbers" dir="ltr">
+                  {formatCurrency(selectedClient.thisYearRevenue)}
+                </span>
+              </div>
+
+              <div className="border-t border-slate-200/60 dark:border-border pt-3" />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <Briefcase className="h-4 w-4" />
+                  מספר עבודות
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {selectedClient.jobCount}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <TrendingUp className="h-4 w-4" />
+                  ממוצע לעבודה
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white font-numbers" dir="ltr">
+                  {formatCurrency(selectedClient.averagePerJob)}
+                </span>
+              </div>
+
+              {selectedClient.avgDaysToPayment !== null && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <Clock className="h-4 w-4" />
+                    זמן תשלום ממוצע
+                  </div>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {Math.round(selectedClient.avgDaysToPayment)} ימים
+                  </span>
+                </div>
+              )}
+
+              {(selectedClient.outstandingAmount > 0 || selectedClient.overdueInvoices > 0) && (
+                <>
+                  <div className="border-t border-slate-200/60 dark:border-border pt-3" />
+
+                  {selectedClient.outstandingAmount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        ממתין לתשלום
+                      </div>
+                      <span className="font-semibold text-amber-600 dark:text-amber-400 font-numbers" dir="ltr">
+                        {formatCurrency(selectedClient.outstandingAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedClient.overdueInvoices > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        חשבוניות באיחור
+                      </div>
+                      <span className="font-semibold text-red-600 dark:text-red-400">
+                        {selectedClient.overdueInvoices}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Notes */}
+              {selectedClient.notes && (
+                <div className="pt-3 border-t border-slate-200/60 dark:border-border">
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">
+                    <FileText className="h-4 w-4" />
+                    הערות
+                  </div>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                    {selectedClient.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Create/Edit Form Dialog */}
       <ClientForm
@@ -634,6 +796,9 @@ export function ClientsPageClient({
         duplicates={duplicates}
         onMergeComplete={refreshData}
       />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }

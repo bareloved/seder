@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -91,6 +92,9 @@ export function BatchEditDialog({
       <DialogContent className="sm:max-w-[425px]" dir="rtl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            עדכון פרטים עבור מספר עבודות בו-זמנית
+          </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">

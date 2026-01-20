@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import { IncomeEntry, DisplayStatus, VatType, MoneyStatus } from "../types";
 import type { Category, Client } from "@/db/schema";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import { IncomeListView } from "./IncomeListView";
@@ -21,6 +21,7 @@ interface IncomeTableProps {
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -61,6 +62,7 @@ export const IncomeTable = React.memo(function IncomeTable({
   defaultDate,
   onRowClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -101,6 +103,7 @@ export const IncomeTable = React.memo(function IncomeTable({
     defaultDate,
     onRowClick,
     onStatusChange,
+    onMoneyStatusChange,
     onMarkAsPaid,
     onMarkInvoiceSent,
     onDuplicate,

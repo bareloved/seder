@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -150,6 +151,9 @@ export function ImportPreviewDialog({
                                 <Settings2 className="h-4 w-4" />
                             </Button>
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            בחירת אירועים מהיומן לייבוא כרשומות הכנסה
+                        </DialogDescription>
                     </DialogHeader>
 
                     {/* Toolbar */}

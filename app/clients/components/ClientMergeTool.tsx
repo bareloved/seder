@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -124,6 +125,9 @@ export function ClientMergeTool({
             <Merge className="h-5 w-5" />
             מיזוג לקוחות כפולים
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            בחר את השם הנכון לכל קבוצה כדי לאחד לקוחות כפולים
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4">

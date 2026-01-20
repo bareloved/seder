@@ -1,4 +1,4 @@
-import { IncomeEntry, KPIData, DisplayStatus, VatType } from "./types";
+import { IncomeEntry, KPIData, DisplayStatus, VatType, WorkStatus, MoneyStatus } from "./types";
 import { Currency } from "./currency";
 
 // Re-export Currency for convenience if needed, or just use it internally
@@ -98,6 +98,49 @@ export function getDisplayStatus(entry: IncomeEntry): DisplayStatus | null {
 export function isOverdue(entry: IncomeEntry, daysThreshold = 30): boolean {
   if (entry.invoiceStatus !== "sent" || !entry.invoiceSentDate) return false;
   return daysSince(entry.invoiceSentDate) > daysThreshold;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Split-Pill Status Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Get work status from entry (read-only, derived from date)
+export function getWorkStatus(entry: IncomeEntry): WorkStatus {
+  return isPastDate(entry.date) ? "done" : "in_progress";
+}
+
+// Get money status from entry (derived from invoiceStatus & paymentStatus)
+export function getMoneyStatus(entry: IncomeEntry): MoneyStatus {
+  // Cancelled invoices are treated as no invoice
+  if (entry.invoiceStatus === "cancelled") {
+    return "no_invoice";
+  }
+  // If paid (either via paymentStatus or invoiceStatus)
+  if (entry.paymentStatus === "paid" || entry.invoiceStatus === "paid") {
+    return "paid";
+  }
+  // If invoice was sent (includes partial payments)
+  if (entry.invoiceStatus === "sent") {
+    return "invoice_sent";
+  }
+  // Default: no invoice
+  return "no_invoice";
+}
+
+// Map money status change to DB field updates
+export function mapMoneyStatusToDb(moneyStatus: MoneyStatus): {
+  invoiceStatus: string;
+  paymentStatus?: string;
+} {
+  switch (moneyStatus) {
+    case "paid":
+      return { invoiceStatus: "paid", paymentStatus: "paid" };
+    case "invoice_sent":
+      return { invoiceStatus: "sent" };
+    case "no_invoice":
+    default:
+      return { invoiceStatus: "draft", paymentStatus: "unpaid" };
+  }
 }
 
 // Filter entries by month and year
@@ -223,7 +266,9 @@ export function exportToCSV(entries: IncomeEntry[], filename?: string): void {
     "סכום",
     "שולם",
     "לקוח",
-    "סטטוס",
+    "סטטוס עבודה",
+    "סטטוס תשלום",
+    "סטטוס (ישן)",
     "תאריך שליחת חשבונית",
     "קטגוריה",
   ];
@@ -235,6 +280,8 @@ export function exportToCSV(entries: IncomeEntry[], filename?: string): void {
     e.amountGross.toString(),
     e.amountPaid.toString(),
     e.clientName,
+    getWorkStatus(e) === "done" ? "בוצע" : "בהמתנה",
+    getMoneyStatus(e) === "paid" ? "שולם" : getMoneyStatus(e) === "invoice_sent" ? "נשלחה" : "ללא",
     getDisplayStatus(e) || "",
     e.invoiceSentDate || "",
     e.category || "",

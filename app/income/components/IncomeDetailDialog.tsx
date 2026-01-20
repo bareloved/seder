@@ -4,13 +4,14 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG, DEFAULT_VAT_RATE, VatType } from "../types";
-import { getDisplayStatus, getTodayDateString } from "../utils";
+import { getDisplayStatus, getTodayDateString, getWorkStatus, getMoneyStatus } from "../utils";
+import { SplitStatusPill } from "./SplitStatusPill";
 import { IncomeDetailEdit } from "./income-drawer/IncomeDetailEdit";
 import type { Category, Client } from "@/db/schema";
 
@@ -63,6 +64,8 @@ export function IncomeDetailDialog({
 
   const displayStatus = getDisplayStatus(effectiveEntry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
+  const workStatus = getWorkStatus(effectiveEntry);
+  const moneyStatus = getMoneyStatus(effectiveEntry);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -75,17 +78,15 @@ export function IncomeDetailDialog({
             <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {isNew ? "עבודה חדשה" : "פרטי עבודה"}
             </DialogTitle>
-            {statusConfig && !isNew && (
-              <Badge
-                className={cn(
-                  "text-xs px-2.5 py-1 rounded-full font-medium border",
-                  statusConfig.bgClass,
-                  statusConfig.textClass,
-                  statusConfig.borderClass
-                )}
-              >
-                {statusConfig.label}
-              </Badge>
+            <DialogDescription className="sr-only">
+              {isNew ? "הוספת רשומת הכנסה חדשה" : "צפייה ועריכת פרטי הכנסה"}
+            </DialogDescription>
+            {!isNew && (
+              <SplitStatusPill
+                workStatus={workStatus}
+                moneyStatus={moneyStatus}
+                isInteractive={false}
+              />
             )}
           </div>
         </DialogHeader>

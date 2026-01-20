@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -90,6 +91,9 @@ export function ClientForm({ isOpen, onClose, client, onSubmit }: ClientFormProp
       <DialogContent className="sm:max-w-[425px]" dir="rtl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {isEditing ? "עריכת פרטי לקוח קיים" : "הוספת לקוח חדש למערכת"}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>

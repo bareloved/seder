@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ListX, Plus, X } from "lucide-react";
-import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import { IncomeEntry, DisplayStatus, VatType, MoneyStatus } from "../types";
 import type { Category, Client } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
@@ -27,6 +27,7 @@ interface IncomeCardsViewProps {
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -183,6 +184,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
   defaultDate,
   onRowClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -239,6 +241,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
                   entry={entry}
                   onCardClick={onRowClick}
                   onStatusChange={onStatusChange}
+                  onMoneyStatusChange={onMoneyStatusChange}
                   onMarkAsPaid={onMarkAsPaid}
                   onMarkInvoiceSent={onMarkInvoiceSent}
                   onDuplicate={onDuplicate}
@@ -258,11 +261,6 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
           Full card layout with rich details - existing design
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="md:hidden print:hidden">
-        {/* Mobile Quick Add */}
-        <div className="mb-3">
-          <MobileQuickAdd onAddEntry={onAddEntry} clients={clients} categories={categories} defaultDate={defaultDate} />
-        </div>
-
         {/* Empty States for Mobile */}
         {hasNoData && (
           <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
@@ -285,6 +283,7 @@ export const IncomeCardsView = React.memo(function IncomeCardsView({
                 entry={entry}
                 onCardClick={onRowClick}
                 onStatusChange={onStatusChange}
+                onMoneyStatusChange={onMoneyStatusChange}
                 onMarkAsPaid={onMarkAsPaid}
                 onMarkInvoiceSent={onMarkInvoiceSent}
                 onDuplicate={onDuplicate}
