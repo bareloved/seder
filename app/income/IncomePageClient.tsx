@@ -23,6 +23,8 @@ import { BatchActionBar } from "./components/BatchActionBar";
 import { BatchEditDialog } from "./components/BatchEditDialog";
 import { BatchDeleteDialog } from "./components/BatchDeleteDialog";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
@@ -905,6 +907,16 @@ export default function IncomePageClient({
         onConfirm={batchDelete}
         isLoading={isBatchLoading}
       />
+
+      {/* Mobile Floating Add Button */}
+      <Button
+        size="icon"
+        onClick={openNewEntryDialog}
+        className="md:hidden fixed bottom-20 right-4 h-9 w-9 rounded-full shadow-sm bg-[#2ecc71] hover:bg-[#27ae60] text-white z-40"
+        style={{ display: selectedIds.size > 0 ? 'none' : 'flex' }}
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav hidden={selectedIds.size > 0} />

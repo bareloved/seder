@@ -140,10 +140,10 @@ export function IncomeFilters({
   const currentMonthStatus = monthPaymentStatuses[month];
 
   return (
-    <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 p-1">
+    <div className="w-full flex flex-col-reverse md:flex-row items-center justify-between gap-2 md:gap-4 p-1">
 
-      {/* Right Side: Filters & Search & Add */}
-      <div className="flex items-center gap-3 flex-1 w-full md:w-auto justify-start">
+      {/* Right Side: Filters & Search & Add (Desktop only) */}
+      <div className="hidden md:flex items-center gap-3 flex-1 w-full md:w-auto justify-start">
 
         {/* Add Entry Button */}
         {onNewEntry && (
@@ -164,7 +164,7 @@ export function IncomeFilters({
         )}
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-[240px] hidden md:block group">
+        <div className="relative flex-1 max-w-[240px] group">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors pointer-events-none" />
           <Input
             value={searchQuery}
@@ -183,7 +183,7 @@ export function IncomeFilters({
         </div>
 
         {/* Desktop Filter Dropdowns */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {/* Categories */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
@@ -239,20 +239,20 @@ export function IncomeFilters({
           </DropdownMenu>
         </div>
 
+      </div>
+
+      {/* Date Selectors - Order: Filter (mobile) | Month | Year */}
+      <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar">
+
         {/* Mobile Filter Toggle */}
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsFilterSheetOpen(true)}
-          className="md:hidden h-9 w-9 bg-white"
+          className="md:hidden h-9 w-9 bg-white dark:bg-card border-slate-200 dark:border-border shrink-0"
         >
           <Filter className="h-4 w-4" />
         </Button>
-
-      </div>
-
-      {/* Left Side: Date Selectors (Desktop) - Order: Month Year */}
-      <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar">
 
         {/* Calendar Import Button */}
         {isGoogleConnected && onImportFromCalendar && (
@@ -290,7 +290,7 @@ export function IncomeFilters({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-8 min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="h-8 min-w-[80px] md:min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-1 md:px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 {isNavigating ? (
                   <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
@@ -385,7 +385,7 @@ export function IncomeFilters({
 
       {/* Mobile Filter Sheet */}
       <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-        <SheetContent side="bottom" className="p-4 space-y-4">
+        <SheetContent side="bottom" className="p-4 space-y-4" aria-describedby={undefined}>
           <SheetHeader>
             <SheetTitle>סינון</SheetTitle>
           </SheetHeader>
@@ -408,50 +408,65 @@ export function IncomeFilters({
                 </button>
               )}
             </div>
-            {/* Mobile Categories */}
+            {/* Mobile Categories Dropdown */}
             <div className="space-y-2">
               <p className="text-sm font-medium">קטגוריות</p>
-              <div className="flex flex-wrap gap-2">
-                {categories.filter(c => !c.isArchived).map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategories.includes(category.id) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      const newCats = selectedCategories.includes(category.id)
-                        ? selectedCategories.filter(c => c !== category.id)
-                        : [...selectedCategories, category.id];
-                      onCategoryChange(newCats);
-                    }}
-                  >
-                    <CategoryChip category={category} size="sm" withIcon={true} />
+              <DropdownMenu dir="rtl">
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full h-11 justify-between text-slate-600 dark:text-slate-300 font-normal">
+                    {selectedCategories.length === 0 ? "כל הקטגוריות" : `${selectedCategories.length} נבחרו`}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
-                ))}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px]" align="start">
+                  <DropdownMenuItem onClick={() => onCategoryChange([])} className="justify-start bg-slate-50 dark:bg-transparent">
+                    כל הקטגוריות
+                  </DropdownMenuItem>
+                  {categories.filter(c => !c.isArchived).map((category) => (
+                    <DropdownMenuItem
+                      key={category.id}
+                      onClick={() => {
+                        const newCats = selectedCategories.includes(category.id)
+                          ? selectedCategories.filter(c => c !== category.id)
+                          : [...selectedCategories, category.id];
+                        onCategoryChange(newCats);
+                      }}
+                      className="justify-between"
+                    >
+                      <CategoryChip category={category} size="sm" withIcon={true} />
+                      {selectedCategories.includes(category.id) && <span className="text-emerald-500">✓</span>}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            {/* Mobile Clients */}
+            {/* Mobile Clients Dropdown */}
             {clients.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium">לקוחות</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={selectedClient === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onClientChange("all")}
-                  >
-                    כל הלקוחות
-                  </Button>
-                  {clients.slice(0, 10).map((client) => (
-                    <Button
-                      key={client}
-                      variant={selectedClient === client ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => onClientChange(client)}
-                    >
-                      {client}
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full h-11 justify-between text-slate-600 dark:text-slate-300 font-normal">
+                      {selectedClient === "all" ? "כל הלקוחות" : selectedClient}
+                      <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
-                  ))}
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px] max-h-[300px] overflow-y-auto" align="start">
+                    <DropdownMenuItem onClick={() => onClientChange("all")} className="justify-start bg-slate-50 dark:bg-transparent">
+                      כל הלקוחות
+                    </DropdownMenuItem>
+                    {clients.map((client) => (
+                      <DropdownMenuItem
+                        key={client}
+                        onClick={() => onClientChange(client)}
+                        className="justify-between"
+                      >
+                        {client}
+                        {selectedClient === client && <span className="text-emerald-500">✓</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
 
