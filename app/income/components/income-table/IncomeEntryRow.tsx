@@ -32,7 +32,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry, DisplayStatus, STATUS_CONFIG } from "../../types";
+import { IncomeEntry, DisplayStatus, STATUS_CONFIG, MoneyStatus } from "../../types";
 import type { Category, Client } from "@/db/schema";
 import {
   formatCurrency,
@@ -42,7 +42,10 @@ import {
   getDisplayStatus,
   isPastDate,
   getWeekday,
+  getWorkStatus,
+  getMoneyStatus,
 } from "../../utils";
+import { SplitStatusPill } from "../SplitStatusPill";
 import { CategoryChip } from "../CategoryChip";
 import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
 
@@ -54,6 +57,7 @@ export interface IncomeEntryRowProps {
   entry: IncomeEntry;
   onClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -82,6 +86,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   entry,
   onClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -101,6 +106,8 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   const effectiveOrder = columnOrder && columnOrder.length ? columnOrder : DEFAULT_COLUMN_ORDER;
   const displayStatus = getDisplayStatus(entry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
+  const workStatus = getWorkStatus(entry);
+  const moneyStatus = getMoneyStatus(entry);
   const overdue = isOverdue(entry);
 
   const rawNotes = (entry.notes || "").trim();
@@ -108,9 +115,9 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   const hasNotes = rawNotes.length > 0 && !isCalendarImportNote;
   const hasCalendarEvent = !!entry.calendarEventId;
 
-  const isPaid = displayStatus === "שולם";
-  const isDraft = displayStatus === "בוצע";
-  const isWaiting = displayStatus === "נשלחה";
+  const isPaid = moneyStatus === "paid";
+  const isDraft = workStatus === "done" && moneyStatus === "no_invoice";
+  const isWaiting = moneyStatus === "invoice_sent";
 
   const [editingField, setEditingField] = React.useState<EditableField>(null);
   const [editValue, setEditValue] = React.useState<string>("");
@@ -417,26 +424,21 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               </div>
             ),
             status: (
-              <div className="shrink-0 w-[100px] px-2 flex justify-center">
-                {statusConfig ? (
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <button className="focus:outline-none">
-                        <Badge variant="outline" className={`text-xs font-normal px-2.5 py-0.5 rounded-full ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
-                          {statusConfig.label}
-                        </Badge>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center">
-                      {(["בוצע", "נשלחה", "שולם"] as DisplayStatus[]).map(status => (
-                        <DropdownMenuItem key={status} onClick={() => onStatusChange(entry.id, status)} className="justify-center">
-                          {STATUS_CONFIG[status].label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <span className="text-base text-slate-400 dark:text-slate-500 opacity-50">-</span>
+              <div className="shrink-0 w-[100px] px-2 flex justify-center items-center gap-1.5">
+                <SplitStatusPill
+                  workStatus={workStatus}
+                  moneyStatus={moneyStatus}
+                  isInteractive={true}
+                  onMoneyStatusChange={(newStatus) => {
+                    if (onMoneyStatusChange) {
+                      onMoneyStatusChange(entry.id, newStatus);
+                    }
+                  }}
+                />
+                {overdue && (
+                  <span className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200 rounded-full font-medium">
+                    מאחר
+                  </span>
                 )}
               </div>
             ),
@@ -497,14 +499,21 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <div className="md:hidden px-2 py-2 border-b border-slate-100 dark:border-border/50 cursor-pointer active:bg-slate-50 dark:active:bg-muted/30">
-            {/* Top row: Description (right) + Status badge (left) */}
+            {/* Top row: Description (right) + Status pill (left) */}
             <div className="flex items-start justify-between gap-2">
               <span className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2">{entry.description}</span>
-              {statusConfig && (
-                <Badge variant="outline" className={`text-[10px] px-2 py-0.5 shrink-0 ${statusConfig.bgClass} ${statusConfig.textClass} ${statusConfig.borderClass}`}>
-                  {statusConfig.label}
-                </Badge>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                <SplitStatusPill
+                  workStatus={workStatus}
+                  moneyStatus={moneyStatus}
+                  isInteractive={false}
+                />
+                {overdue && (
+                  <span className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200 rounded-full font-medium">
+                    מאחר
+                  </span>
+                )}
+              </div>
             </div>
             {/* Middle row: Client name */}
             <span className="text-xs text-slate-500 dark:text-slate-400">{entry.clientName}</span>

@@ -102,3 +102,68 @@ export const CATEGORIES = [
 export type LegacyCategory = typeof CATEGORIES[number];
 
 export const DEFAULT_VAT_RATE = 18;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Split-Pill Status Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Work status - derived from date (read-only, no manual override)
+export type WorkStatus = "in_progress" | "done";
+
+// Money status - derived from invoiceStatus & paymentStatus
+export type MoneyStatus = "no_invoice" | "invoice_sent" | "paid";
+
+// Work status config for UI
+export const WORK_STATUS_CONFIG: Record<WorkStatus, {
+  label: string;
+  tooltip: string;
+  icon: "Clock" | "CheckCircle2";
+  bgClass: string;
+  textClass: string;
+}> = {
+  in_progress: {
+    label: "בהמתנה",
+    tooltip: "העבודה טרם בוצעה",
+    icon: "Clock",
+    bgClass: "bg-transparent",
+    textClass: "text-slate-400 dark:text-slate-500",
+  },
+  done: {
+    label: "בוצע",
+    tooltip: "העבודה הושלמה",
+    icon: "CheckCircle2",
+    bgClass: "bg-transparent",
+    textClass: "text-slate-400 dark:text-slate-500",
+  },
+};
+
+// Money status config for UI
+export const MONEY_STATUS_CONFIG: Record<MoneyStatus, {
+  label: string;
+  tooltip: string;
+  icon: "FileX" | "Send" | "Banknote";
+  bgClass: string;
+  textClass: string;
+}> = {
+  no_invoice: {
+    label: "ללא",
+    tooltip: "טרם נשלחה חשבונית",
+    icon: "FileX",
+    bgClass: "bg-slate-100 dark:bg-slate-800",
+    textClass: "text-slate-500 dark:text-slate-400",
+  },
+  invoice_sent: {
+    label: "נשלחה",
+    tooltip: "חשבונית נשלחה, ממתין לתשלום",
+    icon: "Send",
+    bgClass: "bg-amber-50 dark:bg-amber-900/30",
+    textClass: "text-amber-600 dark:text-amber-400",
+  },
+  paid: {
+    label: "שולם",
+    tooltip: "התשלום התקבל",
+    icon: "Banknote",
+    bgClass: "bg-emerald-50 dark:bg-emerald-900/30",
+    textClass: "text-emerald-600 dark:text-emerald-400",
+  },
+};

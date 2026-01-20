@@ -52,14 +52,14 @@ export function Navbar({ user }: NavbarProps) {
     ];
 
     return (
-        <header className="bg-brand-primary dark:bg-[#1a3a2a] text-white shadow-sm sticky top-0 z-50 h-[80px] dark:border-b dark:border-border" dir="rtl">
-            <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 h-full flex items-center justify-between">
+        <header className="bg-brand-primary dark:bg-[#1a3a2a] text-white shadow-sm sticky top-0 z-50 h-12 md:h-[80px] dark:border-b dark:border-border" dir="rtl">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-12 lg:px-20 h-full flex items-center justify-between">
 
                 {/* Right Side: Logo & Navigation */}
                 <div className="flex items-center gap-14">
                     {/* Logo Icon */}
                     <div className="flex items-center justify-center">
-                        <ClipboardList className="w-8 h-8 text-white" />
+                        <ClipboardList className="w-6 h-6 md:w-8 md:h-8 text-white" />
                     </div>
 
                     {/* Navigation Links */}
@@ -98,27 +98,27 @@ export function Navbar({ user }: NavbarProps) {
                 </div>
 
                 {/* Left Side: Theme Toggle & User Profile */}
-                <div className="flex items-center gap-4 pl-2">
+                <div className="flex items-center gap-2 md:gap-4 pl-2">
                     {/* Theme Toggle */}
                     <button
                         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                        className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
                         aria-label="החלף ערכת נושא"
                     >
                         {mounted ? (
                             theme === "dark" ? (
-                                <Sun className="w-5 h-5 text-white" />
+                                <Sun className="w-4 h-4 md:w-5 md:h-5 text-white" />
                             ) : (
-                                <Moon className="w-5 h-5 text-white" />
+                                <Moon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                             )
                         ) : (
-                            <div className="w-5 h-5" />
+                            <div className="w-4 h-4 md:w-5 md:h-5" />
                         )}
                     </button>
 
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
-                            <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
+                            <div className="w-8 h-8 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
                                 {user?.image ? (
                                     <img
                                         src={user.image}
@@ -127,7 +127,7 @@ export function Navbar({ user }: NavbarProps) {
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-orange-300 flex items-center justify-center">
-                                        <User className="w-6 h-6 text-white/90" />
+                                        <User className="w-4 h-4 md:w-6 md:h-6 text-white/90" />
                                     </div>
                                 )}
                             </div>

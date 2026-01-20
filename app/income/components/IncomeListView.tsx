@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IncomeEntry, DisplayStatus, VatType } from "../types";
+import { IncomeEntry, DisplayStatus, VatType, MoneyStatus } from "../types";
 import type { Category, Client } from "@/db/schema";
 import type { ViewMode } from "./ViewModeToggle";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
@@ -57,7 +57,7 @@ const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   client: "shrink-0 px-3", // Width set via inline style
   category: "w-[100px] shrink-0 px-2",
   amount: "w-[120px] shrink-0 px-3",
-  status: "w-[100px] shrink-0 px-2",
+  status: "w-[100px] shrink-0 px-2", // Icon-only split-pill status
   actions: "w-[110px] shrink-0 px-1.5",
 };
 
@@ -79,6 +79,7 @@ interface IncomeListViewProps {
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -186,6 +187,7 @@ export const IncomeListView = React.memo(function IncomeListView({
   defaultDate,
   onRowClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -457,7 +459,7 @@ export const IncomeListView = React.memo(function IncomeListView({
     client: <SortableColumnHeader columnKey="client" label="לקוח" />,
     category: <SortableColumnHeader columnKey="category" label="קטגוריה" />,
     amount: <SortableColumnHeader columnKey="amount" label="סכום" className="justify-start" />,
-    status: <SortableColumnHeader columnKey="status" label="סטטוס" className="justify-center" />,
+    status: <SortableColumnHeader columnKey="status" label="סטטוס" className="flex-1 justify-center" />,
     actions: (
       <div className="flex items-center justify-center">
         <DropdownMenu>
@@ -579,6 +581,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 entry={entry}
                 onClick={onRowClick}
                 onStatusChange={onStatusChange}
+                onMoneyStatusChange={onMoneyStatusChange}
                 onMarkAsPaid={onMarkAsPaid}
                 onMarkInvoiceSent={onMarkInvoiceSent}
                 onDuplicate={onDuplicate}

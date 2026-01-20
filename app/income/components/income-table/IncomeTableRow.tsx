@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-import { IncomeEntry, DisplayStatus, STATUS_CONFIG, CATEGORIES } from "../../types";
+import { IncomeEntry, DisplayStatus, STATUS_CONFIG, CATEGORIES, MoneyStatus } from "../../types";
 import {
   formatCurrency,
   formatDate,
@@ -44,7 +44,10 @@ import {
   getDisplayStatus,
   isPastDate,
   getWeekday,
+  getWorkStatus,
+  getMoneyStatus,
 } from "../../utils";
+import { SplitStatusPill } from "../SplitStatusPill";
 import { CategoryChip } from "../CategoryChip";
 import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
 import type { Client } from "@/db/schema";
@@ -58,6 +61,7 @@ interface IncomeTableRowProps {
   clientRecords?: Client[];
   onRowClick: (entry: IncomeEntry) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
+  onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
   onDuplicate: (entry: IncomeEntry) => void;
@@ -72,6 +76,7 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
   clientRecords = [],
   onRowClick,
   onStatusChange,
+  onMoneyStatusChange,
   onMarkAsPaid,
   onMarkInvoiceSent,
   onDuplicate,
@@ -80,6 +85,8 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
 }: IncomeTableRowProps) {
   const displayStatus = getDisplayStatus(entry);
   const statusConfig = displayStatus ? STATUS_CONFIG[displayStatus] : null;
+  const workStatus = getWorkStatus(entry);
+  const moneyStatus = getMoneyStatus(entry);
   const isEven = index % 2 === 0;
   const overdue = isOverdue(entry);
   const daysSinceInvoice = entry.invoiceSentDate
@@ -441,61 +448,19 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
       {/* Status */}
       <TableCell className="py-3 px-1">
         <div className="flex items-center gap-2">
-          {/* Future gig without status - show nothing */}
-          {isFutureGig && !displayStatus ? null : statusConfig ? (
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="focus:outline-none"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Badge
-                    className={cn(
-                      "text-[10px] px-2.5 py-0.5 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity",
-                      statusConfig.bgClass,
-                      statusConfig.textClass,
-                      statusConfig.borderClass
-                    )}
-                  >
-                    {statusConfig.label}
-                  </Badge>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="p-1.5 min-w-[120px]"
-                sideOffset={4}
-                avoidCollisions={true}
-              >
-                {(["בוצע", "נשלחה", "שולם"] as DisplayStatus[])
-                  .filter((status) => status !== displayStatus)
-                  .map((status) => {
-                    const config = STATUS_CONFIG[status];
-                    return (
-                      <DropdownMenuItem
-                        key={status}
-                        onClick={() => onStatusChange(entry.id, status)}
-                        className="p-1 focus:bg-transparent"
-                      >
-                        <Badge
-                          className={cn(
-                            "w-full justify-center text-[10px] px-2.5 py-1 rounded-full font-medium border cursor-pointer",
-                            config.bgClass,
-                            config.textClass,
-                            config.borderClass
-                          )}
-                        >
-                          {config.label}
-                        </Badge>
-                      </DropdownMenuItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
+          <SplitStatusPill
+            workStatus={workStatus}
+            moneyStatus={moneyStatus}
+            isInteractive={true}
+            onMoneyStatusChange={(newStatus) => {
+              if (onMoneyStatusChange) {
+                onMoneyStatusChange(entry.id, newStatus);
+              }
+            }}
+          />
 
           {/* Days since invoice */}
-          {daysSinceInvoice !== null && displayStatus === "נשלחה" && (
+          {daysSinceInvoice !== null && moneyStatus === "invoice_sent" && (
             <span
               className={cn(
                 "text-[9px] font-medium font-numbers",
@@ -505,6 +470,13 @@ export const IncomeTableRow = React.memo(function IncomeTableRow({
               )}
             >
               לפני {daysSinceInvoice} ימים
+            </span>
+          )}
+
+          {/* Overdue badge */}
+          {overdue && (
+            <span className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 border-0 dark:bg-red-900/40 dark:text-red-200 rounded-full font-medium">
+              מאחר
             </span>
           )}
         </div>
