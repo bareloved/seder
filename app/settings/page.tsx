@@ -12,6 +12,7 @@ import { DangerSection } from "./components/DangerSection";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 function SettingsContent() {
     const router = useRouter();
@@ -39,10 +40,10 @@ function SettingsContent() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-20 font-sans" dir="rtl">
+        <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-24 md:pb-20 font-sans" dir="rtl">
             <Navbar user={session.user} />
 
-            <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+            <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-8 space-y-6">
                 <div className="flex flex-col gap-2">
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900">הגדרות</h1>
                     <p className="text-slate-500">נהל את החשבון, ההעדפות והנתונים שלך במקום אחד.</p>
@@ -56,6 +57,9 @@ function SettingsContent() {
                     {activeTab === "danger" && <DangerSection />}
                 </SettingsLayout>
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
         </div>
     );
 }

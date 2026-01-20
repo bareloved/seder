@@ -390,6 +390,24 @@ export function IncomeFilters({
             <SheetTitle>סינון</SheetTitle>
           </SheetHeader>
           <div className="space-y-4">
+            {/* Mobile Search */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="חיפוש..."
+                className="h-11 pr-9 bg-white dark:bg-card border-slate-200 dark:border-border"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => onSearchChange("")}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1"
+                >
+                  <X className="h-4 w-4 text-slate-400" />
+                </button>
+              )}
+            </div>
             {/* Mobile Categories */}
             <div className="space-y-2">
               <p className="text-sm font-medium">קטגוריות</p>

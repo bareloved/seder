@@ -16,6 +16,7 @@ import {
   calculateKPIMetrics,
   getNeedsAttentionJobs,
 } from "./utils";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 interface AnalyticsPageClientProps {
   initialEntries: IncomeEntry[];
@@ -65,10 +66,10 @@ export default function AnalyticsPageClient({
   }, [initialEntries, dateRangePreset, customRange, selectedMonth, selectedYear]);
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20 font-sans" dir="rtl">
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-3 sm:space-y-6">
         {/* Filters Toolbar */}
         <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
           <div className="p-4">
@@ -111,6 +112,9 @@ export default function AnalyticsPageClient({
         </div>
         <p>© 2026 סדר - יוצאים לעצמאות</p>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }

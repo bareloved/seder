@@ -39,32 +39,32 @@ export function AnalyticsKPICards({ kpi }: AnalyticsKPICardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" dir="rtl">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4" dir="rtl">
       {cards.map((card) => (
         <Card
           key={card.id}
-          className="bg-white dark:bg-card shadow-sm hover:shadow-md border border-slate-100 dark:border-border relative overflow-hidden h-[120px] transition-all"
+          className="bg-white dark:bg-card shadow-sm hover:shadow-md border border-slate-100 dark:border-border relative overflow-hidden h-[100px] sm:h-[120px] transition-all"
         >
-          <CardContent className="p-4 h-full flex flex-col justify-between">
+          <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
             {/* Top Right: Title */}
             <div className="text-right">
-              <span className="text-base text-slate-600 dark:text-slate-400 font-normal block">
+              <span className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-normal block">
                 {card.title}
               </span>
               {/* Bottom Right: Amount */}
-              <div className={cn("text-[34px] font-normal font-numbers tracking-tight mt-1", card.amountColor)} dir="ltr">
+              <div className={cn("text-2xl sm:text-[34px] font-normal font-numbers tracking-tight mt-1", card.amountColor)} dir="ltr">
                 {card.isCount ? (
                   card.amount.toLocaleString("he-IL")
                 ) : (
                   <>
-                    <span className="text-xl">₪</span> {card.amount.toLocaleString("he-IL")}
+                    <span className="text-base sm:text-xl">₪</span> {card.amount.toLocaleString("he-IL")}
                   </>
                 )}
               </div>
             </div>
 
             {/* Bottom Left: Icon */}
-            <div className="absolute bottom-4 left-4">
+            <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4">
               <card.icon className={cn("h-3 w-3", card.iconColor)} />
             </div>
           </CardContent>

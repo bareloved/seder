@@ -22,6 +22,7 @@ import {
 import { BatchActionBar } from "./components/BatchActionBar";
 import { BatchEditDialog } from "./components/BatchEditDialog";
 import { BatchDeleteDialog } from "./components/BatchDeleteDialog";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import type { IncomeEntry, DisplayStatus, FilterType, KPIData } from "./types";
 import type { SortColumn } from "./components/income-table/IncomeTableHeader";
 import type { IncomeAggregates, MonthPaymentStatus } from "./data";
@@ -762,11 +763,11 @@ export default function IncomePageClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-20 font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20 font-sans" dir="rtl">
 
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-3 sm:space-y-6">
 
         {/* KPI Section */}
         <section>
@@ -904,6 +905,9 @@ export default function IncomePageClient({
         onConfirm={batchDelete}
         isLoading={isBatchLoading}
       />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav hidden={selectedIds.size > 0} />
 
     </div>
   );
