@@ -54,13 +54,13 @@ export function SplitStatusPill({
   const WorkIcon = WORK_ICONS[workConfig.icon];
   const MoneyIcon = MONEY_ICONS[moneyConfig.icon];
 
-  // Work status half (right side in RTL - read-only)
-  const WorkHalf = (
+  // Work status icon (right side in RTL - read-only)
+  const WorkIcon_ = (
     <Tooltip>
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "flex items-center justify-center px-1.5 py-1 rounded-e-full",
+            "flex items-center justify-center w-7 h-7 rounded-full",
             workConfig.bgClass,
             workConfig.textClass
           )}
@@ -74,11 +74,11 @@ export function SplitStatusPill({
     </Tooltip>
   );
 
-  // Money status half (left side in RTL - interactive)
-  const MoneyHalfContent = (
+  // Money status icon (left side in RTL - interactive)
+  const MoneyIconContent = (
     <div
       className={cn(
-        "flex items-center justify-center px-1.5 py-1 rounded-s-full",
+        "flex items-center justify-center w-7 h-7 rounded-full",
         moneyConfig.bgClass,
         moneyConfig.textClass,
         isInteractive && "cursor-pointer hover:opacity-80 transition-opacity"
@@ -88,7 +88,7 @@ export function SplitStatusPill({
     </div>
   );
 
-  const MoneyHalf = isInteractive && onMoneyStatusChange ? (
+  const MoneyIcon_ = isInteractive && onMoneyStatusChange ? (
     <DropdownMenu modal={false}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -97,7 +97,7 @@ export function SplitStatusPill({
               className="focus:outline-none"
               onClick={(e) => e.stopPropagation()}
             >
-              {MoneyHalfContent}
+              {MoneyIconContent}
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
@@ -106,7 +106,7 @@ export function SplitStatusPill({
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent
-        align="start"
+        align="center"
         className="p-1 min-w-[44px]"
         sideOffset={4}
         avoidCollisions={true}
@@ -117,24 +117,30 @@ export function SplitStatusPill({
             const config = MONEY_STATUS_CONFIG[status];
             const StatusIcon = MONEY_ICONS[config.icon];
             return (
-              <DropdownMenuItem
-                key={status}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoneyStatusChange(status);
-                }}
-                className="p-1 focus:bg-transparent justify-center"
-              >
-                <div
-                  className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-full",
-                    config.bgClass,
-                    config.textClass
-                  )}
-                >
-                  <StatusIcon className="h-4 w-4" />
-                </div>
-              </DropdownMenuItem>
+              <Tooltip key={status}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoneyStatusChange(status);
+                    }}
+                    className="p-1 focus:bg-transparent justify-center"
+                  >
+                    <div
+                      className={cn(
+                        "flex items-center justify-center w-7 h-7 rounded-full",
+                        config.bgClass,
+                        config.textClass
+                      )}
+                    >
+                      <StatusIcon className="h-3.5 w-3.5" />
+                    </div>
+                  </DropdownMenuItem>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-xs">
+                  {config.tooltip}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
       </DropdownMenuContent>
@@ -142,7 +148,7 @@ export function SplitStatusPill({
   ) : (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div>{MoneyHalfContent}</div>
+        <div>{MoneyIconContent}</div>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
         {moneyConfig.tooltip}
@@ -153,15 +159,14 @@ export function SplitStatusPill({
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden",
+        "inline-flex items-center gap-1",
         className
       )}
       dir="rtl"
     >
       {/* In RTL: Work status on right (start), Money status on left (end) */}
-      {WorkHalf}
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
-      {MoneyHalf}
+      {WorkIcon_}
+      {MoneyIcon_}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   CalendarDays,
   MoreVertical,
   StickyNote,
+  Pencil,
 } from "lucide-react";
 import { IncomeEntry, DisplayStatus, STATUS_CONFIG, MoneyStatus } from "../../types";
 import {
@@ -87,7 +88,7 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
     <div
       className={cn(
         // Compact card with clean shadow
-        "rounded-xl border bg-white dark:bg-card p-3.5 shadow-sm transition-all active:scale-[0.99] relative overflow-hidden",
+        "rounded-xl border bg-white dark:bg-card p-3.5 shadow-sm relative overflow-hidden",
         "border-slate-200/80 dark:border-border",
         // Subtle left accent for status
         !isPaid && "border-r-[3px] border-r-orange-300 dark:border-r-orange-700",
@@ -96,7 +97,6 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
         // Calendar draft background
         isCalendarDraft && !isUnpaidPast && "bg-blue-50/40 dark:bg-blue-900/15"
       )}
-      onClick={() => onCardClick(entry)}
     >
       {/* ════════════════════════════════════════════════════════════════════════
           MAIN CONTENT AREA - Stacked Layout
@@ -228,6 +228,17 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
           </Button>
         </div>
 
+        {/* Edit button - center action to open entry */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 px-3 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-muted/50 active:bg-slate-200"
+          onClick={() => onCardClick(entry)}
+        >
+          <Pencil className="h-4 w-4 ml-1.5" />
+          עריכה
+        </Button>
+
         {/* More actions menu - larger trigger */}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -236,7 +247,6 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
               size="icon"
               // Larger touch target: h-10 w-10
               className="h-10 w-10 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-muted/50 rounded-lg"
-              onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-5 w-5" />
             </Button>
@@ -248,20 +258,14 @@ export const MobileIncomeCard = React.memo(function MobileIncomeCard({
             style={{ direction: "rtl" }}
           >
             <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onDuplicate(entry);
-              }}
+              onClick={() => onDuplicate(entry)}
               className="h-11 text-sm px-3 gap-3 items-center justify-start"
             >
               <Copy className="h-4 w-4" />
               שכפל
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(entry.id);
-              }}
+              onClick={() => onDelete(entry.id)}
               className="h-11 text-sm px-3 gap-3 items-center justify-start text-red-600 focus:text-red-600"
             >
               <Trash2 className="h-4 w-4" />
