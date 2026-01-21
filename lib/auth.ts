@@ -4,6 +4,11 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
 export const auth = betterAuth({
+  trustedOrigins: [
+    "https://sedder.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+  ],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
