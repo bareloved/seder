@@ -12,6 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { TouchTooltip } from "@/components/ui/touch-tooltip";
 import { cn } from "@/lib/utils";
 import { Clock, CheckCircle2, FileX, Send, Banknote } from "lucide-react";
 import {
@@ -39,6 +40,7 @@ interface SplitStatusPillProps {
   isInteractive?: boolean; // Enable money status dropdown
   onMoneyStatusChange?: (newStatus: MoneyStatus) => void;
   className?: string;
+  useTouchTooltip?: boolean; // Use tap-to-show tooltips for mobile
 }
 
 export function SplitStatusPill({
@@ -47,6 +49,7 @@ export function SplitStatusPill({
   isInteractive = true,
   onMoneyStatusChange,
   className,
+  useTouchTooltip = false,
 }: SplitStatusPillProps) {
   const workConfig = WORK_STATUS_CONFIG[workStatus];
   const moneyConfig = MONEY_STATUS_CONFIG[moneyStatus];
@@ -54,19 +57,28 @@ export function SplitStatusPill({
   const WorkIcon = WORK_ICONS[workConfig.icon];
   const MoneyIcon = MONEY_ICONS[moneyConfig.icon];
 
+  // Work status icon content (shared between tooltip types)
+  const WorkIconContent = (
+    <div
+      className={cn(
+        "flex items-center justify-center w-7 h-7 rounded-full",
+        workConfig.bgClass,
+        workConfig.textClass
+      )}
+    >
+      <WorkIcon className="h-3.5 w-3.5" />
+    </div>
+  );
+
   // Work status icon (right side in RTL - read-only)
-  const WorkIcon_ = (
+  const WorkIcon_ = useTouchTooltip ? (
+    <TouchTooltip content={workConfig.tooltip} side="top">
+      <button className="focus:outline-none">{WorkIconContent}</button>
+    </TouchTooltip>
+  ) : (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div
-          className={cn(
-            "flex items-center justify-center w-7 h-7 rounded-full",
-            workConfig.bgClass,
-            workConfig.textClass
-          )}
-        >
-          <WorkIcon className="h-3.5 w-3.5" />
-        </div>
+        {WorkIconContent}
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
         {workConfig.tooltip}
@@ -145,6 +157,10 @@ export function SplitStatusPill({
           })}
       </DropdownMenuContent>
     </DropdownMenu>
+  ) : useTouchTooltip ? (
+    <TouchTooltip content={moneyConfig.tooltip} side="top">
+      <button className="focus:outline-none">{MoneyIconContent}</button>
+    </TouchTooltip>
   ) : (
     <Tooltip>
       <TooltipTrigger asChild>

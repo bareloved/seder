@@ -242,7 +242,7 @@ export function IncomeFilters({
       </div>
 
       {/* Date Selectors - Order: Filter (mobile) | Month | Year */}
-      <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 w-full md:w-auto">
 
         {/* Mobile Filter Toggle */}
         <Button
@@ -254,7 +254,20 @@ export function IncomeFilters({
           <Filter className="h-4 w-4" />
         </Button>
 
-        {/* Calendar Import Button */}
+        {/* Calendar Import Button - Mobile (icon only) */}
+        {isGoogleConnected && onImportFromCalendar && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onImportFromCalendar}
+            disabled={isImporting}
+            className="md:hidden h-9 w-9 bg-white dark:bg-card border-slate-200 dark:border-border text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 shrink-0 disabled:opacity-50"
+          >
+            {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+          </Button>
+        )}
+
+        {/* Calendar Import Button - Desktop (with label) */}
         {isGoogleConnected && onImportFromCalendar && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -335,9 +348,8 @@ export function IncomeFilters({
         {/* Year Dropdown */}
         <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-9 px-3 justify-center gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-slate-700 dark:text-slate-300 font-normal">
-              <span>{year}</span>
-              <ChevronDown className="h-3 w-3 opacity-50" />
+            <Button variant="outline" className="h-9 px-2.5 justify-center bg-white dark:bg-card border-slate-200 dark:border-border text-slate-700 dark:text-slate-300 font-normal">
+              {year}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="min-w-0" align="center">

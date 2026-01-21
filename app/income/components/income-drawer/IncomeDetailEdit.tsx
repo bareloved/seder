@@ -34,7 +34,7 @@ import {
   VatType,
 } from "../../types";
 import type { Category } from "@/db/schema";
-import { formatFullDate, getDisplayStatus, getVatTypeFromEntry } from "../../utils";
+import { getDisplayStatus, getVatTypeFromEntry } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
 import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
 import type { Client } from "@/db/schema";
@@ -151,7 +151,7 @@ export function IncomeDetailEdit({
                   !editedEntry.date && "text-slate-400"
                 )}
               >
-                {editedEntry.date ? formatFullDate(editedEntry.date) : <span>בחר תאריך</span>}
+                {editedEntry.date ? format(new Date(editedEntry.date), "EEEEEE, dd.MM.yy", { locale: he }) : <span>בחר תאריך</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -238,11 +238,12 @@ export function IncomeDetailEdit({
                 <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[200px]" align="start">
+            <DropdownMenuContent className="min-w-[120px] w-[150px]" align="end">
               {categories.filter(c => !c.isArchived).map((cat) => (
                 <DropdownMenuItem
                   key={cat.id}
                   onClick={() => handleChange({ categoryId: cat.id, categoryData: cat })}
+                  className="justify-end pr-2"
                 >
                   <CategoryChip category={cat} size="sm" withIcon={true} />
                 </DropdownMenuItem>

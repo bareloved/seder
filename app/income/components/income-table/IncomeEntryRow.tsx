@@ -506,6 +506,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               workStatus={workStatus}
               moneyStatus={moneyStatus}
               isInteractive={false}
+              useTouchTooltip={true}
             />
             {overdue && (
               <span className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200 rounded-full font-medium">
