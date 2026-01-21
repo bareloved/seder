@@ -270,13 +270,13 @@ function DashboardMockup() {
 
 export function LandingHero() {
   return (
-    <SectionWrapper className="pt-12 md:pt-20 bg-gradient-to-b from-primary/5 to-transparent">
+    <SectionWrapper className="pt-12 md:pt-20 bg-gradient-to-b from-[#2ecc71]/5 to-transparent">
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        <div className="text-center lg:text-start">
+        <div className="text-center lg:text-start animate-fade-in-up">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
             סדר בהכנסות,
             <br />
-            <span className="text-primary">סדר בחיים</span>
+            <span className="text-[#2ecc71]">סדר בחיים</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
             הכלי הפשוט והחכם לניהול הכנסות לפרילנסרים.
@@ -284,13 +284,13 @@ export function LandingHero() {
             עקבו אחרי עבודות, חשבוניות ותשלומים - במקום אחד.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <Button asChild size="lg" className="text-lg px-8 py-6">
+            <Button asChild size="lg" className="text-lg px-8 py-6 bg-[#2ecc71] hover:bg-[#27ae60]">
               <Link href="/sign-in">התחילו בחינם</Link>
             </Button>
           </div>
         </div>
 
-        <div className="relative min-h-[400px] md:min-h-[500px]">
+        <div className="relative min-h-[400px] md:min-h-[500px] animate-fade-in-up" style={{ animationDelay: "200ms" }}>
           <DashboardMockup />
         </div>
       </div>
