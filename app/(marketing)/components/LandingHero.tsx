@@ -159,22 +159,22 @@ function DashboardMockup() {
       {/* Floating Calendar Import Card - Left */}
       <div
         className="absolute -left-4 top-20 bg-white rounded-xl shadow-xl p-3 w-44 hidden md:block"
-        dir="rtl"
+        dir="ltr"
       >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Calendar className="w-4 h-4 text-primary" />
+        <div className="flex items-center gap-2 mb-3" dir="rtl">
+          <div className="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center">
+            <Calendar className="w-4 h-4 text-sky-500" />
           </div>
-          <span className="text-sm font-medium text-gray-800">ייבוא מיומן</span>
+          <span className="text-sm font-medium text-gray-800">ייבוא מהיומן</span>
         </div>
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-gray-600">הופעה - בית האופרה</span>
+            <span className="text-gray-600">הופעה בהיכל התרבות</span>
           </div>
           <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-gray-600">חזרה - להקת כליזמר</span>
+            <span className="text-gray-600">שיעור גיטרה</span>
           </div>
           <div className="flex items-center justify-between p-2 bg-primary/5 rounded-lg border border-primary/20">
             <div className="w-3.5 h-3.5 border border-gray-300 rounded" />
@@ -270,7 +270,7 @@ function DashboardMockup() {
 
 export function LandingHero() {
   return (
-    <SectionWrapper className="pt-12 md:pt-20">
+    <SectionWrapper className="pt-12 md:pt-20 bg-gradient-to-b from-primary/5 to-transparent">
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-start">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
