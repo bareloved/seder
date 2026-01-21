@@ -58,6 +58,18 @@ npm run db:studio        # Open Drizzle Studio for data management
   - `data.ts` - Data fetching & aggregation helpers
   - `types.ts`, `schemas.ts` - TypeScript types and Zod schemas
   - `components/` - Feature-specific React components
+
+### Mobile vs Desktop Views (Income Page)
+
+**IMPORTANT:** The income page uses different rendering for mobile vs desktop:
+
+- **`IncomeEntryRow.tsx`** - The ACTUAL mobile view component (used via `IncomeListView.tsx`)
+  - Contains both desktop layout (`hidden md:flex`) and mobile layout (`md:hidden`)
+  - Mobile changes should be made here in the `md:hidden` section
+- **`MobileIncomeCard.tsx`** - NOT used in the main mobile view (legacy/cards view only)
+  - Only renders when `viewMode === "cards"` via `IncomeCardsView.tsx`
+- **`IncomeTable.tsx`** - Orchestrator that switches between `IncomeListView` and `IncomeCardsView`
+- **`IncomeListView.tsx`** - Main list view, uses `IncomeEntryRow` for both mobile and desktop
 - `app/analytics/` - Charts and KPI reporting
 - `app/categories/` - User-defined income categories
 - `app/settings/` - User account settings

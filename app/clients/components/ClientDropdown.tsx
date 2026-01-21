@@ -105,7 +105,7 @@ export function ClientDropdown({
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -136,7 +136,7 @@ export function ClientDropdown({
           />
         </div>
 
-        <div className="max-h-[250px] overflow-y-auto p-1">
+        <div className="max-h-[250px] overflow-y-auto overscroll-contain p-1" style={{ WebkitOverflowScrolling: 'touch' }}>
           {/* Clear Option */}
           <button
             type="button"
