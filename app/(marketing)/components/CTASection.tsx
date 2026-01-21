@@ -9,7 +9,7 @@ export function CTASection() {
           מוכנים לעשות סדר?
         </h2>
         <p className="text-lg md:text-xl mb-8 text-white/90">
-          התחילו לנהל את ההכנסות שלכם בחינם. בלי כרטיס אשראי.
+          התחילו לנהל את ההכנסות שלכם.
         </p>
         <Button
           asChild
