@@ -32,6 +32,7 @@ import type { Category, Client } from "@/db/schema";
 import type { IncomeEntryWithCategory } from "./data";
 import { toast } from "sonner";
 import { CategoryManagerDialog } from "@/app/categories/components";
+import { OnboardingTour, EXAMPLE_INCOME_ENTRY } from "@/components/onboarding";
 
 const VIEW_MODE_STORAGE_KEY = "seder_income_view_mode";
 
@@ -68,6 +69,7 @@ interface IncomePageClientProps {
   isGoogleConnected: boolean;
   user: { name: string | null; email: string; image: string | null };
   todayDateString: string;
+  showOnboarding?: boolean;
 }
 
 export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
@@ -107,6 +109,7 @@ export default function IncomePageClient({
   isGoogleConnected,
   user,
   todayDateString,
+  showOnboarding = false,
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +182,7 @@ export default function IncomePageClient({
   const [selectedEntry, setSelectedEntry] = React.useState<IncomeEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [initialFocusField, setInitialFocusField] = React.useState<"description" | "amount" | "clientName" | undefined>();
+  const [prefillData, setPrefillData] = React.useState<typeof EXAMPLE_INCOME_ENTRY | undefined>();
 
   // Selection state for batch operations
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -191,6 +195,7 @@ export default function IncomePageClient({
     setIsDialogOpen(false);
     setSelectedEntry(null);
     setInitialFocusField(undefined);
+    setPrefillData(undefined);
   }, []);
 
   // Clear selection when month/year changes
@@ -728,11 +733,12 @@ export default function IncomePageClient({
     setIsDialogOpen(true);
   };
 
-  const openNewEntryDialog = () => {
+  const openNewEntryDialog = React.useCallback((prefill?: typeof EXAMPLE_INCOME_ENTRY) => {
     setSelectedEntry(null);
     setInitialFocusField("description");
+    setPrefillData(prefill);
     setIsDialogOpen(true);
-  };
+  }, []);
 
   const onSort = React.useCallback((column: SortColumn) => {
     if (column === sortColumn) {
@@ -775,7 +781,7 @@ export default function IncomePageClient({
     onClientChange: setSelectedClient,
     selectedCategories: selectedCategories,
     onCategoryChange: setSelectedCategories,
-    onNewEntry: openNewEntryDialog,
+    onNewEntry: () => openNewEntryDialog(),
     onEditCategories: () => setIsCategoryDialogOpen(true),
     onInlineEdit: inlineEditEntry,
     // Selection props
@@ -817,7 +823,7 @@ export default function IncomePageClient({
               categories={categories}
               selectedCategories={selectedCategories}
               onCategoryChange={setSelectedCategories}
-              onNewEntry={openNewEntryDialog}
+              onNewEntry={() => openNewEntryDialog()}
               year={year}
               month={month}
               onYearChange={handleYearChange}
@@ -834,7 +840,7 @@ export default function IncomePageClient({
           </div>
 
           {/* Content Area */}
-          <div className="p-0">
+          <div className="p-0" data-tour="income-table">
             {filteredEntries.length === 0 && !hasActiveFilter ? (
               // Empty State
               <div className="flex flex-col items-center justify-center py-20 text-slate-400">
@@ -879,6 +885,7 @@ export default function IncomePageClient({
         categories={categories}
         clients={clientRecords}
         initialFocusField={initialFocusField}
+        prefillData={prefillData}
       />
 
       <CalendarImportDialog
@@ -933,15 +940,25 @@ export default function IncomePageClient({
       {/* Mobile Floating Add Button */}
       <Button
         size="icon"
-        onClick={openNewEntryDialog}
+        onClick={() => openNewEntryDialog()}
         className="md:hidden fixed bottom-20 right-4 h-9 w-9 rounded-full shadow-sm bg-[#2ecc71] hover:bg-[#27ae60] text-white z-40"
         style={{ display: selectedIds.size > 0 ? 'none' : 'flex' }}
+        data-tour="add-button-mobile"
       >
         <Plus className="h-5 w-5" />
       </Button>
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav hidden={selectedIds.size > 0} />
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        showOnboarding={showOnboarding}
+        onOpenAddDialog={openNewEntryDialog}
+        onOpenCalendarDialog={() => setIsCalendarDialogOpen(true)}
+        isGoogleConnected={isGoogleConnected}
+        isDialogOpen={isDialogOpen}
+      />
 
     </div>
   );

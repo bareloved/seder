@@ -15,6 +15,13 @@ import { SplitStatusPill } from "./SplitStatusPill";
 import { IncomeDetailEdit } from "./income-drawer/IncomeDetailEdit";
 import type { Category, Client } from "@/db/schema";
 
+interface PrefillData {
+  description?: string;
+  clientName?: string;
+  amountGross?: number;
+  date?: string;
+}
+
 interface IncomeDetailDialogProps {
   entry: IncomeEntry | null;
   categories: Category[];
@@ -27,6 +34,7 @@ interface IncomeDetailDialogProps {
   onAdd: (entry: IncomeEntry & { status?: DisplayStatus; vatType?: VatType }) => void;
   defaultDateForNew?: string;
   initialFocusField?: "description" | "amount" | "clientName";
+  prefillData?: PrefillData;
 }
 
 export function IncomeDetailDialog({
@@ -41,18 +49,19 @@ export function IncomeDetailDialog({
   onAdd,
   defaultDateForNew,
   initialFocusField,
+  prefillData,
 }: IncomeDetailDialogProps) {
   // If not open, don't render anything (avoids flash of default content)
   if (!isOpen) return null;
 
   const isNew = !entry;
-  
+
   const effectiveEntry: IncomeEntry = entry || {
     id: "new",
-    date: defaultDateForNew || getTodayDateString(),
-    description: "",
-    clientName: "",
-    amountGross: 0,
+    date: prefillData?.date || defaultDateForNew || getTodayDateString(),
+    description: prefillData?.description || "",
+    clientName: prefillData?.clientName || "",
+    amountGross: prefillData?.amountGross || 0,
     amountPaid: 0,
     vatRate: DEFAULT_VAT_RATE,
     includesVat: false,

@@ -36,6 +36,13 @@
       "when": 1768766741893,
       "tag": "0004_oval_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769077852040,
+      "tag": "0005_exotic_tattoo",
+      "breakpoints": true
     }
   ]
 }
