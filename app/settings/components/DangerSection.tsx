@@ -17,37 +17,33 @@ import {
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { deleteUserAccountWithPassword } from "../actions";
+import { deleteUserAccount } from "../actions";
+
+const CONFIRMATION_TEXT = "DELETE";
 
 export function DangerSection() {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
-    const [password, setPassword] = useState("");
+    const [confirmation, setConfirmation] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
+
+    const isConfirmed = confirmation === CONFIRMATION_TEXT;
 
     const handleDelete = async () => {
-        if (!password.trim()) {
-            setError("יש להזין סיסמה");
-            return;
-        }
+        if (!isConfirmed) return;
 
         setIsLoading(true);
-        setError("");
 
         try {
-            const result = await deleteUserAccountWithPassword(password);
+            const result = await deleteUserAccount();
 
             if (result.success) {
-                // Sign out and redirect to home
                 await authClient.signOut();
                 router.push("/");
             } else {
-                setError(result.error || "מחיקת החשבון נכשלה");
                 toast.error(result.error || "מחיקת החשבון נכשלה");
             }
         } catch {
-            setError("אירעה שגיאה בלתי צפויה");
             toast.error("אירעה שגיאה בלתי צפויה");
         } finally {
             setIsLoading(false);
@@ -57,9 +53,7 @@ export function DangerSection() {
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
         if (!open) {
-            // Reset state when dialog closes
-            setPassword("");
-            setError("");
+            setConfirmation("");
         }
     };
 
@@ -95,24 +89,19 @@ export function DangerSection() {
                             </AlertDialogHeader>
 
                             <div className="space-y-2 py-4">
-                                <label htmlFor="password" className="text-sm font-medium">
-                                    הזן את הסיסמה שלך לאישור
+                                <label htmlFor="confirmation" className="text-sm font-medium">
+                                    הקלד <span className="font-mono font-bold">{CONFIRMATION_TEXT}</span> לאישור
                                 </label>
                                 <Input
-                                    id="password"
-                                    type="password"
+                                    id="confirmation"
+                                    type="text"
                                     dir="ltr"
-                                    value={password}
-                                    onChange={(e) => {
-                                        setPassword(e.target.value);
-                                        setError("");
-                                    }}
-                                    placeholder="סיסמה"
+                                    value={confirmation}
+                                    onChange={(e) => setConfirmation(e.target.value)}
+                                    placeholder={CONFIRMATION_TEXT}
                                     disabled={isLoading}
+                                    autoComplete="off"
                                 />
-                                {error && (
-                                    <p className="text-sm text-red-600">{error}</p>
-                                )}
                             </div>
 
                             <AlertDialogFooter>
@@ -120,7 +109,7 @@ export function DangerSection() {
                                 <Button
                                     variant="destructive"
                                     onClick={handleDelete}
-                                    disabled={isLoading || !password.trim()}
+                                    disabled={isLoading || !isConfirmed}
                                 >
                                     {isLoading ? (
                                         <>

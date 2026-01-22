@@ -6,7 +6,6 @@ import { eq, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { verifyPassword } from "better-auth/crypto";
 
 // --- Settings Actions ---
 
@@ -259,7 +258,7 @@ export async function completeOnboarding() {
 
 // --- Danger Actions ---
 
-export async function deleteUserAccountWithPassword(password: string) {
+export async function deleteUserAccount() {
     const currentSession = await auth.api.getSession({
         headers: await headers(),
     });
@@ -271,32 +270,6 @@ export async function deleteUserAccountWithPassword(password: string) {
     const userId = currentSession.user.id;
 
     try {
-        // Get the credential account to verify password
-        const credentialAccount = await db
-            .select()
-            .from(account)
-            .where(
-                and(
-                    eq(account.userId, userId),
-                    eq(account.providerId, "credential")
-                )
-            )
-            .limit(1);
-
-        if (credentialAccount.length === 0 || !credentialAccount[0].password) {
-            return { success: false, error: "לא ניתן לאמת סיסמה עבור חשבון זה" };
-        }
-
-        // Verify password
-        const passwordMatch = await verifyPassword({
-            hash: credentialAccount[0].password,
-            password: password,
-        });
-
-        if (!passwordMatch) {
-            return { success: false, error: "סיסמה שגויה" };
-        }
-
         // Delete all user data in correct order (respecting foreign keys)
         await db.transaction(async (tx) => {
             // 1. Delete income entries (has FKs to categories, clients, user)
