@@ -937,16 +937,17 @@ export default function IncomePageClient({
         isLoading={isBatchLoading}
       />
 
-      {/* Mobile Floating Add Button */}
-      <Button
-        size="icon"
-        onClick={() => openNewEntryDialog()}
-        className="md:hidden fixed bottom-20 right-4 h-9 w-9 rounded-full shadow-sm bg-[#2ecc71] hover:bg-[#27ae60] text-white z-40"
-        style={{ display: selectedIds.size > 0 ? 'none' : 'flex' }}
-        data-tour="add-button-mobile"
-      >
-        <Plus className="h-5 w-5" />
-      </Button>
+      {/* Mobile Floating Add Button - only on small screens (phones) */}
+      {selectedIds.size === 0 && (
+        <Button
+          size="icon"
+          onClick={() => openNewEntryDialog()}
+          className="md:hidden fixed bottom-20 right-4 h-9 w-9 rounded-full shadow-sm bg-[#2ecc71] hover:bg-[#27ae60] text-white z-40"
+          data-tour="add-button-mobile"
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav hidden={selectedIds.size > 0} />

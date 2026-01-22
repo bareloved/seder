@@ -41,7 +41,7 @@ export function KPICards({
     },
     {
       id: "to-invoice",
-      title: "לשלוח חשבונית",
+      title: "לפני חיוב",
       amount: kpis.readyToInvoice,
       icon: FileText,
       amountColor: "text-slate-900 dark:text-slate-100",

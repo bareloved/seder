@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarDays, ListX, Plus, X, GripVertical, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, CheckSquare } from "lucide-react";
+import { CalendarDays, ListX, Plus, X, GripVertical, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, CheckSquare, ChevronLeft } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +51,7 @@ const RESIZABLE_COLUMNS: ColumnKey[] = ["client", "description"];
 
 // Static widths for non-resizable columns
 // Note: resizable columns (client, description) use shrink-0 + inline style for width
+// Note: actions column uses sticky positioning to stay visible on scroll
 const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   date: "w-[70px] shrink-0 px-2",
   description: "shrink-0 min-w-0 px-3", // Width set via inline style
@@ -58,7 +59,7 @@ const HEADER_WIDTH_MAP: Record<ColumnKey, string> = {
   category: "w-[100px] shrink-0 px-2",
   amount: "w-[120px] shrink-0 px-3",
   status: "w-[100px] shrink-0 px-2", // Icon-only split-pill status
-  actions: "w-[110px] shrink-0 px-1.5",
+  actions: "w-[50px] shrink-0 px-1.5 sticky left-0 z-10 bg-white dark:bg-background",
 };
 
 const COLUMN_LABELS: Record<ColumnKey, string> = {
@@ -226,6 +227,10 @@ export const IncomeListView = React.memo(function IncomeListView({
   const [draggedKey, setDraggedKey] = useState<ColumnKey | null>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
+  // Horizontal scroll overflow detection
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [hasOverflowLeft, setHasOverflowLeft] = useState(false);
+
   // Column width state for resizable columns
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnKey, number>>>(DEFAULT_COLUMN_WIDTHS);
   const [resizing, setResizing] = useState<{
@@ -251,6 +256,38 @@ export const IncomeListView = React.memo(function IncomeListView({
     const unpaid = totalGross - totalPaid;
     return { totalGross, totalPaid, unpaid, count: entries.length };
   }, [entries]);
+
+  // Check for horizontal overflow (content wider than container)
+  const checkOverflow = React.useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    // Show indicator when there's content that doesn't fit
+    const hasOverflow = container.scrollWidth > container.clientWidth;
+    setHasOverflowLeft(hasOverflow);
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Check immediately and after a brief delay (for layout to settle)
+    checkOverflow();
+    const timeoutId = setTimeout(checkOverflow, 100);
+
+    container.addEventListener("scroll", checkOverflow);
+    window.addEventListener("resize", checkOverflow);
+
+    // Use ResizeObserver to detect container size changes
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(container);
+
+    return () => {
+      clearTimeout(timeoutId);
+      container.removeEventListener("scroll", checkOverflow);
+      window.removeEventListener("resize", checkOverflow);
+      resizeObserver.disconnect();
+    };
+  }, [checkOverflow, entries.length, columnWidths]);
 
   // Load saved column order (desktop only)
   useEffect(() => {
@@ -492,7 +529,7 @@ export const IncomeListView = React.memo(function IncomeListView({
           - Row-cards with Excel-like inline editing
           - Sticky totals bar at bottom
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="hidden md:block">
+      <div className="hidden md:block relative">
         {/* FILTERS moved to parent component */}
 
         {/* QUICK ADD CARD */}
@@ -500,108 +537,121 @@ export const IncomeListView = React.memo(function IncomeListView({
           <QuickAddCard onAddEntry={onAddEntry} clients={clients} categories={categories} onEditCategories={onEditCategories} />
         </div>
 
-        {/* Column Headers - draggable (desktop only) */}
-        <div className={`flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none ${resizing ? "cursor-col-resize" : ""}`}>
-          {/* Select All Checkbox */}
-          {isSelectionMode && onSelectAll && (
-            <div className="shrink-0 w-[40px] px-2 flex items-center justify-center">
-              <Checkbox
-                checked={selectedIds.size > 0 && selectedIds.size === entries.length ? true : selectedIds.size > 0 ? "indeterminate" : false}
-                onCheckedChange={onSelectAll}
-                className="h-4 w-4 border-2 border-slate-300 data-[state=checked]:bg-slate-800 data-[state=checked]:border-slate-800 data-[state=indeterminate]:bg-slate-400 data-[state=indeterminate]:border-slate-400"
-              />
+        {/* Scrollable container for columns */}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent"
+          dir="rtl"
+        >
+          {/* Column Headers - draggable (desktop only) */}
+          <div className={`flex items-center text-[12px] text-slate-400 dark:text-slate-500 font-medium mb-1 px-1 select-none min-w-max ${resizing ? "cursor-col-resize" : ""}`}>
+            {/* Select All Checkbox */}
+            {isSelectionMode && onSelectAll && (
+              <div className="shrink-0 w-[40px] px-2 flex items-center justify-center">
+                <Checkbox
+                  checked={selectedIds.size > 0 && selectedIds.size === entries.length ? true : selectedIds.size > 0 ? "indeterminate" : false}
+                  onCheckedChange={onSelectAll}
+                  className="h-4 w-4 border-2 border-slate-300 data-[state=checked]:bg-slate-800 data-[state=checked]:border-slate-800 data-[state=indeterminate]:bg-slate-400 data-[state=indeterminate]:border-slate-400"
+                />
+              </div>
+            )}
+            {columnOrder.map((key) => {
+              const isResizable = RESIZABLE_COLUMNS.includes(key);
+              const dynamicWidth = isResizable ? columnWidths[key] || DEFAULT_COLUMN_WIDTHS[key] : undefined;
+              const isActions = key === "actions";
+
+              return (
+                <div
+                  key={key}
+                  draggable={!resizing && !isActions}
+                  onDragStart={(e) => !isActions && handleDragStart(e, key)}
+                  onDragOver={(e) => !isActions && handleDragOver(e, key)}
+                  onDragLeave={handleDragLeave}
+                  onDragEnd={handleDragEnd}
+                  onDrop={(e) => !isActions && handleDrop(e, key)}
+                  style={dynamicWidth ? { width: dynamicWidth } : undefined}
+                  className={`
+                    ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
+                    ${dropTarget?.key === key ? "bg-slate-50 dark:bg-card/40" : !isActions ? "hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}
+                    ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-card/50 dashed border border-site-300" : !resizing && !isActions ? "cursor-grab active:cursor-grabbing" : ""}
+                  `}
+                >
+                  {/* Resize handle on left edge (end in RTL) for resizable columns */}
+                  {isResizable && (
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 group/resize flex items-center justify-center"
+                      onMouseDown={(e) => handleResizeStart(e, key)}
+                    >
+                      <div className="w-0.5 h-3 bg-transparent group-hover/resize:bg-slate-400 dark:group-hover/resize:bg-slate-500 rounded-full transition-colors" />
+                    </div>
+                  )}
+                  {/* Drop candidate indicator line */}
+                  {dropTarget?.key === key && (
+                    <div
+                      className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-border z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
+                    />
+                  )}
+                  {headerContent[key]}
+                  {!isActions && (
+                    <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical className="h-3 w-3" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Empty States */}
+          {hasNoData && (
+            <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
+              <EmptyState type="no-data" onAddClick={handleAddClick} />
+            </Card>
+          )}
+
+          {hasFilteredAway && (
+            <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
+              <EmptyState type="filtered" onClearFilter={onClearFilter} />
+            </Card>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              ROW-CARDS (Desktop)
+              Compact table-like rows with Excel-like inline editing
+              ═══════════════════════════════════════════════════════════════════ */}
+          {entries.length > 0 && (
+            <div className="flex flex-col gap-0.5">
+              {entries.map((entry) => (
+                <IncomeEntryRow
+                  key={entry.id}
+                  entry={entry}
+                  onClick={onRowClick}
+                  onStatusChange={onStatusChange}
+                  onMoneyStatusChange={onMoneyStatusChange}
+                  onMarkAsPaid={onMarkAsPaid}
+                  onMarkInvoiceSent={onMarkInvoiceSent}
+                  onDuplicate={onDuplicate}
+                  onDelete={onDelete}
+                  onInlineEdit={onInlineEdit}
+                  clients={clients}
+                  clientRecords={clientRecords}
+                  categories={categories}
+                  columnOrder={columnOrder}
+                  columnWidths={columnWidths}
+                  onEditCategories={onEditCategories}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedIds.has(entry.id)}
+                  onToggleSelection={onToggleSelection}
+                  onToggleSelectionMode={onToggleSelectionMode}
+                />
+              ))}
             </div>
           )}
-          {columnOrder.map((key) => {
-            const isResizable = RESIZABLE_COLUMNS.includes(key);
-            const dynamicWidth = isResizable ? columnWidths[key] || DEFAULT_COLUMN_WIDTHS[key] : undefined;
-
-            return (
-              <div
-                key={key}
-                draggable={!resizing}
-                onDragStart={(e) => handleDragStart(e, key)}
-                onDragOver={(e) => handleDragOver(e, key)}
-                onDragLeave={handleDragLeave}
-                onDragEnd={handleDragEnd}
-                onDrop={(e) => handleDrop(e, key)}
-                style={dynamicWidth ? { width: dynamicWidth } : undefined}
-                className={`
-                  ${HEADER_WIDTH_MAP[key]} flex items-center justify-between group relative rounded-md transition-colors
-                  ${dropTarget?.key === key ? "bg-slate-50 dark:bg-card/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}
-                  ${draggedKey === key ? "opacity-30 bg-slate-100 dark:bg-card/50 dashed border border-site-300" : !resizing ? "cursor-grab active:cursor-grabbing" : ""}
-                `}
-              >
-                {/* Resize handle on left edge (end in RTL) for resizable columns */}
-                {isResizable && (
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-20 group/resize flex items-center justify-center"
-                    onMouseDown={(e) => handleResizeStart(e, key)}
-                  >
-                    <div className="w-0.5 h-3 bg-transparent group-hover/resize:bg-slate-400 dark:group-hover/resize:bg-slate-500 rounded-full transition-colors" />
-                  </div>
-                )}
-                {/* Drop candidate indicator line */}
-                {dropTarget?.key === key && (
-                  <div
-                    className={`absolute inset-y-0 w-0.5 bg-slate-300 dark:bg-border z-10 ${dropTarget.position === "right" ? "-right-0.5" : "-left-0.5"}`}
-                  />
-                )}
-                {headerContent[key]}
-                <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical className="h-3 w-3" />
-                </div>
-              </div>
-            );
-          })}
         </div>
 
-        {/* Empty States */}
-        {hasNoData && (
-          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
-            <EmptyState type="no-data" onAddClick={handleAddClick} />
-          </Card>
-        )}
-
-        {hasFilteredAway && (
-          <Card className="bg-white dark:bg-card border-slate-100 dark:border-border shadow-sm">
-            <EmptyState type="filtered" onClearFilter={onClearFilter} />
-          </Card>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            ROW-CARDS (Desktop)
-            Compact table-like rows with Excel-like inline editing
-            ═══════════════════════════════════════════════════════════════════ */}
-        {entries.length > 0 && (
-          <div className="flex flex-col gap-0.5">
-            {entries.map((entry) => (
-              <IncomeEntryRow
-                key={entry.id}
-                entry={entry}
-                onClick={onRowClick}
-                onStatusChange={onStatusChange}
-                onMoneyStatusChange={onMoneyStatusChange}
-                onMarkAsPaid={onMarkAsPaid}
-                onMarkInvoiceSent={onMarkInvoiceSent}
-                onDuplicate={onDuplicate}
-                onDelete={onDelete}
-                onInlineEdit={onInlineEdit}
-                clients={clients}
-                clientRecords={clientRecords}
-                categories={categories}
-                columnOrder={columnOrder}
-                columnWidths={columnWidths}
-                onEditCategories={onEditCategories}
-                isSelectionMode={isSelectionMode}
-                isSelected={selectedIds.has(entry.id)}
-                onToggleSelection={onToggleSelection}
-                onToggleSelectionMode={onToggleSelectionMode}
-              />
-            ))}
-
-
-          </div>
+        {/* Fade overlay on the left edge when columns are hidden (RTL: left is where content scrolls to) */}
+        {hasOverflowLeft && entries.length > 0 && (
+          <div className="absolute left-[50px] top-0 bottom-0 w-8 bg-gradient-to-r from-white/90 dark:from-background/90 to-transparent z-20 pointer-events-none" />
         )}
       </div>
 

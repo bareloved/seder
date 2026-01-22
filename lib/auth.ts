@@ -1,7 +1,13 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { emailOTP } from "better-auth/plugins";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
+import {
+  sendEmail,
+  getPasswordResetEmailHtml,
+  getPasswordResetEmailText,
+} from "./email";
 
 export const auth = betterAuth({
   trustedOrigins: [
@@ -32,4 +38,20 @@ export const auth = betterAuth({
       prompt: "consent", // Always request consent to ensure refresh token is provided
     },
   },
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 300, // 5 minutes
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type === "forget-password") {
+          await sendEmail({
+            to: email,
+            subject: "איפוס סיסמה - סדר",
+            html: getPasswordResetEmailHtml(otp),
+            text: getPasswordResetEmailText(otp),
+          });
+        }
+      },
+    }),
+  ],
 });

@@ -216,7 +216,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           DESKTOP LAYOUT (md+)
           match image style: clean white rows
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="hidden md:flex md:items-center min-h-[50px]">
+      <div className="hidden md:flex md:items-center min-h-[50px] min-w-max">
         {/* Selection Checkbox - appears first (right side in RTL) when in selection mode */}
         {isSelectionMode && onToggleSelection && (
           <div
@@ -444,7 +444,12 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               </div>
             ),
             actions: (
-              <div className="shrink-0 w-[50px] px-1.5 flex items-center justify-end">
+              <div className={cn(
+                "shrink-0 w-[50px] px-1.5 flex items-center justify-end sticky left-0 z-10 transition-colors",
+                isSelected
+                  ? "bg-slate-100/80 dark:bg-muted/40 group-hover:bg-slate-100 dark:group-hover:bg-muted/50"
+                  : "bg-white dark:bg-background group-hover:bg-slate-50/50 dark:group-hover:bg-muted/30"
+              )}>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-400 hover:text-slate-600" onClick={(e) => e.stopPropagation()}>

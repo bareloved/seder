@@ -13,7 +13,7 @@ const updateUuidSchema = z.string().transform((val) => val === "" ? undefined : 
 export const createIncomeEntrySchema = zfd.formData({
   date: dateSchema,
   description: zfd.text(z.string().min(1, "Description is required")),
-  clientName: zfd.text(z.string()), // Required in DB, but allow empty string from form
+  clientName: zfd.text(z.string().optional().default("")), // Allow empty/missing client name
   clientId: zfd.text(optionalUuidSchema).optional(), // FK to clients table (empty string → undefined)
   amountGross: amountSchema,
   amountPaid: zfd.numeric(z.number().min(0).optional().default(0)),

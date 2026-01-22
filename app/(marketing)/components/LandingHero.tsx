@@ -57,7 +57,7 @@ function DashboardMockup() {
               <Calendar className="w-2.5 h-2.5 text-slate-400 mt-1" />
             </div>
             <div className="bg-white border border-sky-200 rounded-lg p-2 shadow-sm ring-1 ring-sky-500">
-              <span className="text-[10px] text-slate-500 block">לשלוח חשבונית</span>
+              <span className="text-[10px] text-slate-500 block">לפני חיוב</span>
               <div className="text-base font-semibold text-slate-900" dir="ltr">
                 <span className="text-xs">₪</span> 8,200
               </div>
@@ -201,7 +201,7 @@ function DashboardMockup() {
           <div className="flex-1 bg-sky-50 rounded-lg p-2 text-center">
             <FileText className="w-3.5 h-3.5 text-sky-500 mx-auto mb-1" />
             <div className="text-xs font-bold text-sky-700">₪ 8,200</div>
-            <div className="text-[8px] text-sky-500">לשלוח חשבונית</div>
+            <div className="text-[8px] text-sky-500">לפני חיוב</div>
           </div>
           <div className="flex-1 bg-orange-50 rounded-lg p-2 text-center">
             <Wallet className="w-3.5 h-3.5 text-orange-500 mx-auto mb-1" />
