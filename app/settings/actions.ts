@@ -215,6 +215,47 @@ export async function exportUserData(options: ExportOptions) {
     }
 }
 
+// --- Onboarding Actions ---
+
+export async function completeOnboarding() {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    try {
+        const existingSettings = await db
+            .select()
+            .from(userSettings)
+            .where(eq(userSettings.userId, session.user.id));
+
+        if (existingSettings.length > 0) {
+            await db.update(userSettings)
+                .set({
+                    onboardingCompleted: true,
+                    onboardingCompletedAt: new Date(),
+                    updatedAt: new Date()
+                })
+                .where(eq(userSettings.userId, session.user.id));
+        } else {
+            await db.insert(userSettings).values({
+                userId: session.user.id,
+                onboardingCompleted: true,
+                onboardingCompletedAt: new Date(),
+            });
+        }
+
+        revalidatePath("/income");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to complete onboarding:", error);
+        return { success: false, error: "Failed to complete onboarding" };
+    }
+}
+
 // --- Danger Actions ---
 
 export async function deleteUserAccount() {

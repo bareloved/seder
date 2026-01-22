@@ -153,6 +153,7 @@ export function IncomeFilters({
                 onClick={onNewEntry}
                 size="icon"
                 className="h-9 w-9 rounded-full bg-[#2ecc71] hover:bg-[#27ae60] text-white shadow-sm shrink-0 transition-all"
+                data-tour="add-button"
               >
                 <Plus className="h-5 w-5" />
               </Button>
@@ -277,6 +278,7 @@ export function IncomeFilters({
                 onClick={onImportFromCalendar}
                 disabled={isImporting}
                 className="h-9 gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hidden md:flex disabled:opacity-50"
+                data-tour="calendar-import"
               >
                 {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
                 <span className="text-sm">{isImporting ? "מייבא..." : "ייבוא"}</span>

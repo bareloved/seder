@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client"
 import { useState } from "react"
 import { Loader2, ChevronDown } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { PasswordResetDialog } from "./password-reset-dialog"
 
 export function LoginForm({
   className,
@@ -21,6 +22,7 @@ export function LoginForm({
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false)
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
@@ -188,12 +190,13 @@ export function LoginForm({
                   סיסמה
                 </label>
                 {!isSignUp && (
-                  <a
-                    href="#"
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordResetOpen(true)}
                     className="text-sm text-slate-500 hover:text-[#2ecc71] transition-colors"
                   >
                     שכחתם סיסמה?
-                  </a>
+                  </button>
                 )}
               </div>
               <Input
@@ -247,6 +250,12 @@ export function LoginForm({
           מדיניות הפרטיות
         </a>
       </p>
+
+      {/* Password Reset Dialog */}
+      <PasswordResetDialog
+        isOpen={isPasswordResetOpen}
+        onClose={() => setIsPasswordResetOpen(false)}
+      />
     </div>
   )
 }

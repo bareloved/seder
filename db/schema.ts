@@ -171,6 +171,8 @@ export const userSettings = pgTable("user_settings", {
     lastAutoSync?: string;  // ISO timestamp
     selectedCalendarIds?: string[];  // Which calendars to sync
   }>().default({}),
+  onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

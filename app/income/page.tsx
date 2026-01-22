@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection } from "./data";
+import { getIncomeEntriesForMonth, getIncomeAggregatesForMonth, getUniqueClients, getMonthPaymentStatuses, hasGoogleCalendarConnection, hasCompletedOnboarding } from "./data";
 import { getUserCategories } from "@/app/categories/data";
 import { getClientsWithAnalytics } from "@/app/clients/data";
 import IncomePageClient from "./IncomePageClient";
@@ -49,7 +49,7 @@ async function IncomePageContent({
   todayDateString: string;
 }) {
   // Fetch data in parallel
-  const [entries, aggregates, clientNames, clientRecords, categories, monthStatuses, isGoogleConnected] = await Promise.all([
+  const [entries, aggregates, clientNames, clientRecords, categories, monthStatuses, isGoogleConnected, onboardingCompleted] = await Promise.all([
     getIncomeEntriesForMonth({ year, month, userId, limit, offset }),
     getIncomeAggregatesForMonth({ year, month, userId }),
     getUniqueClients(userId),
@@ -59,6 +59,7 @@ async function IncomePageContent({
     getUserCategories(userId),
     getMonthPaymentStatuses(year, userId),
     hasGoogleCalendarConnection(userId),
+    hasCompletedOnboarding(userId),
   ]);
 
   return (
@@ -74,6 +75,7 @@ async function IncomePageContent({
       isGoogleConnected={isGoogleConnected}
       user={user}
       todayDateString={todayDateString}
+      showOnboarding={!onboardingCompleted}
     />
   );
 }

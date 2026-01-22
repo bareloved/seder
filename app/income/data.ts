@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { incomeEntries, account, categories, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
+import { incomeEntries, account, categories, userSettings, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
 import { eq, and, gte, lte, asc, desc, sql, count, lt, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { Currency } from "./currency";
@@ -790,4 +790,23 @@ export async function batchDeleteIncomeEntries(
     .returning({ id: incomeEntries.id });
 
   return result.length;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Onboarding
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Check if user has completed onboarding
+ * Returns true if onboarding is complete, false if user should see onboarding
+ */
+export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  const settings = await db
+    .select({ onboardingCompleted: userSettings.onboardingCompleted })
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .limit(1);
+
+  // If no settings exist or onboardingCompleted is false, show onboarding
+  return settings.length > 0 && settings[0].onboardingCompleted === true;
 }
