@@ -268,20 +268,7 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
             </p>
           </div>
           <Button onClick={handleAdd} className="gap-2">
-            <Plus className="h-4 w-4" />
-            קטגוריה חדשה
-          </Button>
-        </div>
-      )}
-
-      {/* Add button when header is hidden */}
-      {hideHeader && (
-        <div className="flex justify-start">
-          <Button
-            onClick={handleAdd}
-            className="gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 rounded-xl px-3.5 py-2 h-auto text-sm"
-          >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4 font-semibold" />
             קטגוריה חדשה
           </Button>
         </div>
@@ -321,20 +308,39 @@ export function CategoryManager({ initialCategories = [], hideHeader = false }: 
         </div>
       )}
 
-      {/* Archived Section */}
-      {archivedCategories.length > 0 && (
+      {/* Footer with Add button and Archived Section */}
+      {(hideHeader || archivedCategories.length > 0) && (
         <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-          >
-            <Archive className="h-3.5 w-3.5" />
-            <span>
-              {showArchived ? "הסתר ארכיון" : `הצג ארכיון (${archivedCategories.length})`}
-            </span>
-          </button>
+          <div className="flex items-center justify-between">
+            {/* Add button when header is hidden */}
+            {hideHeader ? (
+              <Button
+                onClick={handleAdd}
+                variant="ghost"
+                className="gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1 h-auto"
+              >
+                <Plus className="h-3 w-3" />
+                קטגוריה חדשה
+              </Button>
+            ) : (
+              <div />
+            )}
 
-          {showArchived && (
+            {/* Archive toggle */}
+            {archivedCategories.length > 0 && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                <span>
+                  {showArchived ? "הסתר ארכיון" : `הצג ארכיון (${archivedCategories.length})`}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {showArchived && archivedCategories.length > 0 && (
             <div className="mt-3 space-y-2">
               {archivedCategories.map((category) => (
                 <SortableCategory
