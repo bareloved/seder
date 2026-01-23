@@ -32,7 +32,7 @@ import type { Category, Client } from "@/db/schema";
 import type { IncomeEntryWithCategory } from "./data";
 import { toast } from "sonner";
 import { CategoryManagerDialog } from "@/app/categories/components";
-import { OnboardingTour, EXAMPLE_INCOME_ENTRY } from "@/components/onboarding";
+import { OnboardingTour } from "@/components/onboarding";
 
 const VIEW_MODE_STORAGE_KEY = "seder_income_view_mode";
 
@@ -182,7 +182,6 @@ export default function IncomePageClient({
   const [selectedEntry, setSelectedEntry] = React.useState<IncomeEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [initialFocusField, setInitialFocusField] = React.useState<"description" | "amount" | "clientName" | undefined>();
-  const [prefillData, setPrefillData] = React.useState<typeof EXAMPLE_INCOME_ENTRY | undefined>();
 
   // Selection state for batch operations
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -195,7 +194,6 @@ export default function IncomePageClient({
     setIsDialogOpen(false);
     setSelectedEntry(null);
     setInitialFocusField(undefined);
-    setPrefillData(undefined);
   }, []);
 
   // Clear selection when month/year changes
@@ -733,10 +731,9 @@ export default function IncomePageClient({
     setIsDialogOpen(true);
   };
 
-  const openNewEntryDialog = React.useCallback((prefill?: typeof EXAMPLE_INCOME_ENTRY) => {
+  const openNewEntryDialog = React.useCallback(() => {
     setSelectedEntry(null);
     setInitialFocusField("description");
-    setPrefillData(prefill);
     setIsDialogOpen(true);
   }, []);
 
@@ -885,7 +882,6 @@ export default function IncomePageClient({
         categories={categories}
         clients={clientRecords}
         initialFocusField={initialFocusField}
-        prefillData={prefillData}
       />
 
       <CalendarImportDialog

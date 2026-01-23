@@ -2,15 +2,16 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { SpotlightOverlay } from "./SpotlightOverlay";
 import { TourTooltip } from "./TourTooltip";
 import { HelpButton } from "./HelpButton";
-import { TOUR_STEPS, EXAMPLE_INCOME_ENTRY } from "./types";
+import { TOUR_STEPS } from "./types";
 import { completeOnboarding } from "@/app/settings/actions";
 
 interface OnboardingTourProps {
   showOnboarding: boolean;
-  onOpenAddDialog: (prefillData?: typeof EXAMPLE_INCOME_ENTRY) => void;
+  onOpenAddDialog: () => void;
   onOpenCalendarDialog: () => void;
   isGoogleConnected: boolean;
   isDialogOpen?: boolean; // Track if add dialog is open
@@ -23,6 +24,7 @@ export function OnboardingTour({
   isGoogleConnected,
   isDialogOpen = false,
 }: OnboardingTourProps) {
+  const router = useRouter();
   const [isActive, setIsActive] = React.useState(false);
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
   const [targetRect, setTargetRect] = React.useState<DOMRect | null>(null);
@@ -141,11 +143,11 @@ export function OnboardingTour({
 
     // Handle special actions for specific steps
     if (step.id === "add-income") {
-      // Open add dialog with pre-filled example
+      // Open add dialog with empty fields
       // Pause the tour - it will resume when dialog closes
       setIsActive(false);
       setIsPaused(true);
-      onOpenAddDialog(EXAMPLE_INCOME_ENTRY);
+      onOpenAddDialog();
       return;
     }
 
@@ -157,7 +159,13 @@ export function OnboardingTour({
       return;
     }
 
-    // calendar-not-connected step just continues to next step (no special action)
+    if (step.id === "calendar-not-connected") {
+      // Navigate to settings calendar tab to connect Google Calendar
+      setIsActive(false);
+      await completeOnboarding();
+      router.push("/settings?tab=calendar");
+      return;
+    }
 
     // Move to next step
     if (currentStepIndex < effectiveSteps.length - 1) {
@@ -167,7 +175,7 @@ export function OnboardingTour({
       setIsActive(false);
       await completeOnboarding();
     }
-  }, [currentStepIndex, effectiveSteps, onOpenAddDialog, onOpenCalendarDialog]);
+  }, [currentStepIndex, effectiveSteps, onOpenAddDialog, onOpenCalendarDialog, router]);
 
   const handleSkip = React.useCallback(async () => {
     setIsActive(false);
@@ -179,7 +187,7 @@ export function OnboardingTour({
   const handleSecondaryAction = React.useCallback(async () => {
     const step = effectiveSteps[currentStepIndex];
 
-    if (step.id === "calendar-connected" && step.secondaryAction) {
+    if ((step.id === "calendar-connected" || step.id === "calendar-not-connected") && step.secondaryAction) {
       // "Maybe later" - skip to next step
       if (currentStepIndex < effectiveSteps.length - 1) {
         setCurrentStepIndex((prev) => prev + 1);

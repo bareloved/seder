@@ -5,9 +5,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { useState } from "react"
-import { Loader2, ChevronDown } from "lucide-react"
+import { Loader2, ChevronDown, Check, Circle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { PasswordResetDialog } from "./password-reset-dialog"
+
+const PasswordCheck = ({ passed, label }: { passed: boolean; label: string }) => (
+  <div className="flex items-center gap-2 text-sm">
+    {passed ? (
+      <Check className="w-4 h-4 text-green-500" />
+    ) : (
+      <Circle className="w-4 h-4 text-slate-300" />
+    )}
+    <span className={passed ? "text-green-600" : "text-slate-400"}>{label}</span>
+  </div>
+)
 
 export function LoginForm({
   className,
@@ -23,6 +34,14 @@ export function LoginForm({
   const [name, setName] = useState("")
   const [error, setError] = useState("")
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false)
+
+  // Password validation for signup
+  const passwordChecks = {
+    length: password.length >= 8,
+    number: /\d/.test(password),
+    uppercase: /[A-Z]/.test(password),
+  }
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean)
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
@@ -45,23 +64,38 @@ export function LoginForm({
     setError("")
     try {
       if (isSignUp) {
-        await authClient.signUp.email({
+        const { error: signUpError } = await authClient.signUp.email({
           email,
           password,
           name,
           callbackURL: "/income",
         })
+        if (signUpError) {
+          throw new Error(signUpError.message)
+        }
       } else {
-        await authClient.signIn.email({
+        const { error: signInError } = await authClient.signIn.email({
           email,
           password,
           callbackURL: "/income",
         })
+        if (signInError) {
+          throw new Error(signInError.message)
+        }
       }
       router.push("/income")
     } catch (err) {
       console.error("Authentication failed", err)
-      setError(isSignUp ? "יצירת החשבון נכשלה. נסו שוב." : "פרטי ההתחברות שגויים.")
+      const message = err instanceof Error ? err.message : ""
+      if (isSignUp) {
+        if (message.includes("already exists") || message.includes("User already exists")) {
+          setError("כתובת האימייל כבר רשומה במערכת.")
+        } else {
+          setError("יצירת החשבון נכשלה. נסו שוב.")
+        }
+      } else {
+        setError("פרטי ההתחברות שגויים.")
+      }
       setIsLoading(false)
     }
   }
@@ -209,12 +243,19 @@ export function LoginForm({
                 dir="ltr"
                 placeholder="••••••••"
               />
+              {isSignUp && password.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  <PasswordCheck passed={passwordChecks.length} label="לפחות 8 תווים" />
+                  <PasswordCheck passed={passwordChecks.number} label="לפחות מספר אחד" />
+                  <PasswordCheck passed={passwordChecks.uppercase} label="לפחות אות גדולה אחת (A-Z)" />
+                </div>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full h-11 bg-[#2ecc71] hover:bg-[#27ae60] text-white font-medium"
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoading || isGoogleLoading || (isSignUp && !isPasswordValid)}
             >
               {isLoading && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
               {isSignUp ? "יצירת חשבון" : "התחברות"}

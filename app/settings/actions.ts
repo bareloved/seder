@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/client";
-import { userSettings, incomeEntries, categories } from "@/db/schema";
+import { userSettings, incomeEntries, categories, clients, session, account, user } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
@@ -259,37 +259,44 @@ export async function completeOnboarding() {
 // --- Danger Actions ---
 
 export async function deleteUserAccount() {
-    const session = await auth.api.getSession({
+    const currentSession = await auth.api.getSession({
         headers: await headers(),
     });
 
-    if (!session) {
-        return { success: false, error: "Unauthorized" };
+    if (!currentSession) {
+        return { success: false, error: "לא מחובר" };
     }
 
+    const userId = currentSession.user.id;
+
     try {
-        // Cascade delete should handle related records if configured in DB, 
-        // but Drizzle/Postgres foreign keys need to be set up for ON DELETE CASCADE.
-        // If not, we manually delete related data.
-
+        // Delete all user data in correct order (respecting foreign keys)
         await db.transaction(async (tx) => {
-            // Delete income entries
-            await tx.delete(incomeEntries).where(eq(incomeEntries.userId, session.user.id));
-            // Delete settings
-            await tx.delete(userSettings).where(eq(userSettings.userId, session.user.id));
-            // Auth data is usually handled by auth provider logic or separate cleanup
-            // but we can try to clean up user record if we own it
-            // For better-auth, we might need to use its API or delete from auth tables directly
+            // 1. Delete income entries (has FKs to categories, clients, user)
+            await tx.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
 
-            // Attempt delete from auth tables (if accessible directly via schema)
-            // However, auth.api.deleteUser might be safer if available
+            // 2. Delete categories (FK to user)
+            await tx.delete(categories).where(eq(categories.userId, userId));
+
+            // 3. Delete clients (FK to user)
+            await tx.delete(clients).where(eq(clients.userId, userId));
+
+            // 4. Delete sessions (FK to user)
+            await tx.delete(session).where(eq(session.userId, userId));
+
+            // 5. Delete accounts (FK to user)
+            await tx.delete(account).where(eq(account.userId, userId));
+
+            // 6. Delete user settings (FK to user, is PK)
+            await tx.delete(userSettings).where(eq(userSettings.userId, userId));
+
+            // 7. Delete user (parent - delete last)
+            await tx.delete(user).where(eq(user.id, userId));
         });
-
-        // TODO: Call auth provider deletion if necessary
 
         return { success: true };
     } catch (error) {
         console.error("Account deletion failed:", error);
-        return { success: false, error: "Deletion failed" };
+        return { success: false, error: "מחיקת החשבון נכשלה" };
     }
 }

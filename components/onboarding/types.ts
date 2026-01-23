@@ -8,7 +8,6 @@ export interface TourStep {
   content: string;
   action?: string; // Primary button text
   secondaryAction?: string; // Secondary button text (e.g., "skip")
-  prefillExample?: boolean; // Whether to pre-fill form with example data
 }
 
 export interface TourState {
@@ -16,14 +15,6 @@ export interface TourState {
   currentStepIndex: number;
   hasCompletedOnboarding: boolean;
 }
-
-// Example income entry for pre-filling in step 2
-export const EXAMPLE_INCOME_ENTRY = {
-  description: "הופעה בחתונה",
-  clientName: "דוד כהן",
-  amountGross: 1500,
-  date: new Date().toISOString().split("T")[0],
-};
 
 // Tour steps configuration
 export const TOUR_STEPS: TourStep[] = [
@@ -39,9 +30,8 @@ export const TOUR_STEPS: TourStep[] = [
     type: "spotlight",
     targetSelector: '[data-tour="add-button"]',
     title: "הוספת עבודה ראשונה",
-    content: "לחץ כאן כדי להוסיף את העבודה הראשונה שלך. מילאנו לך דוגמה להתחלה.",
+    content: "לחץ כאן כדי להוסיף את העבודה הראשונה שלך.",
     action: "הוסף עבודה",
-    prefillExample: true,
   },
   {
     id: "view-income",
@@ -64,8 +54,9 @@ export const TOUR_STEPS: TourStep[] = [
     id: "calendar-not-connected",
     type: "modal",
     title: "ייבוא מהיומן",
-    content: "תוכל לחבר את יומן Google שלך בהגדרות כדי לייבא אירועים אוטומטית לסדר.",
-    action: "המשך",
+    content: "חבר את יומן Google שלך כדי לייבא אירועים אוטומטית לסדר.",
+    action: "לחיבור יומן",
+    secondaryAction: "אולי אחר כך",
   },
   {
     id: "complete",

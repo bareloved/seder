@@ -25,6 +25,7 @@ import {
   Tag,
   Check,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -37,6 +38,7 @@ import type { Category } from "@/db/schema";
 import { getDisplayStatus, getVatTypeFromEntry } from "../../utils";
 import { CategoryChip } from "../CategoryChip";
 import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
+import { CategoryManagerDialog } from "@/app/categories/components/CategoryManagerDialog";
 import type { Client } from "@/db/schema";
 
 interface IncomeDetailEditProps {
@@ -47,6 +49,7 @@ interface IncomeDetailEditProps {
   onClose: () => void;
   onMarkAsPaid: (id: string) => void;
   onMarkInvoiceSent: (id: string) => void;
+  onCategoriesChange?: () => void;
   initialFocusField?: "description" | "amount" | "clientName";
 }
 
@@ -63,6 +66,7 @@ export function IncomeDetailEdit({
   onClose,
   onMarkAsPaid,
   onMarkInvoiceSent,
+  onCategoriesChange,
   initialFocusField,
 }: IncomeDetailEditProps) {
   // Initialize state with derived fields
@@ -74,6 +78,7 @@ export function IncomeDetailEdit({
 
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
   const descriptionRef = React.useRef<HTMLInputElement>(null);
   const amountRef = React.useRef<HTMLInputElement>(null);
 
@@ -248,6 +253,16 @@ export function IncomeDetailEdit({
                   <CategoryChip category={cat} size="sm" withIcon={true} />
                 </DropdownMenuItem>
               ))}
+              {categories.filter(c => !c.isArchived).length > 0 && (
+                <div className="h-px bg-slate-200 dark:bg-border my-1" />
+              )}
+              <DropdownMenuItem
+                onClick={() => setIsCategoryDialogOpen(true)}
+                className="justify-end pr-2 text-xs text-slate-500 dark:text-slate-400 gap-1"
+              >
+                <span className="whitespace-nowrap">קטגוריה חדשה</span>
+                <Plus className="h-3 w-3" />
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -308,6 +323,14 @@ export function IncomeDetailEdit({
           סגור
         </Button>
       </div>
+
+      {/* Category Manager Dialog */}
+      <CategoryManagerDialog
+        isOpen={isCategoryDialogOpen}
+        onClose={() => setIsCategoryDialogOpen(false)}
+        initialCategories={categories}
+        onCategoriesChange={onCategoriesChange}
+      />
     </div>
   );
 }
