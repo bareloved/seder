@@ -23,12 +23,14 @@ import { he } from "date-fns/locale";
 import { IncomeEntry, DisplayStatus, VatType } from "../../types";
 import type { Category } from "@/db/schema";
 import { CategoryChip } from "../CategoryChip";
+import { CategoryManagerDialog } from "@/app/categories/components/CategoryManagerDialog";
 
 interface MobileQuickAddProps {
   onAddEntry: (entry: Omit<IncomeEntry, "id" | "invoiceStatus" | "paymentStatus" | "vatRate" | "includesVat"> & { status?: DisplayStatus, vatType?: VatType, invoiceStatus?: "draft" | "sent" | "paid" | "cancelled", paymentStatus?: "unpaid" | "partial" | "paid", vatRate?: number, includesVat?: boolean }) => void;
   clients: string[];
   categories: Category[];
   defaultDate?: string;
+  onCategoriesChange?: () => void;
 }
 
 export function MobileQuickAdd({
@@ -36,6 +38,7 @@ export function MobileQuickAdd({
   clients,
   categories,
   defaultDate,
+  onCategoriesChange,
 }: MobileQuickAddProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [newEntryDate, setNewEntryDate] = React.useState<Date>();
@@ -44,6 +47,7 @@ export function MobileQuickAdd({
   const [clientName, setClientName] = React.useState("");
   const [categoryId, setCategoryId] = React.useState("");
   const [showClientSuggestions, setShowClientSuggestions] = React.useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
 
   // Filter clients for autocomplete
   const filteredClients = React.useMemo(() => {
@@ -159,7 +163,16 @@ export function MobileQuickAdd({
       />
 
       {/* Category */}
-      <Select value={categoryId} onValueChange={setCategoryId}>
+      <Select
+        value={categoryId}
+        onValueChange={(value) => {
+          if (value === "__new__") {
+            setIsCategoryDialogOpen(true);
+          } else {
+            setCategoryId(value);
+          }
+        }}
+      >
         <SelectTrigger className="h-10 w-full text-sm bg-white dark:bg-card text-right justify-between" dir="rtl">
           <SelectValue placeholder="בחר קטגוריה">
             {categoryId && (
@@ -177,6 +190,15 @@ export function MobileQuickAdd({
               <CategoryChip category={cat} size="sm" withIcon={true} />
             </SelectItem>
           ))}
+          {categories.filter(c => !c.isArchived).length > 0 && (
+            <div className="h-px bg-slate-200 dark:bg-border my-1" />
+          )}
+          <SelectItem value="__new__" className="justify-end text-xs text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              קטגוריה חדשה
+              <Plus className="h-3 w-3" />
+            </span>
+          </SelectItem>
         </SelectContent>
       </Select>
 
@@ -233,6 +255,14 @@ export function MobileQuickAdd({
         <Plus className="h-4 w-4 ml-2" />
         הוסף עבודה
       </Button>
+
+      {/* Category Manager Dialog */}
+      <CategoryManagerDialog
+        isOpen={isCategoryDialogOpen}
+        onClose={() => setIsCategoryDialogOpen(false)}
+        initialCategories={categories}
+        onCategoriesChange={onCategoriesChange}
+      />
     </div>
   );
 }

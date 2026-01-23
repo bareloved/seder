@@ -24,11 +24,17 @@ export function CategoryManagerDialog({
   initialCategories = [],
   onCategoriesChange,
 }: CategoryManagerDialogProps) {
+  const handleClose = () => {
+    onClose();
+    // Trigger refresh to pick up any category changes
+    onCategoriesChange?.();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-[420px] max-h-[85vh] overflow-y-auto [&>button]:left-3 [&>button]:sm:left-4 [&>button]:right-auto">
         <DialogHeader className="text-right" dir="rtl">
-          <DialogTitle className="text-base text-right">ניהול קטגוריות</DialogTitle>
+          <DialogTitle className="text-base text-right">קטגוריות</DialogTitle>
           <DialogDescription className="text-xs text-right">
             התאם את הקטגוריות לצרכיך. גרור לשינוי סדר.
           </DialogDescription>
