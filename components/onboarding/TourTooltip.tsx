@@ -21,23 +21,41 @@ interface TourTooltipProps {
 function calculatePosition(
   targetRect: DOMRect | null,
   tooltipWidth: number,
-  tooltipHeight: number
+  tooltipHeight: number,
+  isMobile: boolean
 ): { top: number; left: number; position: TooltipPosition } {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // Reserve space for mobile bottom nav (64px nav + 16px margin)
+  const bottomReserved = isMobile ? 80 : 0;
+  const effectiveViewportHeight = viewportHeight - bottomReserved;
+
   if (!targetRect) {
-    // Center for modal-type steps
+    // Center for modal-type steps (account for bottom nav on mobile)
     return {
-      top: window.innerHeight / 2 - tooltipHeight / 2,
-      left: window.innerWidth / 2 - tooltipWidth / 2,
+      top: (effectiveViewportHeight - tooltipHeight) / 2,
+      left: viewportWidth / 2 - tooltipWidth / 2,
       position: "bottom",
     };
   }
 
   const margin = 16;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
 
-  // Try positioning below first
-  const belowSpace = viewportHeight - targetRect.bottom;
+  // On mobile, position tooltip above targets in the lower portion of the screen
+  const targetInLowerHalf = isMobile && targetRect.top > effectiveViewportHeight / 2;
+
+  if (targetInLowerHalf) {
+    // Position tooltip above the target, centered horizontally
+    return {
+      top: targetRect.top - tooltipHeight - margin * 4,
+      left: (viewportWidth - tooltipWidth) / 2,
+      position: "top",
+    };
+  }
+
+  // Try positioning below (but respect bottom nav area on mobile)
+  const belowSpace = effectiveViewportHeight - targetRect.bottom;
   if (belowSpace >= tooltipHeight + margin) {
     return {
       top: targetRect.bottom + margin,
@@ -52,7 +70,7 @@ function calculatePosition(
     };
   }
 
-  // Try positioning above
+  // Try positioning above (fallback if below doesn't work)
   const aboveSpace = targetRect.top;
   if (aboveSpace >= tooltipHeight + margin) {
     return {
@@ -76,7 +94,7 @@ function calculatePosition(
         margin,
         Math.min(
           targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-          viewportHeight - tooltipHeight - margin
+          effectiveViewportHeight - tooltipHeight - margin
         )
       ),
       left: targetRect.right + margin,
@@ -90,7 +108,7 @@ function calculatePosition(
       margin,
       Math.min(
         targetRect.top + targetRect.height / 2 - tooltipHeight / 2,
-        viewportHeight - tooltipHeight - margin
+        effectiveViewportHeight - tooltipHeight - margin
       )
     ),
     left: Math.max(margin, targetRect.left - tooltipWidth - margin),
@@ -110,14 +128,24 @@ export function TourTooltip({
 }: TourTooltipProps) {
   const tooltipRef = React.useRef<HTMLDivElement>(null);
   const [position, setPosition] = React.useState({ top: 0, left: 0, position: "bottom" as TooltipPosition });
+  const [isMobile, setIsMobile] = React.useState(false);
 
-  // Estimate tooltip dimensions
-  const TOOLTIP_WIDTH = 320;
+  // Detect mobile on mount and resize
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Responsive tooltip dimensions
+  const tooltipWidth = isMobile ? Math.min(280, window.innerWidth - 32) : 320;
   const TOOLTIP_HEIGHT = 200;
 
   React.useEffect(() => {
     const updatePosition = () => {
-      const pos = calculatePosition(targetRect, TOOLTIP_WIDTH, TOOLTIP_HEIGHT);
+      const currentTooltipWidth = window.innerWidth < 768 ? Math.min(280, window.innerWidth - 32) : 320;
+      const pos = calculatePosition(targetRect, currentTooltipWidth, TOOLTIP_HEIGHT, window.innerWidth < 768);
       setPosition(pos);
     };
 
@@ -138,7 +166,8 @@ export function TourTooltip({
       ref={tooltipRef}
       dir="rtl"
       className={cn(
-        "fixed z-[62] bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-[320px] max-w-[calc(100vw-32px)]",
+        "fixed z-[62] bg-white dark:bg-slate-800 rounded-xl shadow-2xl",
+        "w-[280px] max-w-[calc(100vw-32px)] sm:w-[320px] p-4 sm:p-6",
         "animate-in fade-in-0 zoom-in-95 duration-200",
         isModal && "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
       )}
