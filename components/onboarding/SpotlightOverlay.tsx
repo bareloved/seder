@@ -35,39 +35,8 @@ export function SpotlightOverlay({
     height: targetRect.height + padding * 2,
   };
 
-  // Create clip-path with a hole for the target element
-  // Using SVG-based clip-path for better cross-browser support
-  const clipPathId = "spotlight-clip";
-
   return (
     <>
-      <svg className="absolute" width="0" height="0">
-        <defs>
-          <clipPath id={clipPathId}>
-            {/* Full screen rectangle with a hole cut out */}
-            <path
-              d={`
-                M 0 0
-                L 100vw 0
-                L 100vw 100vh
-                L 0 100vh
-                Z
-                M ${hole.x} ${hole.y}
-                L ${hole.x} ${hole.y + hole.height}
-                Q ${hole.x} ${hole.y + hole.height} ${hole.x + borderRadius} ${hole.y + hole.height}
-                L ${hole.x + hole.width - borderRadius} ${hole.y + hole.height}
-                Q ${hole.x + hole.width} ${hole.y + hole.height} ${hole.x + hole.width} ${hole.y + hole.height - borderRadius}
-                L ${hole.x + hole.width} ${hole.y + borderRadius}
-                Q ${hole.x + hole.width} ${hole.y} ${hole.x + hole.width - borderRadius} ${hole.y}
-                L ${hole.x + borderRadius} ${hole.y}
-                Q ${hole.x} ${hole.y} ${hole.x} ${hole.y + borderRadius}
-                Z
-              `}
-              fillRule="evenodd"
-            />
-          </clipPath>
-        </defs>
-      </svg>
       <div
         className="fixed inset-0 z-[60] pointer-events-auto transition-opacity duration-300"
         aria-hidden="true"

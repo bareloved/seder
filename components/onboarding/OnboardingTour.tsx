@@ -97,6 +97,12 @@ export function OnboardingTour({
         element = document.querySelector('[data-tour="add-button-mobile"]');
       }
 
+      // Calendar import button is hidden on mobile - use modal mode instead
+      if (isMobile && selector === '[data-tour="calendar-import"]') {
+        setTargetRect(null); // Forces modal-style centered positioning
+        return;
+      }
+
       if (!element) {
         element = document.querySelector(selector);
       }
