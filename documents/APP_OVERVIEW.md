@@ -28,8 +28,12 @@
 Name | Description | Important fields (selected)
 ---- | ----------- | ---------------------------
 User | Authenticated account (Better Auth) owning all income data | id, email, name, createdAt/updatedAt
-Income Entry | Single gig/job record | date, description, clientName, category, amountGross, amountPaid, vatRate, includesVat, invoiceStatus, paymentStatus, invoiceSentDate, paidDate, calendarEventId, notes, userId
+Income Entry | Single gig/job record | date, description, clientName, amountGross, amountPaid, vatRate, includesVat, invoiceStatus, paymentStatus, invoiceSentDate, paidDate, calendarEventId, categoryId, clientId, notes, userId
+Category | User-customizable income category | id, name, color, icon, displayOrder, isArchived, userId
+Client | Client directory entry with contact info | id, name, email, phone, notes, defaultRate, isArchived, displayOrder, userId
+User Settings | User preferences and onboarding state | userId, language, timezone, theme, dateFormat, defaultCurrency, calendarSettings, onboardingCompleted
 Session / Account | Auth/session + OAuth tokens for Google Calendar | session: token, expiresAt, userId; account: providerId, accessToken/refreshToken, userId, scope
+Verification | OTP tokens for password reset | id, identifier, value, expiresAt
 Status & VAT Types (UI) | UI enums that map to DB fields | DisplayStatus, VatType in `app/income/types.ts`
 KPI / Aggregates | Derived metrics per month or filtered view | totalGross, totalPaid/unpaid, outstanding, readyToInvoice, previousMonthPaid, trend
 
@@ -39,22 +43,52 @@ KPI / Aggregates | Derived metrics per month or filtered view | totalGross, tota
 
 Route / Screen | Purpose | Notes
 -------------- | ------- | -----
-/ | Redirects to `/income` | No UI
-/sign-in | Auth screen | Email/password + Google OAuth (Calendar scope)
-/income | Primary dashboard | Month selector, KPIs, filters, income table + quick add, detail dialog, calendar import
+/ | Landing page (guests) or redirect to `/income` (authenticated) | Marketing page with hero, features, testimonials
+/sign-in | Auth screen | Split-screen design: email/password, Google OAuth, password reset via OTP
+/income | Primary dashboard | Month selector, KPIs, filters, income table + quick add, detail dialog, calendar import, onboarding tour
+/analytics | Charts and reporting | KPIs, income over time, income by category, needs attention table
+/settings | User settings | Tabs: account, preferences, calendar, data, danger zone
+/clients | Client directory | Client management with contact info, defaults, and analytics
 /api/auth/[...all] | Auth handler | Better Auth Next.js route
 
 --------------------------------------------------
 5. Current Feature Set
 --------------------------------------------------
 
-- Income table (desktop + mobile cards) with quick add, inline edits, and full detail dialog.
+**Income Management**
+- Income table (desktop + mobile responsive) with quick add, inline edits, and full detail dialog.
 - Status management: invoice status (draft/sent/paid/cancelled), payment status (unpaid/partial/paid), overdue highlighting, sent/paid actions.
+- Split-pill status component for clear visual status indication.
 - Filtering/search: status chips, client filter, free-text search, month/year selector; KPI cards double as filters.
 - KPI row: totals, ready-to-invoice, outstanding, paid this month, trend vs previous month.
-- Calendar import: Google Calendar read-only import to create draft entries with unique calendarEventId.
+
+**Categories & Clients**
+- Categories: dedicated entity with name, color, icon, displayOrder; inline editing in income table.
+- Clients: client directory with contact info (email, phone), notes, default rates, and analytics.
+- Duplicate client name detection and management.
+
+**Analytics**
+- Analytics page with date range filtering (presets and specific month/year).
+- KPI cards: total gross, total paid, outstanding, count of jobs.
+- Charts: income over time (line/bar), income by category (pie/donut).
+- Needs attention table for overdue or pending items.
+
+**Calendar Integration**
+- Google Calendar read-only import to create draft entries with unique calendarEventId (per-user scoping).
+- Calendar settings in settings page for managing connection and sync preferences.
+
+**User Experience**
+- Onboarding tour: spotlight-based guided tour for first-time users with help button to restart.
+- Landing page: marketing page for guests with hero, features, how it works, testimonials, and CTA.
+- Split-screen sign-in page with brand panel (desktop).
+- Password reset via OTP email flow.
+- Mobile support: responsive design, touch tooltips, floating action button, mobile bottom navigation.
+
+**Settings & Account**
+- Comprehensive settings page with tabs: account, preferences, calendar, data, danger zone.
+- Secure account deletion with "DELETE" text confirmation.
+- Theme, language, and date format preferences.
 - VAT handling: includes/excludes VAT, vatRate field, calculated totals.
-- Mobile support: mobile quick add and responsive cards.
 
 --------------------------------------------------
 6. Tech Stack & Architecture
@@ -65,19 +99,22 @@ Route / Screen | Purpose | Notes
 - Auth: Better Auth with Drizzle adapter; email/password and Google OAuth (Calendar scope).
 - Database: PostgreSQL via Drizzle ORM (`db/schema.ts`, `db/client.ts`); core table `income_entries` scoped by `userId`.
 - Data flow:
-  - Server actions in `app/income/actions.ts` call domain/data helpers in `app/income/data.ts`.
-  - Pages fetch month-scoped entries/aggregates on the server, then hydrate client components for optimistic updates and filtering.
-  - Calendar import uses stored Google tokens to fetch events and insert draft entries (conflict-checked on calendarEventId).
+  - Server actions in `app/*/actions.ts` handle mutations with validation.
+  - Data fetching helpers in `app/*/data.ts` query database with proper user scoping.
+  - Pages fetch data on the server, then hydrate client components for optimistic updates and filtering.
+  - Calendar import uses stored Google tokens to fetch events and insert draft entries (conflict-checked on calendarEventId per user).
+- Key app directories: `income/`, `analytics/`, `categories/`, `clients/`, `settings/`, `sign-in/`, `(marketing)/`.
 
 --------------------------------------------------
 7. Future Direction / Out of Scope (for now)
 --------------------------------------------------
 
-- Dedicated Client and Category entities (currently plain strings).
 - Multi-currency or localization beyond Hebrew/RTL and ILS.
-- Advanced reporting (yearly views, charts, breakdowns) and pagination/virtualization for very large months.
-- Rich onboarding (guided tour/sample data) and polished error/toast system.
-- Revisit calendar uniqueness for multi-user scenarios; thread authenticated user through all import paths.
+- Pagination/virtualization for very large months.
+- Invoicing and invoice generation (currently tracking only).
+- Two-way calendar sync (currently read-only import).
+- Email notifications for overdue items.
+- Recurring income entries (e.g., monthly retainers).
 
 --------------------------------------------------
 8. How to Keep This File Useful
