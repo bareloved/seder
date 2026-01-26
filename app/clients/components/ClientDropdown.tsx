@@ -22,6 +22,7 @@ interface ClientDropdownProps {
   className?: string;
   allowCreate?: boolean;
   compact?: boolean;
+  hideArrow?: boolean;
 }
 
 export function ClientDropdown({
@@ -33,6 +34,7 @@ export function ClientDropdown({
   className,
   allowCreate = true,
   compact = false,
+  hideArrow = false,
 }: ClientDropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -121,7 +123,7 @@ export function ClientDropdown({
           <span className="truncate">
             {displayValue || placeholder}
           </span>
-          <ChevronDown className={cn("shrink-0 opacity-50", compact ? "h-3 w-3 mr-1" : "h-4 w-4 mr-2")} />
+          {!hideArrow && <ChevronDown className={cn("shrink-0 opacity-50", compact ? "h-3 w-3 mr-1" : "h-4 w-4 mr-2")} />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[250px] p-0" align="start">

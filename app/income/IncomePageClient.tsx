@@ -10,7 +10,7 @@ import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
-import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, getWorkStatus, getMoneyStatus, mapMoneyStatusToDb } from "./utils";
+import { isOverdue, getDisplayStatus, calculateKPIs, mapStatusToDb, mapVatTypeToDb, getVatTypeFromEntry, getWorkStatus, getMoneyStatus } from "./utils";
 import {
   createIncomeEntryAction,
   updateIncomeEntryAction,
@@ -662,8 +662,6 @@ export default function IncomePageClient({
 
   // Handler for money status changes from SplitStatusPill
   const updateMoneyStatus = React.useCallback(async (id: string, moneyStatus: MoneyStatus) => {
-    const today = new Date().toISOString().split("T")[0];
-
     // Map money status to display status for the existing updateStatus function
     let displayStatus: DisplayStatus;
     if (moneyStatus === "paid") {
@@ -789,8 +787,32 @@ export default function IncomePageClient({
     onToggleSelectionMode: toggleSelectionMode,
   };
 
+  // CSS for card effects (timing borders, hover glow, green paid amounts)
+  const subtleCardsStyle = `
+    /* Time-based left border (subtle) */
+    .subtle-cards .income-row[data-timing="past"] {
+      border-left-color: #cbd5e1;
+    }
+    .subtle-cards .income-row[data-timing="today"] {
+      border-left-color: transparent;
+    }
+    .subtle-cards .income-row[data-timing="future"] {
+      border-left-color: rgba(147, 197, 253, 0.5);
+    }
+    .dark .subtle-cards .income-row[data-timing="past"] {
+      border-left-color: #64748b;
+    }
+    .dark .subtle-cards .income-row[data-timing="future"] {
+      border-left-color: rgba(96, 165, 250, 0.6);
+    }
+  `;
+
   return (
-    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20 font-sans" dir="rtl">
+    <>
+      {/* Inject subtle cards style */}
+      <style dangerouslySetInnerHTML={{ __html: subtleCardsStyle }} />
+
+      <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20 font-sans" dir="rtl">
 
       <Navbar user={user} />
 
@@ -806,57 +828,55 @@ export default function IncomePageClient({
           />
         </section>
 
-        {/* Main Content Card - Filters + Table in one white container */}
-        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+        {/* Toolbar / Filters Area - Floating Card */}
+        <section className="p-2 rounded-xl bg-white dark:bg-card shadow-sm border border-slate-200/40 dark:border-slate-700/40">
+          <IncomeFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            clients={monthClients}
+            selectedClient={selectedClient}
+            onClientChange={setSelectedClient}
+            categories={categories}
+            selectedCategories={selectedCategories}
+            onCategoryChange={setSelectedCategories}
+            onNewEntry={() => openNewEntryDialog()}
+            year={year}
+            month={month}
+            onYearChange={handleYearChange}
+            onMonthChange={handleMonthChange}
+            onMonthYearChange={handleMonthYearChange}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            monthPaymentStatuses={monthPaymentStatuses}
+            isGoogleConnected={isGoogleConnected}
+            onImportFromCalendar={() => setIsCalendarDialogOpen(true)}
+            isNavigating={isNavigating}
+            isImporting={isImporting}
+            // Sort props
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onSort={onSort}
+          />
+        </section>
 
-          {/* Toolbar / Filters Area */}
-          <div className="p-2 border-b border-slate-100 dark:border-border">
-            <IncomeFilters
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              clients={monthClients}
-              selectedClient={selectedClient}
-              onClientChange={setSelectedClient}
-              categories={categories}
-              selectedCategories={selectedCategories}
-              onCategoryChange={setSelectedCategories}
-              onNewEntry={() => openNewEntryDialog()}
-              year={year}
-              month={month}
-              onYearChange={handleYearChange}
-              onMonthChange={handleMonthChange}
-              onMonthYearChange={handleMonthYearChange}
-              viewMode={viewMode}
-              onViewModeChange={handleViewModeChange}
-              monthPaymentStatuses={monthPaymentStatuses}
-              isGoogleConnected={isGoogleConnected}
-              onImportFromCalendar={() => setIsCalendarDialogOpen(true)}
-              isNavigating={isNavigating}
-              isImporting={isImporting}
-            />
-          </div>
-
-          {/* Content Area */}
-          <div className="p-0" data-tour="income-table">
-            {filteredEntries.length === 0 && !hasActiveFilter ? (
-              // Empty State
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <p className="font-medium">אין נתונים להצגה</p>
-                <p className="text-sm mt-1">התחל להוסיף עבודות כדי לראות אותן כאן</p>
-              </div>
-            ) : (
-              <>
-                {/* Table / List View */}
-                {viewMode === "list" ? (
-                  <IncomeTable {...viewProps} />
-                ) : (
-                  <div className="p-4">
-                    <IncomeListView {...viewProps} />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+        {/* Content Area */}
+        <section className="subtle-cards" data-tour="income-table">
+          {filteredEntries.length === 0 && !hasActiveFilter ? (
+            // Empty State
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40">
+              <p className="font-medium">אין נתונים להצגה</p>
+              <p className="text-sm mt-1">התחל להוסיף עבודות כדי לראות אותן כאן</p>
+            </div>
+          ) : (
+            <>
+              {/* Table / List View */}
+              {viewMode === "list" ? (
+                <IncomeTable {...viewProps} />
+              ) : (
+                <IncomeListView {...viewProps} />
+              )}
+            </>
+          )}
         </section>
 
       </main>
@@ -957,6 +977,7 @@ export default function IncomePageClient({
         isDialogOpen={isDialogOpen}
       />
 
-    </div>
+      </div>
+    </>
   );
 }
