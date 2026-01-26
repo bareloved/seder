@@ -66,11 +66,11 @@ export function KPICards({
       title: "התקבל החודש",
       amount: kpis.totalPaid,
       icon: TrendingUp,
-      amountColor: "text-[#2ecc71]", // Brand Green
+      amountColor: "text-[#059669] dark:text-[#34d399]", // emerald-600 light, emerald-400 dark
       filter: "paid" as FilterType,
       highlight: false,
       hasTrend: true,
-      iconColor: "text-[#2ecc71]",
+      iconColor: "text-[#059669] dark:text-[#34d399]",
       iconBg: "bg-emerald-50"
     },
   ];

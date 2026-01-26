@@ -21,7 +21,21 @@ const ploni = localFont({
 
 export const metadata: Metadata = {
   title: "Seder",
-  description: "Manage your income and expenses",
+  description: "ניהול הכנסות לפרילנסרים ומוזיקאים",
+  metadataBase: new URL("https://seder.app"),
+  openGraph: {
+    title: "Seder",
+    description: "ניהול הכנסות לפרילנסרים ומוזיקאים",
+    url: "https://seder.app",
+    siteName: "Seder",
+    locale: "he_IL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Seder",
+    description: "ניהול הכנסות לפרילנסרים ומוזיקאים",
+  },
 };
 
 export default function RootLayout({

@@ -15,7 +15,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2 } from "lucide-react";
+import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown } from "lucide-react";
+import type { SortColumn } from "./income-table/IncomeTableHeader";
 import type { Category } from "@/db/schema";
 import { ViewMode } from "./ViewModeToggle";
 import { CategoryChip } from "./CategoryChip";
@@ -54,7 +55,20 @@ interface IncomeFiltersProps {
   // Loading states
   isNavigating?: boolean;
   isImporting?: boolean;
+  // Sort props
+  sortColumn?: SortColumn;
+  sortDirection?: "asc" | "desc";
+  onSort?: (column: SortColumn) => void;
 }
+
+// Sort options with Hebrew labels
+const SORT_OPTIONS: { value: SortColumn; label: string }[] = [
+  { value: "date", label: "תאריך" },
+  { value: "description", label: "תיאור" },
+  { value: "amount", label: "סכום" },
+  { value: "category", label: "קטגוריה" },
+  { value: "status", label: "סטטוס" },
+];
 
 export function IncomeFilters({
   searchQuery,
@@ -76,6 +90,10 @@ export function IncomeFilters({
   onImportFromCalendar,
   isNavigating,
   isImporting,
+  // Sort props
+  sortColumn = "date",
+  sortDirection = "asc",
+  onSort,
 }: IncomeFiltersProps) {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
 
@@ -238,6 +256,33 @@ export function IncomeFilters({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Sort Dropdown */}
+          {onSort && (
+            <DropdownMenu dir="rtl">
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
+                  {SORT_OPTIONS.find(o => o.value === sortColumn)?.label || "מיון"}
+                  <span className="text-[10px] opacity-50">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-32" align="start">
+                {SORT_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => onSort(option.value)}
+                    className="justify-between"
+                  >
+                    <span>{option.label}</span>
+                    {sortColumn === option.value && (
+                      <span className="text-emerald-500 text-xs">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
       </div>
@@ -477,6 +522,39 @@ export function IncomeFilters({
                       >
                         {client}
                         {selectedClient === client && <span className="text-emerald-500">✓</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            {/* Mobile Sort Dropdown */}
+            {onSort && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">מיון</p>
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full h-11 justify-between text-slate-600 dark:text-slate-300 font-normal">
+                      <span className="flex items-center gap-2">
+                        <ArrowUpDown className="h-4 w-4 opacity-60" />
+                        {SORT_OPTIONS.find(o => o.value === sortColumn)?.label || "מיון"}
+                        <span className="text-xs opacity-50">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px]" align="start">
+                    {SORT_OPTIONS.map((option) => (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => onSort(option.value)}
+                        className="justify-between"
+                      >
+                        <span>{option.label}</span>
+                        {sortColumn === option.value && (
+                          <span className="text-emerald-500 text-xs">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
