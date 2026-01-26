@@ -56,6 +56,7 @@ export function CalendarImportDialog({
   // Preview state
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
   const [fetchedEvents, setFetchedEvents] = React.useState<CalendarEvent[]>([]);
+  const [importedEventIds, setImportedEventIds] = React.useState<string[]>([]);
   const [classifications, setClassifications] = React.useState<Array<{
     eventId: string;
     isWork: boolean;
@@ -126,6 +127,7 @@ export function CalendarImportDialog({
       }));
 
       setFetchedEvents(events);
+      setImportedEventIds(result.importedEventIds || []);
 
       // Classify with rules engine
       classifyWithRules(events);
@@ -300,10 +302,12 @@ export function CalendarImportDialog({
         onClose={() => {
           setIsPreviewOpen(false);
           setFetchedEvents([]);
+          setImportedEventIds([]);
           setClassifications([]);
         }}
         onImport={handleImport}
         events={fetchedEvents}
+        importedEventIds={importedEventIds}
         classifications={classifications}
         onRulesChanged={() => classifyWithRules(fetchedEvents)}
       />

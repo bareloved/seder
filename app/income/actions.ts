@@ -241,7 +241,7 @@ export async function fetchCalendarEventsAction(
   calendarIds: string[] = ["primary"]
 ) {
   const userId = await getUserId();
-  if (!userId) return { success: false, error: "Unauthorized", events: [], requiresReconnect: false };
+  if (!userId) return { success: false, error: "Unauthorized", events: [], importedEventIds: [], requiresReconnect: false };
 
   try {
     // Get a valid access token (with auto-refresh)
@@ -249,6 +249,11 @@ export async function fetchCalendarEventsAction(
 
     const { listEventsForMonth } = await import("@/lib/googleCalendar");
     const events = await listEventsForMonth(year, month, accessToken, calendarIds);
+
+    // Check which events are already imported
+    const { getImportedCalendarEventIds } = await import("./data");
+    const eventIds = events.map((e) => e.id);
+    const importedEventIds = await getImportedCalendarEventIds(userId, eventIds);
 
     // Serialize dates for client
     const serializedEvents = events.map((e) => ({
@@ -259,7 +264,7 @@ export async function fetchCalendarEventsAction(
       calendarId: e.calendarId,
     }));
 
-    return { success: true, events: serializedEvents, requiresReconnect: false };
+    return { success: true, events: serializedEvents, importedEventIds, requiresReconnect: false };
   } catch (error) {
     console.error("Failed to fetch calendar events:", error);
 
@@ -268,6 +273,7 @@ export async function fetchCalendarEventsAction(
         success: false,
         error: error.message,
         events: [],
+        importedEventIds: [],
         requiresReconnect: error.requiresReconnect,
       };
     }
@@ -276,6 +282,7 @@ export async function fetchCalendarEventsAction(
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch events",
       events: [],
+      importedEventIds: [],
       requiresReconnect: false,
     };
   }
