@@ -369,9 +369,9 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           )}
         </div>
 
-        {/* Amount - Centered absolutely */}
+        {/* Amount - Positioned left of center */}
         <div
-          className="absolute left-1/2 -translate-x-1/2"
+          className="absolute left-[45%] -translate-x-1/2"
           onClick={(e) => {
             if (onInlineEdit && editingField !== "amountGross") {
               e.stopPropagation();
@@ -393,18 +393,18 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             />
           ) : (
             <div className={cn(
-              "amount-value text-base font-semibold font-numbers tracking-tight",
+              "amount-value text-lg font-numbers tracking-tight",
               isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200",
               onInlineEdit && "hover:opacity-70 cursor-pointer"
             )} dir="ltr">
-              <span className="text-xs">₪</span>{entry.amountGross.toLocaleString("he-IL")}
+              <span className="text-xs me-0.5">₪</span>{entry.amountGross.toLocaleString("he-IL")}
             </div>
           )}
         </div>
 
         {/* Category - positioned between amount and status */}
         <div
-          className="absolute left-[28%] -translate-x-1/2"
+          className="absolute left-[28%] -translate-x-1/2 hidden md:block"
           onClick={(e) => e.stopPropagation()}
         >
           {onInlineEdit && categories.length > 0 ? (
@@ -529,18 +529,6 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                 <span>עריכה</span>
                 <Pencil className="h-3.5 w-3.5 shrink-0" />
               </DropdownMenuItem>
-              {!isPaid && (
-                <DropdownMenuItem onClick={() => onMarkAsPaid(entry.id)} className="gap-2 justify-end whitespace-nowrap">
-                  <span>סמן כשולם</span>
-                  <Check className="h-3.5 w-3.5 shrink-0" />
-                </DropdownMenuItem>
-              )}
-              {isDraft && (
-                <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
-                  <span>נשלחה חשבונית</span>
-                  <Send className="h-3.5 w-3.5 shrink-0" />
-                </DropdownMenuItem>
-              )}
               {onToggleSelectionMode && (
                 <DropdownMenuItem onClick={onToggleSelectionMode} className="gap-2 justify-end whitespace-nowrap">
                   <span>{isSelectionMode ? "בטל בחירה" : "בחר עבודות"}</span>
@@ -587,10 +575,10 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               {entry.description}
             </span>
             <div className={cn(
-              "amount-value font-semibold font-numbers tracking-tight shrink-0",
+              "amount-value text-lg font-numbers tracking-tight shrink-0",
               isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"
             )} dir="ltr">
-              <span className="text-xs">₪</span> {entry.amountGross.toLocaleString("he-IL")}
+              <span className="text-xs me-0.5">₪</span>{entry.amountGross.toLocaleString("he-IL")}
             </div>
           </div>
 
@@ -634,19 +622,6 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     <span>עריכה</span>
                     <Pencil className="h-3.5 w-3.5 shrink-0" />
                   </DropdownMenuItem>
-                  {!isPaid && (
-                    <DropdownMenuItem onClick={() => onMarkAsPaid(entry.id)} className="gap-2 justify-end whitespace-nowrap">
-                      <span>סמן כשולם</span>
-                      <Check className="h-3.5 w-3.5 shrink-0" />
-                    </DropdownMenuItem>
-                  )}
-                  {isDraft && (
-                    <DropdownMenuItem onClick={() => onMarkInvoiceSent(entry.id)} className="gap-2 justify-end whitespace-nowrap">
-                      <span>נשלחה חשבונית</span>
-                      <Send className="h-3.5 w-3.5 shrink-0" />
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onDelete(entry.id)} className="gap-2 justify-end whitespace-nowrap text-red-600 focus:text-red-600">
                     <span>מחיקה</span>
                     <Trash2 className="h-3.5 w-3.5 shrink-0" />

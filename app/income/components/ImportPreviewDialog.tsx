@@ -23,6 +23,7 @@ interface ClassifiedEventWithData extends CalendarEvent {
     suggestedClient?: string;
     selected: boolean;
     clientName: string;
+    isImported: boolean;
 }
 
 interface ImportPreviewDialogProps {
@@ -30,6 +31,7 @@ interface ImportPreviewDialogProps {
     onClose: () => void;
     onImport: (events: Array<{ id: string; summary: string; date: string; clientName: string }>) => Promise<void>;
     events: CalendarEvent[];
+    importedEventIds: string[];
     classifications: Array<{
         eventId: string;
         isWork: boolean;
@@ -44,6 +46,7 @@ export function ImportPreviewDialog({
     onClose,
     onImport,
     events,
+    importedEventIds,
     classifications,
     onRulesChanged,
 }: ImportPreviewDialogProps) {
@@ -55,23 +58,26 @@ export function ImportPreviewDialog({
     const [eventData, setEventData] = React.useState<ClassifiedEventWithData[]>([]);
 
     React.useEffect(() => {
+        const importedSet = new Set(importedEventIds);
         const merged = events.map((event) => {
             const classification = classifications.find((c) => c.eventId === event.id);
             const isWork = classification?.isWork ?? true;
             const confidence = classification?.confidence ?? 0.5;
+            const isImported = importedSet.has(event.id);
 
             return {
                 ...event,
                 isWork,
                 confidence,
                 suggestedClient: classification?.suggestedClient,
-                // Auto-select work events with ≥70% confidence
-                selected: isWork && confidence >= 0.7,
+                // Auto-select work events with ≥70% confidence, but not already imported
+                selected: !isImported && isWork && confidence >= 0.7,
                 clientName: classification?.suggestedClient || "",
+                isImported,
             };
         });
         setEventData(merged);
-    }, [events, classifications]);
+    }, [events, classifications, importedEventIds]);
 
     const toggleSelect = (eventId: string) => {
         setEventData((prev) =>
@@ -210,12 +216,15 @@ export function ImportPreviewDialog({
                                             </span>
                                             <Badge
                                                 variant="secondary"
-                                                className={`shrink-0 text-[10px] px-1.5 py-0 ${event.isWork
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                                        : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
-                                                    }`}
+                                                className={`shrink-0 text-[10px] px-1.5 py-0 ${
+                                                    event.isImported
+                                                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                                        : event.isWork
+                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                                            : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                                                }`}
                                             >
-                                                {event.isWork ? "עבודה" : "אישי"}
+                                                {event.isImported ? "יובא" : event.isWork ? "עבודה" : "אישי"}
                                             </Badge>
                                         </div>
                                         <div className="text-xs text-slate-500 dark:text-slate-400">

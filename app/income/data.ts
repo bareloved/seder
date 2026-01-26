@@ -604,6 +604,24 @@ export async function hasGoogleCalendarConnection(userId: string): Promise<boole
   return accounts.length > 0;
 }
 
+export async function getImportedCalendarEventIds(userId: string, eventIds: string[]): Promise<string[]> {
+  if (eventIds.length === 0) return [];
+
+  const imported = await db
+    .select({ calendarEventId: incomeEntries.calendarEventId })
+    .from(incomeEntries)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        inArray(incomeEntries.calendarEventId, eventIds)
+      )
+    );
+
+  return imported
+    .map((row) => row.calendarEventId)
+    .filter((id): id is string => id !== null);
+}
+
 export async function importIncomeEntriesFromCalendarForMonth({
   year,
   month,
