@@ -816,7 +816,7 @@ export default function IncomePageClient({
 
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-3 sm:space-y-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-1 sm:space-y-2">
 
         {/* KPI Section */}
         <section>

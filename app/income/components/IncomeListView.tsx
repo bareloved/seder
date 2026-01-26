@@ -158,7 +158,7 @@ export const IncomeListView = React.memo(function IncomeListView({
             Card-based rows with inline editing
             ═══════════════════════════════════════════════════════════════════ */}
         {entries.length > 0 && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {entries.map((entry) => (
               <IncomeEntryRow
                 key={entry.id}
@@ -208,7 +208,7 @@ export const IncomeListView = React.memo(function IncomeListView({
             No inline editing on mobile - uses same component but without handlers
             ═══════════════════════════════════════════════════════════════════ */}
         {entries.length > 0 && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {entries.map((entry) => (
               <IncomeEntryRow
                 key={entry.id}
