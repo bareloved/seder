@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown } from "lucide-react";
+import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown, Tags, Users } from "lucide-react";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import type { Category } from "@/db/schema";
 import { ViewMode } from "./ViewModeToggle";
@@ -161,7 +161,7 @@ export function IncomeFilters({
     <div className="w-full flex flex-col-reverse md:flex-row items-center justify-between gap-2 md:gap-4 p-1">
 
       {/* Right Side: Filters & Search & Add (Desktop only) */}
-      <div className="hidden md:flex items-center gap-3 flex-1 w-full md:w-auto justify-start">
+      <div className="hidden md:flex items-center gap-2 xl:gap-3 flex-1 w-full md:w-auto justify-start">
 
         {/* Add Entry Button */}
         {onNewEntry && (
@@ -183,7 +183,7 @@ export function IncomeFilters({
         )}
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-[240px] group">
+        <div className="relative flex-1 max-w-[180px] xl:max-w-[240px] group">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-slate-600 transition-colors pointer-events-none" />
           <Input
             value={searchQuery}
@@ -202,13 +202,16 @@ export function IncomeFilters({
         </div>
 
         {/* Desktop Filter Dropdowns */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 xl:gap-3">
           {/* Categories */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedCategories.length === 0 ? "קטגוריות" : `${selectedCategories.length} נבחרו`}
-                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
+              <Button variant="outline" className="h-9 px-1.5 xl:px-2 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal gap-1">
+                <Tags className="h-4 w-4 xl:hidden" />
+                <span className="hidden xl:inline">
+                  {selectedCategories.length === 0 ? "קטגוריות" : `${selectedCategories.length} נבחרו`}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-50 hidden xl:inline" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-36" align="start">
@@ -236,9 +239,12 @@ export function IncomeFilters({
           {/* Clients */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal">
-                {selectedClient === "all" ? "לקוחות" : selectedClient}
-                <ChevronDown className="h-3 w-3 opacity-50 mr-2" />
+              <Button variant="outline" className="h-9 px-1.5 xl:px-2 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal gap-1">
+                <Users className="h-4 w-4 xl:hidden" />
+                <span className="hidden xl:inline">
+                  {selectedClient === "all" ? "לקוחות" : selectedClient}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-50 hidden xl:inline" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-36 max-h-[300px] overflow-y-auto" align="start">
@@ -261,9 +267,9 @@ export function IncomeFilters({
           {onSort && (
             <DropdownMenu dir="rtl">
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal gap-1.5">
+                <Button variant="outline" className="h-9 px-1.5 xl:px-2 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 font-normal gap-1">
                   <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
-                  {SORT_OPTIONS.find(o => o.value === sortColumn)?.label || "מיון"}
+                  <span className="hidden xl:inline">{SORT_OPTIONS.find(o => o.value === sortColumn)?.label || "מיון"}</span>
                   <span className="text-[10px] opacity-50">{sortDirection === "asc" ? "↑" : "↓"}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -313,7 +319,7 @@ export function IncomeFilters({
           </Button>
         )}
 
-        {/* Calendar Import Button - Desktop (with label) */}
+        {/* Calendar Import Button - Desktop (with label on xl+) */}
         {isGoogleConnected && onImportFromCalendar && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -326,7 +332,7 @@ export function IncomeFilters({
                 data-tour="calendar-import"
               >
                 {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
-                <span className="text-sm">{isImporting ? "מייבא..." : "ייבוא"}</span>
+                <span className="text-sm hidden xl:inline">{isImporting ? "מייבא..." : "ייבוא"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -444,7 +450,7 @@ export function IncomeFilters({
 
       {/* Mobile Filter Sheet */}
       <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-        <SheetContent side="bottom" className="p-4 space-y-4" aria-describedby={undefined}>
+        <SheetContent side="top" className="p-4 space-y-4" aria-describedby={undefined}>
           <SheetHeader>
             <SheetTitle>סינון</SheetTitle>
           </SheetHeader>

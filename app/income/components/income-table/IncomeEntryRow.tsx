@@ -369,9 +369,9 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           )}
         </div>
 
-        {/* Amount - Centered absolutely */}
+        {/* Amount - Positioned left of center */}
         <div
-          className="absolute left-1/2 -translate-x-1/2"
+          className="absolute left-[45%] -translate-x-1/2"
           onClick={(e) => {
             if (onInlineEdit && editingField !== "amountGross") {
               e.stopPropagation();
@@ -404,7 +404,7 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
 
         {/* Category - positioned between amount and status */}
         <div
-          className="absolute left-[28%] -translate-x-1/2"
+          className="absolute left-[28%] -translate-x-1/2 hidden md:block"
           onClick={(e) => e.stopPropagation()}
         >
           {onInlineEdit && categories.length > 0 ? (
