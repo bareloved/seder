@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { QueryProvider } from '../providers/QueryProvider';
 import { ApiProvider } from '../providers/ApiProvider';
 import { useAuth } from '../hooks/useAuth';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 // Force RTL for Hebrew
 if (!I18nManager.isRTL) {
@@ -55,6 +56,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { isAuthenticated } = useAuth();
   const segments = useSegments();
+  usePushNotifications(isAuthenticated === true);
 
   useEffect(() => {
     if (isAuthenticated === null) return; // Still loading
