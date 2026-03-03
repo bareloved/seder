@@ -183,3 +183,14 @@ export type NewUserSettings = typeof userSettings.$inferInsert;
 // TypeScript type for income entry
 export type IncomeEntry = typeof incomeEntries.$inferSelect;
 export type NewIncomeEntry = typeof incomeEntries.$inferInsert;
+
+// Device tokens for push notifications (mobile app)
+export const deviceTokens = pgTable("device_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  platform: text("platform").notNull(), // 'ios' | 'android'
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userTokenUnique: uniqueIndex("device_tokens_user_token_idx").on(table.userId, table.token),
+}));
