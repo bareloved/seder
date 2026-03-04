@@ -14,6 +14,7 @@ import { SymbolView } from "expo-symbols";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../../hooks/useAuth";
+import { getAuthToken } from "../../lib/auth-storage";
 import {
   colors,
   fonts,
@@ -23,6 +24,9 @@ import {
   shadows,
   rtlRow,
 } from "../../lib/theme";
+
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
 
 // ---------------------------------------------------------------------------
 // Change Password Modal
@@ -61,12 +65,30 @@ function ChangePasswordModal({
     }
     setSaving(true);
     try {
-      // Password change would go through auth API
-      Alert.alert("שים לב", "שינוי סיסמה זמין דרך האתר בלבד כרגע");
+      const token = await getAuthToken();
+      const res = await fetch(`${API_BASE}/api/auth/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          revokeOtherSessions: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "שגיאה בשינוי הסיסמה");
+      }
+
+      Alert.alert("הצלחה", "הסיסמה שונתה בהצלחה");
       reset();
       onClose();
-    } catch {
-      Alert.alert("שגיאה", "לא ניתן לשנות סיסמה");
+    } catch (err: any) {
+      Alert.alert("שגיאה", err?.message || "לא ניתן לשנות סיסמה");
     } finally {
       setSaving(false);
     }
@@ -225,6 +247,10 @@ export default function AccountScreen() {
         {/* Password */}
         <View style={[styles.card, { marginTop: spacing.md }]}>
           <View style={styles.cardRow}>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardLabel}>סיסמה</Text>
+              <Text style={styles.cardValueDots}>••••••••</Text>
+            </View>
             <TouchableOpacity
               style={styles.outlineButton}
               onPress={() => {
@@ -235,16 +261,12 @@ export default function AccountScreen() {
             >
               <Text style={styles.outlineButtonText}>שינוי סיסמה</Text>
             </TouchableOpacity>
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardLabel}>סיסמה</Text>
-              <Text style={styles.cardValueDots}>••••••••</Text>
-            </View>
             <SymbolView name="lock" tintColor={colors.textMuted} size={20} />
           </View>
         </View>
 
         {/* Active sessions */}
-        <Text style={styles.sectionTitle}>הפעלות פעילות</Text>
+        <Text style={styles.sectionTitle}>מכשירים פעילים</Text>
         <View style={styles.card}>
           <Text style={styles.hintText}>
             המכשירים המחוברים לחשבון שלך כרגע.
@@ -269,9 +291,8 @@ export default function AccountScreen() {
             }}
             activeOpacity={0.6}
           >
-            <SymbolView name="chevron.left" tintColor={colors.textLight} size={14} />
-            <View style={styles.menuSpacer} />
             <Text style={styles.menuText}>קטגוריות</Text>
+            <View style={styles.menuSpacer} />
             <SymbolView name="folder" tintColor={colors.textMuted} size={20} />
           </TouchableOpacity>
           <View style={styles.menuBorder} />
@@ -283,9 +304,8 @@ export default function AccountScreen() {
             }}
             activeOpacity={0.6}
           >
-            <SymbolView name="chevron.left" tintColor={colors.textLight} size={14} />
-            <View style={styles.menuSpacer} />
             <Text style={styles.menuText}>לקוחות</Text>
+            <View style={styles.menuSpacer} />
             <SymbolView name="person.2" tintColor={colors.textMuted} size={20} />
           </TouchableOpacity>
         </View>

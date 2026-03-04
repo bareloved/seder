@@ -159,12 +159,10 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Email card */}
-        <View style={[styles.emailCard, { borderColor: c.border, backgroundColor: c.card }]}>
-          <Text style={[styles.emailText, { color: c.text }]}>
-            {user?.email ?? "—"}
-          </Text>
-        </View>
+        {/* Email */}
+        <Text style={[styles.emailText, { color: c.textMuted }]}>
+          {user?.email ?? "—"}
+        </Text>
 
         {/* Section 1 — Account */}
         <MenuSection title="חשבון">
@@ -293,18 +291,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // -- Email card --
-  emailCard: {
-    borderWidth: 1,
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    marginTop: spacing.lg,
-  },
+  // -- Email --
   emailText: {
-    fontSize: typography.base,
+    fontSize: typography.sm,
     fontFamily: fonts.numbersRegular,
-    textAlign: "right",
+    textAlign: "center",
+    marginTop: spacing.md,
+    marginBottom: -spacing.md,
   },
 
   // -- Sections --

@@ -316,7 +316,8 @@ const styles = StyleSheet.create({
     fontSize: typography.lg,
     fontFamily: fonts.numbersRegular,
     color: colors.text,
-    textAlign: "right",
+    textAlign: "left",
+    writingDirection: "ltr",
     marginTop: spacing.sm,
   },
 

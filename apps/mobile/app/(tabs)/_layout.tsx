@@ -31,15 +31,34 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="income"
+          name="expenses"
           options={{
-            title: "הכנסות",
+            title: "הוצאות",
             tabBarIcon: ({ color }) => (
-              <SymbolView name="wallet.bifold" tintColor={color} size={26} />
+              <SymbolView name="doc.plaintext" tintColor={color} size={26} style={{ opacity: 0.4 }} />
+            ),
+            tabBarLabel: () => (
+              <Text style={[styles.tabBarLabel, { color: colors.textLight, opacity: 0.4, fontFamily: fonts.regular }]}>
+                הוצאות
+              </Text>
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+            },
+          }}
+        />
+        <Tabs.Screen
+          name="analytics"
+          options={{
+            title: "דוחות",
+            tabBarIcon: ({ color }) => (
+              <SymbolView name="chart.bar" tintColor={color} size={26} />
             ),
             tabBarLabel: ({ focused, color }) => (
               <Text style={[styles.tabBarLabel, { color, fontFamily: focused ? fonts.medium : fonts.regular }]}>
-                הכנסות
+                דוחות
               </Text>
             ),
           }}
@@ -59,36 +78,17 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="analytics"
+          name="income"
           options={{
-            title: "דוחות",
+            title: "הכנסות",
             tabBarIcon: ({ color }) => (
-              <SymbolView name="chart.bar" tintColor={color} size={26} />
+              <SymbolView name="wallet.bifold" tintColor={color} size={26} />
             ),
             tabBarLabel: ({ focused, color }) => (
               <Text style={[styles.tabBarLabel, { color, fontFamily: focused ? fonts.medium : fonts.regular }]}>
-                דוחות
+                הכנסות
               </Text>
             ),
-          }}
-        />
-        <Tabs.Screen
-          name="expenses"
-          options={{
-            title: "הוצאות",
-            tabBarIcon: ({ color }) => (
-              <SymbolView name="doc.plaintext" tintColor={color} size={26} style={{ opacity: 0.4 }} />
-            ),
-            tabBarLabel: () => (
-              <Text style={[styles.tabBarLabel, { color: colors.textLight, opacity: 0.4, fontFamily: fonts.regular }]}>
-                הוצאות
-              </Text>
-            ),
-          }}
-          listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-            },
           }}
         />
       </Tabs>
@@ -109,7 +109,8 @@ const styles = StyleSheet.create({
     borderTopColor: darkColors.border,
   },
   tabBarLabel: {
-    fontSize: 11,
+    fontSize: 14,
+    fontFamily: fonts.semibold,
     marginTop: 2,
   },
   tabBarItem: {
