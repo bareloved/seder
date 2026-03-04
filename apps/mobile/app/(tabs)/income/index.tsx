@@ -63,7 +63,7 @@ export default function IncomeScreen() {
   const c = isDark ? darkColors : colors;
   const [month, setMonth] = useState(getCurrentMonth);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-  const { data: entriesData, isLoading, refetch } = useIncomeEntries(month);
+  const { data: entriesData, isLoading, refetch, isError, error } = useIncomeEntries(month);
   const { data: kpiData, isLoading: kpiLoading } = useIncomeKPIs(month);
   const { remove } = useIncomeMutations();
   const [refreshing, setRefreshing] = useState(false);
@@ -285,6 +285,26 @@ export default function IncomeScreen() {
           <SkeletonIncomeCard />
           <SkeletonIncomeCard />
         </View>
+      ) : isError ? (
+        <View style={styles.emptyContainer}>
+          <SymbolView
+            name="exclamationmark.triangle"
+            tintColor={c.error ?? "#ef4444"}
+            size={44}
+            style={styles.emptyIcon}
+          />
+          <Text style={[styles.emptyText, { color: c.text }]}>שגיאה בטעינת הנתונים</Text>
+          <Text style={[styles.emptySubtext, { color: c.textLight }]}>
+            {error?.message || "בדוק את החיבור לאינטרנט"}
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: c.brand }]}
+            onPress={() => refetch()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.retryButtonText}>נסה שוב</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={filteredEntries}
@@ -411,6 +431,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
     marginTop: spacing.sm,
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontFamily: fonts.medium,
+    fontSize: typography.sm,
   },
   footer: {
     paddingVertical: 24,

@@ -18,9 +18,11 @@ export function DarkModeProvider({ children }: { children: React.ReactNode }) {
 
   // Load persisted preference
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((value) => {
-      if (value === "true") setIsDark(true);
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((value) => {
+        if (value === "true") setIsDark(true);
+      })
+      .catch(() => {});
   }, []);
 
   const toggleDarkMode = useCallback(() => {

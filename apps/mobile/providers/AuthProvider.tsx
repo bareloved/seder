@@ -36,10 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    Promise.all([getAuthToken(), getUserProfile()]).then(([token, profile]) => {
-      setIsAuthenticated(!!token);
-      if (profile) setUser(profile);
-    });
+    Promise.all([getAuthToken(), getUserProfile()])
+      .then(([token, profile]) => {
+        setIsAuthenticated(!!token);
+        if (profile) setUser(profile);
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
   }, []);
 
   const signIn = useCallback(
