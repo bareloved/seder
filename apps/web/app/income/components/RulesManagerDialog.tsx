@@ -19,6 +19,7 @@ import {
     saveUserRules,
     DEFAULT_RULES,
 } from "@/lib/classificationRules";
+import { updateCalendarSettings } from "@/app/settings/actions";
 
 // Translation pairs - when user adds one, we auto-add the other
 const TRANSLATIONS: Record<string, string> = {
@@ -121,6 +122,8 @@ export function RulesManagerDialog({ isOpen, onClose }: RulesManagerDialogProps)
 
     const handleSave = () => {
         saveUserRules(rules);
+        // Also sync to server so mobile app can use the same rules
+        updateCalendarSettings({ rules } as any).catch(() => {});
         onClose();
     };
 

@@ -1,135 +1,300 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, Modal, Pressable, StyleSheet } from "react-native";
+import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import type { IncomeEntry } from "@seder/shared";
+import {
+  colors,
+  darkColors,
+  spacing,
+  borderRadius,
+  typography,
+  fonts,
+  shadows,
+  getInvoiceStatusStyle,
+  formatCurrency,
+  rtlRow,
+  rtlAlignEnd,
+} from "../../lib/theme";
+import { useDarkMode } from "../../providers/DarkModeProvider";
+
+type SFSymbolName = SymbolViewProps["name"];
 
 interface IncomeEntryCardProps {
   entry: IncomeEntry;
-  onPress: (id: string) => void;
+  onPress?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-function getStatusLabel(entry: IncomeEntry): string {
-  if (entry.paymentStatus === "paid") return "שולם";
-  if (entry.invoiceStatus === "sent") return "נשלחה";
-  if (entry.invoiceStatus === "draft") return "טיוטה";
-  return "בוצע";
+const HEBREW_WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+
+function getTimingBorderColor(dateStr: string): string {
+  const entryDate = new Date(dateStr);
+  const today = new Date();
+  entryDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  if (entryDate.getTime() === today.getTime()) return colors.timingToday;
+  if (entryDate < today) return colors.timingPast;
+  return colors.timingFuture;
 }
 
-function getStatusColor(entry: IncomeEntry): string {
-  if (entry.paymentStatus === "paid") return "#10b981";
-  if (entry.invoiceStatus === "sent") return "#f59e0b";
-  return "#6b7280";
-}
+const INVOICE_ICONS: Record<string, SFSymbolName> = {
+  paid: "checkmark",
+  sent: "paperplane",
+  draft: "doc.text",
+  cancelled: "xmark",
+};
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("he-IL", {
-    day: "numeric",
-    month: "short",
-  });
-}
+export function IncomeEntryCard({ entry, onPress, onEdit, onDelete }: IncomeEntryCardProps) {
+  const { isDark } = useDarkMode();
+  const c = isDark ? darkColors : colors;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const timingColor = getTimingBorderColor(entry.date);
+  const isPaid = entry.paymentStatus === "paid";
+  const invoiceStyle = getInvoiceStatusStyle(entry.invoiceStatus);
+  const invoiceIcon = INVOICE_ICONS[entry.invoiceStatus] ?? INVOICE_ICONS.draft;
 
-function formatCurrency(amount: number): string {
-  return `₪${amount.toLocaleString("he-IL")}`;
-}
-
-export function IncomeEntryCard({ entry, onPress }: IncomeEntryCardProps) {
-  const statusColor = getStatusColor(entry);
+  const date = new Date(entry.date);
+  const dayNum = date.getDate();
+  const weekday = HEBREW_WEEKDAYS[date.getDay()];
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => onPress(entry.id)}
-      activeOpacity={0.7}
+    <View
+      style={[styles.card, { borderLeftColor: timingColor, borderLeftWidth: 3, backgroundColor: c.card, borderColor: c.border }]}
     >
-      <View style={styles.row}>
-        <View style={styles.leftSection}>
-          <Text style={styles.amount}>
-            {formatCurrency(entry.amountGross)}
-          </Text>
-          <View
-            style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}
-          >
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {getStatusLabel(entry)}
-            </Text>
-          </View>
-        </View>
+      {/* Date box — first child, appears on RIGHT in RTL row */}
+      <View style={[styles.dateBox, { backgroundColor: c.backgroundTertiary }]}>
+        <Text style={[styles.dateDay, { color: c.textSecondary }]}>{dayNum}</Text>
+        <Text style={[styles.dateWeekday, { color: c.textLight }]}>{weekday}</Text>
+      </View>
 
-        <View style={styles.rightSection}>
-          <Text style={styles.description} numberOfLines={1}>
+      {/* Main content */}
+      <View style={styles.content}>
+        {/* Top row: description (right) + amount (left) */}
+        <View style={styles.topRow}>
+          <Text style={[styles.description, { color: c.text }]} numberOfLines={2}>
             {entry.description}
           </Text>
-          <View style={styles.metaRow}>
-            {entry.clientName ? (
-              <Text style={styles.client} numberOfLines={1}>
-                {entry.clientName}
+          <Text
+            style={[
+              styles.amount,
+              { color: isPaid ? colors.statusPaid : c.text },
+            ]}
+          >
+            {formatCurrency(entry.amountGross)}
+          </Text>
+        </View>
+
+        {/* Client name */}
+        {entry.clientName ? (
+          <Text style={[styles.client, { color: c.textMuted }]} numberOfLines={1}>
+            {entry.clientName}
+          </Text>
+        ) : null}
+
+        {/* Bottom row: category + status ... actions */}
+        <View style={styles.bottomRow}>
+          {/* Category chip */}
+          {entry.categoryData ? (
+            <View style={styles.categoryChip}>
+              <SymbolView
+                name="slider.horizontal.3"
+                tintColor={colors.textMuted}
+                size={13}
+              />
+              <Text style={styles.categoryText}>
+                {entry.categoryData.name}
               </Text>
-            ) : null}
-            <Text style={styles.date}>{formatDate(entry.date)}</Text>
+            </View>
+          ) : null}
+
+          {/* Invoice status badge */}
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: invoiceStyle.bg },
+            ]}
+          >
+            <SymbolView
+              name={invoiceIcon}
+              tintColor={invoiceStyle.text}
+              size={12}
+            />
+            <Text style={[styles.statusText, { color: invoiceStyle.text }]}>
+              {invoiceStyle.label}
+            </Text>
           </View>
+
+          <View style={styles.spacer} />
+
+          {/* 3-dot menu */}
+          <TouchableOpacity
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            onPress={(e) => {
+              e.target.measure((_x: number, _y: number, _w: number, _h: number, pageX: number, pageY: number) => {
+                setMenuPosition({ x: pageX, y: pageY + _h + 4 });
+                setMenuOpen(true);
+              });
+            }}
+          >
+            <SymbolView name="ellipsis" tintColor={c.textLight} size={20} />
+          </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+
+      {/* Dropdown menu */}
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.menuOverlay} onPress={() => setMenuOpen(false)}>
+          <View style={[styles.menuCard, { top: menuPosition.y, left: menuPosition.x, backgroundColor: c.card, borderColor: c.border }]}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setMenuOpen(false); onEdit?.(entry.id); }}
+            >
+              <SymbolView name="square.and.pencil" tintColor={c.textSecondary} size={20} />
+              <Text style={[styles.menuItemText, { color: c.text }]}>עריכה</Text>
+            </TouchableOpacity>
+            <View style={[styles.menuSeparator, { backgroundColor: c.border }]} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => { setMenuOpen(false); onDelete?.(entry.id); }}
+            >
+              <SymbolView name="trash" tintColor={colors.danger} size={20} />
+              <Text style={[styles.menuItemText, { color: colors.danger }]}>מחיקה</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    marginHorizontal: 12,
-    marginVertical: 4,
-    borderRadius: 10,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    flexDirection: rtlRow,
+    alignItems: "flex-start",
+    backgroundColor: colors.card,
+    marginHorizontal: spacing.md,
+    marginVertical: 2,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+    ...shadows.sm,
   },
-  row: {
-    flexDirection: "row",
+  dateBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs + 2,
+    minWidth: 30,
+  },
+  dateDay: {
+    fontSize: typography.lg,
+    fontFamily: fonts.numbersMedium,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  dateWeekday: {
+    fontSize: typography.xs,
+    fontFamily: fonts.medium,
+    color: colors.textLight,
+    marginTop: 1,
+  },
+  content: {
+    flex: 1,
+    minWidth: 0,
+  },
+  topRow: {
+    flexDirection: rtlRow,
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  rightSection: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  leftSection: {
-    alignItems: "flex-start",
+    gap: spacing.sm,
   },
   description: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+    flex: 1,
+    fontSize: typography.lg,
+    fontFamily: fonts.semibold,
+    color: colors.text,
     textAlign: "right",
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    gap: 8,
+  amount: {
+    fontSize: typography.xl,
+    fontFamily: fonts.numbersRegular,
+    flexShrink: 0,
+    letterSpacing: -0.3,
   },
   client: {
-    fontSize: 13,
-    color: "#6b7280",
+    fontSize: typography.lg,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginTop: 2,
+    textAlign: "right",
   },
-  date: {
-    fontSize: 13,
-    color: "#9ca3af",
+  bottomRow: {
+    flexDirection: rtlRow,
+    alignItems: "center",
+    marginTop: spacing.sm,
+    gap: spacing.sm,
   },
-  amount: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
+  categoryChip: {
+    flexDirection: rtlRow,
+    alignItems: "center",
+    gap: 4,
+  },
+  categoryText: {
+    fontSize: typography.lg,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
   },
   statusBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    flexDirection: rtlRow,
+    alignItems: "center",
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    marginTop: 4,
+    gap: 3,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: typography.base,
+    fontFamily: fonts.medium,
+  },
+  spacer: {
+    flex: 1,
+  },
+  menuOverlay: {
+    flex: 1,
+  },
+  menuCard: {
+    position: "absolute",
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.xs,
+    minWidth: 140,
+    ...shadows.lg,
+  },
+  menuItem: {
+    flexDirection: rtlRow,
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  menuItemText: {
+    fontSize: typography.lg,
+    fontFamily: fonts.regular,
+    color: colors.text,
+  },
+  menuSeparator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.sm,
   },
 });

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +13,12 @@ import {
   IncomeForm,
   type IncomeFormData,
 } from "../../../components/income/IncomeForm";
+import {
+  colors,
+  fonts,
+  spacing,
+  typography,
+} from "../../../lib/theme";
 
 export default function IncomeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,6 +49,9 @@ export default function IncomeDetailScreen() {
           amountPaid: data.amountPaid,
           vatRate: data.vatRate,
           includesVat: data.includesVat,
+          invoiceStatus: data.invoiceStatus as "draft" | "sent" | "paid" | "cancelled",
+          paymentStatus: data.paymentStatus as "unpaid" | "partial" | "paid",
+          categoryId: data.categoryId,
           notes: data.notes,
         });
       } else {
@@ -57,6 +65,9 @@ export default function IncomeDetailScreen() {
             amountPaid: data.amountPaid,
             vatRate: data.vatRate,
             includesVat: data.includesVat,
+            invoiceStatus: data.invoiceStatus as "draft" | "sent" | "paid" | "cancelled",
+            paymentStatus: data.paymentStatus as "unpaid" | "partial" | "paid",
+            categoryId: data.categoryId,
             notes: data.notes,
           },
         });
@@ -88,7 +99,7 @@ export default function IncomeDetailScreen() {
   if (!isNew && isLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color={colors.brand} />
       </View>
     );
   }
@@ -132,16 +143,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.backgroundSecondary,
   },
   errorText: {
-    color: "#ef4444",
-    fontSize: 16,
+    color: colors.danger,
+    fontSize: typography.base,
+    fontFamily: fonts.medium,
   },
   deleteButton: {
-    color: "#ef4444",
-    fontSize: 16,
-    fontWeight: "600",
-    paddingHorizontal: 8,
+    color: colors.danger,
+    fontSize: typography.base,
+    fontFamily: fonts.semibold,
+    paddingHorizontal: spacing.sm,
   },
 });

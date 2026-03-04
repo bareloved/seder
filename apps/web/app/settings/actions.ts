@@ -54,6 +54,7 @@ export async function updateUserSettings(data: any) {
 export async function updateCalendarSettings(data: {
     autoSyncEnabled?: boolean;
     selectedCalendarIds?: string[];
+    rules?: any[];
 }) {
     const session = await auth.api.getSession({
         headers: await headers(),
@@ -76,6 +77,7 @@ export async function updateCalendarSettings(data: {
             ...currentCalendarSettings,
             ...(data.autoSyncEnabled !== undefined && { autoSyncEnabled: data.autoSyncEnabled }),
             ...(data.selectedCalendarIds !== undefined && { selectedCalendarIds: data.selectedCalendarIds }),
+            ...(data.rules !== undefined && { rules: data.rules }),
         };
 
         if (existingSettings.length > 0) {
@@ -254,6 +256,47 @@ export async function completeOnboarding() {
         console.error("Failed to complete onboarding:", error);
         return { success: false, error: "Failed to complete onboarding" };
     }
+}
+
+// --- Password Actions ---
+
+export async function setPasswordForOAuthUser(newPassword: string) {
+    const currentSession = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!currentSession) {
+        return { success: false, error: "לא מחובר" };
+    }
+
+    try {
+        await auth.api.setPassword({
+            body: { newPassword },
+            headers: await headers(),
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to set password:", error);
+        return { success: false, error: error?.message || "שגיאה בהגדרת הסיסמה" };
+    }
+}
+
+export async function hasCredentialAccount() {
+    const currentSession = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!currentSession) {
+        return false;
+    }
+
+    const accounts = await db
+        .select({ providerId: account.providerId })
+        .from(account)
+        .where(eq(account.userId, currentSession.user.id));
+
+    return accounts.some((a) => a.providerId === "credential");
 }
 
 // --- Danger Actions ---

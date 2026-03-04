@@ -14,11 +14,14 @@ function getPool(): Pool {
   }
   
   if (!pool) {
+    // Replace weaker SSL modes with verify-full to silence pg v8 deprecation warning
+    const connectionString = process.env.DATABASE_URL.replace(
+      /sslmode=(require|prefer|verify-ca)\b/,
+      "sslmode=verify-full"
+    );
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false, // Required for Neon
-      },
+      connectionString,
+      ssl: true,
     });
   }
   

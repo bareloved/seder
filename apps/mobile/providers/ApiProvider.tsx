@@ -12,7 +12,7 @@ import {
 import { getAuthToken } from "../lib/auth-storage";
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
 
 function createApis() {
   const client = createApiClient({

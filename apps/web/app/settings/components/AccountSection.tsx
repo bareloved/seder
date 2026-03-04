@@ -17,10 +17,12 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
+import { hasCredentialAccount, setPasswordForOAuthUser } from "../actions";
 
 export function AccountSection({ user }: { user: User }) {
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
     const [isEmailDialogOpen, setIsEmailDialogOpen] = React.useState(false);
+    const [hasPassword, setHasPassword] = React.useState<boolean | null>(null);
 
     // Password change state
     const [currentPassword, setCurrentPassword] = React.useState("");
@@ -31,6 +33,44 @@ export function AccountSection({ user }: { user: User }) {
     // Email change state
     const [newEmail, setNewEmail] = React.useState("");
     const [isEmailLoading, setIsEmailLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        hasCredentialAccount().then(setHasPassword);
+    }, []);
+
+    const handleSetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (newPassword !== confirmPassword) {
+            toast.error("הסיסמאות לא תואמות");
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            toast.error("הסיסמה חייבת להכיל לפחות 8 תווים");
+            return;
+        }
+
+        setIsPasswordLoading(true);
+
+        try {
+            const result = await setPasswordForOAuthUser(newPassword);
+
+            if (!result.success) {
+                toast.error(result.error || "שגיאה בהגדרת הסיסמה");
+            } else {
+                toast.success("הסיסמה הוגדרה בהצלחה! כעת ניתן להתחבר גם עם אימייל וסיסמה.");
+                setIsPasswordDialogOpen(false);
+                setNewPassword("");
+                setConfirmPassword("");
+                setHasPassword(true);
+            }
+        } catch (err) {
+            toast.error("שגיאה בהגדרת הסיסמה");
+        } finally {
+            setIsPasswordLoading(false);
+        }
+    };
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,34 +219,49 @@ export function AccountSection({ user }: { user: User }) {
                     <div className="flex justify-between items-center">
                         <div className="space-y-1">
                             <Label>סיסמה</Label>
-                            <div className="text-sm text-slate-600">••••••••</div>
+                            <div className="text-sm text-slate-600">
+                                {hasPassword === null ? "..." : hasPassword ? "••••••••" : "לא הוגדרה סיסמה (התחברת עם Google)"}
+                            </div>
                         </div>
-                        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+                        <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+                            setIsPasswordDialogOpen(open);
+                            if (!open) {
+                                setCurrentPassword("");
+                                setNewPassword("");
+                                setConfirmPassword("");
+                            }
+                        }}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" size="sm">שינוי סיסמה</Button>
+                                <Button variant="outline" size="sm">
+                                    {hasPassword ? "שינוי סיסמה" : "הגדרת סיסמה"}
+                                </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]" dir="rtl">
                                 <DialogHeader>
-                                    <DialogTitle>שינוי סיסמה</DialogTitle>
+                                    <DialogTitle>{hasPassword ? "שינוי סיסמה" : "הגדרת סיסמה"}</DialogTitle>
                                     <DialogDescription>
-                                        הזן את הסיסמה הנוכחית והסיסמה החדשה.
+                                        {hasPassword
+                                            ? "הזן את הסיסמה הנוכחית והסיסמה החדשה."
+                                            : "הגדר סיסמה כדי להתחבר גם עם אימייל וסיסמה."}
                                     </DialogDescription>
                                 </DialogHeader>
-                                <form onSubmit={handlePasswordChange}>
+                                <form onSubmit={hasPassword ? handlePasswordChange : handleSetPassword}>
                                     <div className="grid gap-4 py-4">
+                                        {hasPassword && (
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="current-password">סיסמה נוכחית</Label>
+                                                <Input
+                                                    id="current-password"
+                                                    type="password"
+                                                    value={currentPassword}
+                                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                                    dir="ltr"
+                                                    required
+                                                />
+                                            </div>
+                                        )}
                                         <div className="grid gap-2">
-                                            <Label htmlFor="current-password">סיסמה נוכחית</Label>
-                                            <Input
-                                                id="current-password"
-                                                type="password"
-                                                value={currentPassword}
-                                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                                dir="ltr"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="new-password">סיסמה חדשה</Label>
+                                            <Label htmlFor="new-password">סיסמה {hasPassword ? "חדשה" : ""}</Label>
                                             <Input
                                                 id="new-password"
                                                 type="password"
@@ -238,7 +293,7 @@ export function AccountSection({ user }: { user: User }) {
                                         </Button>
                                         <Button type="submit" disabled={isPasswordLoading}>
                                             {isPasswordLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                                            שמור
+                                            {hasPassword ? "שמור" : "הגדר סיסמה"}
                                         </Button>
                                     </DialogFooter>
                                 </form>

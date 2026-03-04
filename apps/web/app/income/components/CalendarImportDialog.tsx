@@ -27,6 +27,7 @@ import {
   importSelectedEventsAction,
 } from "../actions";
 import { classifyByRules, getUserRules } from "@/lib/classificationRules";
+import { updateCalendarSettings } from "@/app/settings/actions";
 import { toast } from "sonner";
 
 interface CalendarImportDialogProps {
@@ -74,6 +75,12 @@ export function CalendarImportDialog({
       const saved = getSavedCalendarSelection();
       if (saved.length > 0) {
         setSelectedCalendarIds(saved);
+      }
+
+      // Sync localStorage rules to server (one-time migration for mobile)
+      const localRules = getUserRules();
+      if (localRules.length > 0) {
+        updateCalendarSettings({ rules: localRules } as any).catch(() => {});
       }
 
       // Fetch calendars to show names

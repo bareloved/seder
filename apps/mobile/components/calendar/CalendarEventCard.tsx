@@ -1,4 +1,16 @@
 import { View, Text, StyleSheet } from "react-native";
+import { SymbolView } from "expo-symbols";
+import {
+  colors,
+  fonts,
+  spacing,
+  borderRadius,
+  typography,
+  shadows,
+  rtlRow,
+} from "../../lib/theme";
+
+const HEBREW_WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
 interface CalendarEventCardProps {
   summary: string;
@@ -15,16 +27,23 @@ export function CalendarEventCard({
   endTime,
   alreadyImported,
 }: CalendarEventCardProps) {
-  const dateStr = new Date(date).toLocaleDateString("he-IL", {
-    day: "numeric",
-    month: "short",
-    weekday: "short",
-  });
+  const d = new Date(date);
+  const dayNum = d.getDate();
+  const weekday = HEBREW_WEEKDAYS[d.getDay()];
 
   return (
     <View
       style={[styles.card, alreadyImported && styles.importedCard]}
     >
+      {/* Date box on right side */}
+      <View style={styles.dateBox}>
+        <Text style={[styles.dateDay, alreadyImported && styles.importedText]}>
+          {dayNum}
+        </Text>
+        <Text style={styles.dateWeekday}>{weekday}</Text>
+      </View>
+
+      {/* Content */}
       <View style={styles.content}>
         <Text
           style={[styles.summary, alreadyImported && styles.importedText]}
@@ -32,18 +51,22 @@ export function CalendarEventCard({
         >
           {summary}
         </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.date}>{dateStr}</Text>
-          {startTime ? (
-            <Text style={styles.time}>
-              {startTime}
-              {endTime ? ` - ${endTime}` : ""}
-            </Text>
-          ) : null}
-        </View>
+        {startTime ? (
+          <Text style={styles.time}>
+            {startTime}
+            {endTime ? ` - ${endTime}` : ""}
+          </Text>
+        ) : null}
       </View>
+
+      {/* Imported badge with icon */}
       {alreadyImported ? (
         <View style={styles.badge}>
+          <SymbolView
+            name="checkmark.circle"
+            tintColor={colors.brandDark}
+            size={12}
+          />
           <Text style={styles.badgeText}>יובא</Text>
         </View>
       ) : null}
@@ -53,59 +76,73 @@ export function CalendarEventCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    marginHorizontal: 12,
-    marginVertical: 4,
-    borderRadius: 10,
-    padding: 14,
-    flexDirection: "row",
+    flexDirection: rtlRow,
     alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: colors.card,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.xs,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   importedCard: {
-    opacity: 0.6,
+    opacity: 0.55,
+  },
+  dateBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm,
+    minWidth: 42,
+  },
+  dateDay: {
+    fontSize: typography.lg,
+    fontFamily: fonts.numbersSemibold,
+    color: colors.text,
+    lineHeight: 22,
+  },
+  dateWeekday: {
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   content: {
     flex: 1,
     alignItems: "flex-end",
   },
   summary: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
+    fontSize: typography.base,
+    fontFamily: fonts.semibold,
+    color: colors.text,
     textAlign: "right",
   },
   importedText: {
-    color: "#6b7280",
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
-  },
-  date: {
-    fontSize: 13,
-    color: "#6b7280",
+    color: colors.textMuted,
   },
   time: {
-    fontSize: 13,
-    color: "#9ca3af",
+    fontSize: typography.sm,
+    fontFamily: fonts.numbersRegular,
+    color: colors.textLight,
+    marginTop: spacing.xs,
   },
   badge: {
-    backgroundColor: "#d1fae5",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginStart: 10,
+    flexDirection: rtlRow,
+    alignItems: "center",
+    backgroundColor: colors.brandLight,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    gap: 4,
   },
   badgeText: {
-    fontSize: 12,
-    color: "#065f46",
-    fontWeight: "600",
+    fontSize: typography.xs,
+    fontFamily: fonts.semibold,
+    color: colors.brandDark,
   },
 });
