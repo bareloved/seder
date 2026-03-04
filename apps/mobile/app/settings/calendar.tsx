@@ -35,14 +35,14 @@ export default function CalendarSettingsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerSpacer} />
-          <Text style={styles.headerTitle}>לוח שנה</Text>
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <SymbolView name="chevron.right" tintColor={colors.text} size={18} />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>לוח שנה</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Connection status */}

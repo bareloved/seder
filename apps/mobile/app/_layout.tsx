@@ -94,7 +94,7 @@ function RootLayoutNav() {
             <Stack.Screen name="categories/index" options={{ presentation: 'modal', title: 'קטגוריות' }} />
             <Stack.Screen name="clients/index" options={{ presentation: 'modal', title: 'לקוחות' }} />
             <Stack.Screen name="calendar/index" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false, animation: 'slide_from_left' }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           </Stack>
         </ThemeProvider>

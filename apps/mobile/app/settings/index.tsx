@@ -1,3 +1,4 @@
+import { Children } from "react";
 import {
   View,
   Text,
@@ -36,38 +37,83 @@ interface MenuRowProps {
   icon: SFSymbolName;
   onPress?: () => void;
   right?: React.ReactNode;
+  value?: string;
   danger?: boolean;
-  showSeparator?: boolean;
 }
 
-function MenuRow({ label, icon, onPress, right, danger, showSeparator = true }: MenuRowProps) {
+function MenuRow({ label, icon, onPress, right, value, danger }: MenuRowProps) {
   const { isDark } = useDarkMode();
   const c = isDark ? darkColors : colors;
+  const showChevron = !!onPress && !right;
+
   return (
-    <>
-      <TouchableOpacity
-        style={styles.row}
-        onPress={onPress}
-        activeOpacity={0.6}
-      >
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.6 : 1}
+      disabled={!onPress}
+    >
+      <SymbolView
+        name={icon}
+        tintColor={danger ? c.danger : c.textMuted}
+        size={22}
+      />
+      <Text style={[styles.rowLabel, { color: danger ? c.danger : c.text }]}>
+        {label}
+      </Text>
+      <View style={styles.rowSpacer} />
+      {value && !right && (
+        <Text style={[styles.valueText, { color: c.textMuted }]}>{value}</Text>
+      )}
+      {right}
+      {showChevron && (
         <SymbolView
           name="chevron.left"
           tintColor={c.textLight}
           size={14}
         />
-        {right ?? <View style={styles.rowSpacer} />}
-        <View style={styles.rowSpacer} />
-        <Text style={[styles.rowLabel, { color: danger ? c.danger : c.text }]}>
-          {label}
+      )}
+    </TouchableOpacity>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Menu section
+// ---------------------------------------------------------------------------
+
+interface MenuSectionProps {
+  title?: string;
+  children: React.ReactNode;
+}
+
+function MenuSection({ title, children }: MenuSectionProps) {
+  const { isDark } = useDarkMode();
+  const c = isDark ? darkColors : colors;
+  const items = Children.toArray(children);
+
+  return (
+    <View style={styles.section}>
+      {title && (
+        <Text style={[styles.sectionTitle, { color: c.textMuted }]}>
+          {title}
         </Text>
-        <SymbolView
-          name={icon}
-          tintColor={danger ? c.danger : c.textMuted}
-          size={22}
-        />
-      </TouchableOpacity>
-      {showSeparator && <View style={[styles.separator, { backgroundColor: c.border }]} />}
-    </>
+      )}
+      <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
+        {items.map((child, i) => (
+          <View key={i}>
+            {i > 0 && (
+              <View
+                style={[
+                  styles.rowSeparator,
+                  { backgroundColor: c.border },
+                ]}
+              />
+            )}
+            {child}
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -90,23 +136,38 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: c.backgroundSecondary }]} edges={["top"]}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: c.background }]} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerSide}>
+          <TouchableOpacity
+            style={[styles.closeButton, { backgroundColor: c.backgroundSecondary }]}
+            onPress={() => router.back()}
+            activeOpacity={0.6}
+          >
+            <SymbolView name="xmark" tintColor={c.textSecondary} size={14} />
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.headerTitle, { color: c.text }]}>הגדרות</Text>
+        <View style={styles.headerSide} />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
-        <Text style={[styles.title, { color: c.text }]}>הגדרות</Text>
-
-        {/* Email banner */}
-        <View style={[styles.emailBanner, { backgroundColor: c.card }]}>
-          <Text style={[styles.emailText, { color: c.text }]}>{user?.email ?? "—"}</Text>
+        {/* Email card */}
+        <View style={[styles.emailCard, { borderColor: c.border, backgroundColor: c.card }]}>
+          <Text style={[styles.emailText, { color: c.text }]}>
+            {user?.email ?? "—"}
+          </Text>
         </View>
 
-        {/* Menu items */}
-        <View style={styles.menuList}>
+        {/* Section 1 — Account */}
+        <MenuSection title="חשבון">
           <TouchableOpacity
             style={styles.row}
             onPress={() => {
@@ -115,29 +176,46 @@ export default function SettingsScreen() {
             }}
             activeOpacity={0.6}
           >
-            <SymbolView name="chevron.left" tintColor={colors.textLight} size={14} />
+            <SymbolView
+              name="person.circle"
+              tintColor={c.textMuted}
+              size={22}
+            />
+            <Text style={[styles.rowLabel, { color: c.text }]}>פרופיל</Text>
             <View style={styles.rowSpacer} />
-            <Text style={styles.rowLabel}>פרופיל</Text>
             {user?.image ? (
               <Image source={{ uri: user.image }} style={styles.avatar} />
             ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarInitial}>
+              <View style={[styles.avatarFallback, { backgroundColor: c.brandLight }]}>
+                <Text style={[styles.avatarInitial, { color: c.brand }]}>
                   {(user?.name ?? user?.email ?? "?").charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
+            <SymbolView name="chevron.left" tintColor={c.textLight} size={14} />
           </TouchableOpacity>
-          <View style={styles.separator} />
 
           <MenuRow
-            label="מצב כהה"
+            label="חשבון"
+            icon="shield"
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/settings/account");
+            }}
+          />
+        </MenuSection>
+
+        {/* Section 2 — Preferences */}
+        <MenuSection title="העדפות">
+          <MenuRow
+            label="מראה"
             icon="moon.stars"
+            value={isDark ? "כהה" : "בהיר"}
             right={
               <Switch
                 value={isDark}
                 onValueChange={toggleDarkMode}
-                trackColor={{ false: colors.border, true: colors.brand }}
+                trackColor={{ false: c.border, true: c.brand }}
                 thumbColor={colors.white}
                 style={styles.toggle}
               />
@@ -151,33 +229,24 @@ export default function SettingsScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push("/settings/calendar");
             }}
-            right={
-              connected ? (
-                <Text style={styles.statusText}>מחובר</Text>
-              ) : undefined
-            }
+            value={connected ? "מחובר" : undefined}
           />
+        </MenuSection>
 
-          <MenuRow
-            label="חשבון"
-            icon="shield"
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/settings/account");
-            }}
-          />
-
+        {/* Section 3 — Sign Out */}
+        <MenuSection>
           <MenuRow
             label="התנתקות"
             icon="rectangle.portrait.and.arrow.right"
             onPress={handleSignOut}
             danger
-            showSeparator={false}
           />
-        </View>
+        </MenuSection>
 
         {/* Version */}
-        <Text style={styles.versionText}>סדר v1.0.0</Text>
+        <Text style={[styles.versionText, { color: c.textLight }]}>
+          סדר v1.0.0
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -190,48 +259,80 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: spacing["2xl"],
+    paddingHorizontal: spacing.xl,
     paddingBottom: spacing["5xl"],
   },
 
-  // -- Title --
-  title: {
-    fontSize: typography["3xl"],
+  // -- Header --
+  header: {
+    flexDirection: rtlRow,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
+  headerSide: {
+    width: 36,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: typography.lg,
     fontFamily: fonts.bold,
-    color: colors.text,
-    textAlign: "right",
-    marginTop: spacing.lg,
+    textAlign: "center",
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  // -- Email banner --
-  emailBanner: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
+  // -- Email card --
+  emailCard: {
+    borderWidth: 1,
+    borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   emailText: {
     fontSize: typography.base,
     fontFamily: fonts.numbersRegular,
-    color: colors.text,
     textAlign: "right",
   },
 
-  // -- Menu --
-  menuList: {
-    marginTop: spacing.xl,
+  // -- Sections --
+  section: {
+    marginTop: spacing["2xl"],
   },
+  sectionTitle: {
+    fontSize: typography.sm,
+    fontFamily: fonts.medium,
+    textAlign: "right",
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  sectionCard: {
+    borderRadius: borderRadius.xl,
+    overflow: "hidden",
+  },
+  rowSeparator: {
+    height: StyleSheet.hairlineWidth,
+    marginRight: spacing["5xl"],
+  },
+
+  // -- Menu row --
   row: {
     flexDirection: rtlRow,
     alignItems: "center",
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
   rowSpacer: {
@@ -240,19 +341,10 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: typography.lg,
     fontFamily: fonts.medium,
-    color: colors.text,
   },
-  rowLabelDanger: {
-    color: colors.danger,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  statusText: {
+  valueText: {
     fontSize: typography.base,
     fontFamily: fonts.regular,
-    color: colors.textMuted,
   },
   toggle: {
     transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
@@ -260,29 +352,26 @@ const styles = StyleSheet.create({
 
   // -- Avatar --
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   avatarFallback: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.brandLight,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarInitial: {
-    fontSize: typography.base,
+    fontSize: typography.sm,
     fontFamily: fonts.semibold,
-    color: colors.brand,
   },
 
   // -- Version --
   versionText: {
     fontSize: typography.xs,
     fontFamily: fonts.numbersRegular,
-    color: colors.textLight,
     textAlign: "center",
     marginTop: spacing["3xl"],
   },
