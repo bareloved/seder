@@ -11,7 +11,7 @@ import {
 } from "../lib/auth-storage";
 
 const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
+  process.env.EXPO_PUBLIC_API_URL || "https://sedder.app";
 
 // Strip invisible Unicode characters (RTL/LTR marks, BOM, zero-width chars)
 // that iOS keyboards or RTL mode can insert into text inputs

@@ -26,7 +26,7 @@ import {
 } from "../../lib/theme";
 
 const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001";
+  process.env.EXPO_PUBLIC_API_URL || "https://sedder.app";
 
 // ---------------------------------------------------------------------------
 // Change Password Modal
