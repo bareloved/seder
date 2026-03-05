@@ -22,7 +22,7 @@ packages/
 ```bash
 # Monorepo (from root)
 pnpm dev                 # Start all apps in development
-pnpm dev:web             # Start web app only (http://localhost:3000)
+pnpm dev:web             # Start web app only (http://localhost:3001)
 pnpm dev:mobile          # Start Expo dev server only
 pnpm build               # Build all packages/apps
 pnpm lint                # Lint all workspaces
@@ -59,6 +59,9 @@ npx expo start --ios     # Start with iOS simulator
 - **Auth**: Better Auth (email/password + Google OAuth with Calendar scope)
 - **Styling**: Tailwind CSS + Radix UI (shadcn-style components)
 - **Validation**: Zod 4
+- **Email**: Resend (transactional emails)
+- **AI**: Gemini API
+- **Testing**: Vitest
 
 ### Mobile App
 - **Framework**: Expo SDK 55, Expo Router
@@ -96,7 +99,7 @@ npx expo start --ios     # Start with iOS simulator
 
 **Mobile App (`apps/mobile/`):**
 - `app/(auth)/` - Sign-in/sign-up screens
-- `app/(tabs)/` - Tab navigation (income, analytics, calendar, settings)
+- `app/(tabs)/` - Tab navigation (income, analytics, clients, expenses)
 - `hooks/` - TanStack Query hooks (useIncomeEntries, useAuth, etc.)
 - `providers/` - React context providers (ApiProvider, QueryProvider)
 - `components/` - Feature components (income, analytics, calendar)
@@ -155,24 +158,36 @@ All data is scoped by `userId`. Row-Level Security (RLS) is enabled at the datab
 
 ## Environment Variables
 
+See `apps/web/.env.example` and `apps/mobile/.env.example` for full lists.
+
 Required (web app):
 ```
-DATABASE_URL=postgresql://user:password@host:port/database
+DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+BETTER_AUTH_SECRET=xxx
+BETTER_AUTH_URL=http://localhost:3001
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3001
 GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
-CRON_SECRET=xxx    # For push notification cron endpoint
+```
+
+Optional (web app):
+```
+GEMINI_API_KEY=xxx         # AI features
+RESEND_API_KEY=xxx         # Transactional emails
+EMAIL_FROM=xxx             # Sender email
+CRON_SECRET=xxx            # Push notification cron endpoint
 ```
 
 Required (mobile app):
 ```
-EXPO_PUBLIC_API_URL=http://localhost:3000  # API base URL
+EXPO_PUBLIC_API_URL=http://localhost:3001  # API base URL
 ```
 
 ## Project Documentation
 
-- `documents/APP_OVERVIEW.md` - High-level architecture and domain model
-- `documents/SEDER_CHANGELOG.md` - Development history
-- `documents/RLS_ROLLOUT_STRATEGY.md` - Multi-tenant security docs
+- `docs/CONTRIB.md` - Development workflow, scripts reference, environment setup
+- `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
+- `docs/plans/` - Implementation plans and design documents
 
 
 <!-- CLAVIX:START -->
