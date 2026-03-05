@@ -75,10 +75,11 @@ function RootLayoutNav() {
     if (isAuthenticated === null) return; // Still loading
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
-    } else if (isAuthenticated && inAuthGroup) {
+    } else if (isAuthenticated && !inTabsGroup) {
       router.replace('/(tabs)/income');
     }
   }, [isAuthenticated, segments]);

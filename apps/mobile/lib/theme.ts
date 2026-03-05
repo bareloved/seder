@@ -1,24 +1,21 @@
-import { I18nManager, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 // =============================================================================
-// RTL helpers — ensures correct visual order even before app restart
-// In React Native, I18nManager.forceRTL only takes effect after restart.
-// These helpers guarantee RTL visual layout regardless of the current state.
+// RTL helpers — RTL is forced at the native level via plugins/force-rtl.js
+// so I18nManager.isRTL is always true. These are kept as semantic aliases.
 // =============================================================================
-
-const isNativeRTL = I18nManager.isRTL;
 
 /** Use for rows where first child should appear on the RIGHT (RTL order) */
-export const rtlRow: "row" | "row-reverse" = isNativeRTL ? "row" : "row-reverse";
+export const rtlRow = "row" as const;
 
 /** Use for rows where first child should appear on the LEFT (reverse RTL) */
-export const rtlRowReverse: "row" | "row-reverse" = isNativeRTL ? "row-reverse" : "row";
+export const rtlRowReverse = "row-reverse" as const;
 
 /** Logical "start" alignment — right in RTL */
-export const rtlAlignStart: "flex-start" | "flex-end" = isNativeRTL ? "flex-start" : "flex-end";
+export const rtlAlignStart = "flex-start" as const;
 
 /** Logical "end" alignment — left in RTL */
-export const rtlAlignEnd: "flex-start" | "flex-end" = isNativeRTL ? "flex-end" : "flex-start";
+export const rtlAlignEnd = "flex-end" as const;
 
 // =============================================================================
 // Font families — matching the Seder web app

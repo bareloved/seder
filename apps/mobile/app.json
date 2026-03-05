@@ -33,7 +33,8 @@
     },
     "plugins": [
       "expo-router",
-      "./plugins/disable-script-sandboxing"
+      "./plugins/disable-script-sandboxing",
+      "./plugins/force-rtl"
     ],
     "experiments": {
       "typedRoutes": true
