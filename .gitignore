@@ -1,17 +1,19 @@
 # dependencies
-/node_modules
-/.pnp
-.pnp.js
+node_modules
 
 # testing
-/coverage
+coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build
+dist
+
+# turborepo
+.turbo
 
 # misc
 .DS_Store
@@ -34,5 +36,10 @@ yarn-error.log*
 .vercel
 
 # database backups
-/backups/db/
+backups/
 
+# lock files from other package managers
+package-lock.json
+
+# build info
+tsconfig.tsbuildinfo

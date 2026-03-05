@@ -4,20 +4,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Seder?
 
-Seder is an income tracking webapp for freelancers and musicians. It provides income entry management, KPI dashboards, analytics, and Google Calendar integration. The app is RTL-friendly (Hebrew-first) with ILS currency.
+Seder is an income tracking platform for freelancers and musicians. It includes a **web app** (Next.js) and **iOS app** (Expo/React Native), structured as a **Turborepo monorepo** with shared packages. It provides income entry management, KPI dashboards, analytics, and Google Calendar integration. The app is RTL-friendly (Hebrew-first) with ILS currency.
+
+## Monorepo Structure
+
+```
+apps/
+  web/         - Next.js 16 web app (main codebase)
+  mobile/      - Expo/React Native iOS app
+packages/
+  shared/      - @seder/shared — types, Zod schemas, constants
+  api-client/  - @seder/api-client — typed HTTP client (ky)
+```
 
 ## Commands
 
 ```bash
-npm run dev              # Start development server on http://localhost:3000
-npm run build            # Build for production
-npm run lint             # Run ESLint
-npm run test             # Run Vitest tests
+# Monorepo (from root)
+pnpm dev                 # Start all apps in development
+pnpm dev:web             # Start web app only (http://localhost:3001)
+pnpm dev:mobile          # Start Expo dev server only
+pnpm build               # Build all packages/apps
+pnpm lint                # Lint all workspaces
+pnpm test                # Run all tests
 
-npm run db:generate      # Generate Drizzle migrations from schema changes
-npm run db:push          # Push schema directly to database (skip migrations)
-npm run db:migrate       # Run pending migrations
-npm run db:studio        # Open Drizzle Studio for data management
+# Database (web app)
+pnpm db:generate         # Generate Drizzle migrations from schema changes
+pnpm db:push             # Push schema directly to database (skip migrations)
+pnpm db:migrate          # Run pending migrations
+pnpm db:studio           # Open Drizzle Studio for data management
+
+# Mobile (from apps/mobile)
+npx expo start           # Start Expo dev server
+npx expo start --ios     # Start with iOS simulator
 ```
 
 ## RTL / Hebrew-First UI
@@ -33,12 +52,27 @@ npm run db:studio        # Open Drizzle Studio for data management
 
 ## Tech Stack
 
+### Web App
 - **Framework**: Next.js 16 (App Router with Server Components & Actions)
 - **Language**: TypeScript 5, React 19
 - **Database**: PostgreSQL with Drizzle ORM
 - **Auth**: Better Auth (email/password + Google OAuth with Calendar scope)
 - **Styling**: Tailwind CSS + Radix UI (shadcn-style components)
-- **Validation**: Zod
+- **Validation**: Zod 4
+- **Email**: Resend (transactional emails)
+- **AI**: Gemini API
+- **Testing**: Vitest
+
+### Mobile App
+- **Framework**: Expo SDK 55, Expo Router
+- **Language**: TypeScript 5, React 19, React Native 0.83
+- **Data Fetching**: TanStack Query v5 + @seder/api-client (ky)
+- **Auth Storage**: expo-secure-store
+- **Push Notifications**: expo-notifications + Expo Push API
+
+### Build & Tooling
+- **Monorepo**: Turborepo + pnpm workspaces
+- **Package Manager**: pnpm (corepack-managed)
 
 ## Architecture
 
@@ -51,6 +85,7 @@ npm run db:studio        # Open Drizzle Studio for data management
 
 ### Key Directories
 
+**Web App (`apps/web/`):**
 - `app/income/` - Main income tracking feature (primary codebase)
   - `page.tsx` - Server-side data fetching
   - `IncomePageClient.tsx` - Client state management
@@ -58,6 +93,23 @@ npm run db:studio        # Open Drizzle Studio for data management
   - `data.ts` - Data fetching & aggregation helpers
   - `types.ts`, `schemas.ts` - TypeScript types and Zod schemas
   - `components/` - Feature-specific React components
+- `app/api/v1/` - REST API routes (used by mobile app)
+  - `_lib/` - Middleware (auth, errors, response helpers)
+  - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`
+
+**Mobile App (`apps/mobile/`):**
+- `app/(auth)/` - Sign-in/sign-up screens
+- `app/(tabs)/` - Tab navigation (income, analytics, clients, expenses)
+- `hooks/` - TanStack Query hooks (useIncomeEntries, useAuth, etc.)
+- `providers/` - React context providers (ApiProvider, QueryProvider)
+- `components/` - Feature components (income, analytics, calendar)
+- `lib/auth-storage.ts` - Secure token storage
+
+**Shared Packages:**
+- `packages/shared/src/types/` - Domain type definitions
+- `packages/shared/src/schemas/` - Zod validation schemas
+- `packages/shared/src/constants/` - Status configs, VAT rates
+- `packages/api-client/src/` - Typed API client modules
 
 ### Mobile vs Desktop Views (Income Page)
 
@@ -106,18 +158,36 @@ All data is scoped by `userId`. Row-Level Security (RLS) is enabled at the datab
 
 ## Environment Variables
 
-Required:
+See `apps/web/.env.example` and `apps/mobile/.env.example` for full lists.
+
+Required (web app):
 ```
-DATABASE_URL=postgresql://user:password@host:port/database
+DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+BETTER_AUTH_SECRET=xxx
+BETTER_AUTH_URL=http://localhost:3001
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3001
 GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
 ```
 
+Optional (web app):
+```
+GEMINI_API_KEY=xxx         # AI features
+RESEND_API_KEY=xxx         # Transactional emails
+EMAIL_FROM=xxx             # Sender email
+CRON_SECRET=xxx            # Push notification cron endpoint
+```
+
+Required (mobile app):
+```
+EXPO_PUBLIC_API_URL=http://localhost:3001  # API base URL
+```
+
 ## Project Documentation
 
-- `documents/APP_OVERVIEW.md` - High-level architecture and domain model
-- `documents/SEDER_CHANGELOG.md` - Development history
-- `documents/RLS_ROLLOUT_STRATEGY.md` - Multi-tenant security docs
+- `docs/CONTRIB.md` - Development workflow, scripts reference, environment setup
+- `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
+- `docs/plans/` - Implementation plans and design documents
 
 
 <!-- CLAVIX:START -->
