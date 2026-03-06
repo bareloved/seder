@@ -25,6 +25,7 @@ struct MainTabView: View {
                     Label("הוצאות", systemImage: "creditcard")
                 }
         }
+        .tint(SederTheme.brandGreen)
         .preferredColorScheme(darkMode ? .dark : nil)
     }
 }

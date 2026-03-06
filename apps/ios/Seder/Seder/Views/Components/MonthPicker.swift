@@ -16,21 +16,31 @@ struct MonthPicker: View {
     }
 
     var body: some View {
-        HStack {
+        HStack(spacing: 16) {
             Button {
                 selectedDate = calendar.date(byAdding: .month, value: 1, to: selectedDate)!
             } label: {
                 Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(SederTheme.brandGreen)
+                    .frame(width: 36, height: 36)
+                    .background(SederTheme.brandGreen.opacity(0.1))
+                    .clipShape(Circle())
             }
 
             Text(monthString)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .frame(minWidth: 140)
 
             Button {
                 selectedDate = calendar.date(byAdding: .month, value: -1, to: selectedDate)!
             } label: {
                 Image(systemName: "chevron.right")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(SederTheme.brandGreen)
+                    .frame(width: 36, height: 36)
+                    .background(SederTheme.brandGreen.opacity(0.1))
+                    .clipShape(Circle())
             }
         }
     }

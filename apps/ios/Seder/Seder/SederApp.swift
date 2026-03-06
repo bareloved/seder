@@ -13,20 +13,23 @@ struct SederApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authViewModel.isAuthenticated {
-                MainTabView()
-                    .environmentObject(authViewModel)
-                    .environment(\.layoutDirection, .rightToLeft)
-                    .onAppear {
-                        NotificationService.shared.requestPermission()
-                    }
-            } else if authViewModel.isLoading {
-                LoadingView()
-            } else {
-                SignInView()
-                    .environmentObject(authViewModel)
-                    .environment(\.layoutDirection, .rightToLeft)
+            Group {
+                if authViewModel.isAuthenticated {
+                    MainTabView()
+                        .environmentObject(authViewModel)
+                        .environment(\.layoutDirection, .rightToLeft)
+                        .onAppear {
+                            NotificationService.shared.requestPermission()
+                        }
+                } else if authViewModel.isLoading {
+                    LoadingView()
+                } else {
+                    SignInView()
+                        .environmentObject(authViewModel)
+                        .environment(\.layoutDirection, .rightToLeft)
+                }
             }
+            .tint(SederTheme.brandGreen)
         }
     }
 }

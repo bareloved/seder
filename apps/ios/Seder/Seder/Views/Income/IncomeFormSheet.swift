@@ -26,6 +26,7 @@ struct IncomeFormSheet: View {
                 Section("פרטי הכנסה") {
                     DatePicker("תאריך", selection: $date, displayedComponents: .date)
                         .environment(\.calendar, Calendar(identifier: .gregorian))
+                        .tint(SederTheme.brandGreen)
 
                     TextField("תיאור", text: $description)
 
@@ -36,6 +37,7 @@ struct IncomeFormSheet: View {
                             .keyboardType(.decimalPad)
                             .environment(\.layoutDirection, .leftToRight)
                         Text("₪")
+                            .foregroundStyle(.secondary)
                     }
 
                     HStack {
@@ -43,6 +45,7 @@ struct IncomeFormSheet: View {
                             .keyboardType(.decimalPad)
                             .environment(\.layoutDirection, .leftToRight)
                         Text("₪")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -52,8 +55,10 @@ struct IncomeFormSheet: View {
                             .keyboardType(.decimalPad)
                             .environment(\.layoutDirection, .leftToRight)
                         Text("%")
+                            .foregroundStyle(.secondary)
                     }
                     Toggle("כולל מע״מ", isOn: $includesVat)
+                        .tint(SederTheme.brandGreen)
                 }
 
                 Section("סטטוס") {
@@ -62,12 +67,14 @@ struct IncomeFormSheet: View {
                             Text(status.label).tag(status)
                         }
                     }
+                    .tint(SederTheme.brandGreen)
 
                     Picker("סטטוס תשלום", selection: $paymentStatus) {
                         ForEach(PaymentStatus.allCases, id: \.self) { status in
                             Text(status.label).tag(status)
                         }
                     }
+                    .tint(SederTheme.brandGreen)
                 }
 
                 Section("הערות") {
@@ -85,6 +92,8 @@ struct IncomeFormSheet: View {
                     Button(isEditing ? "עדכון" : "שמירה") {
                         Task { await save() }
                     }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SederTheme.brandGreen)
                     .disabled(description.isEmpty || amountGross.isEmpty || isSaving)
                 }
             }

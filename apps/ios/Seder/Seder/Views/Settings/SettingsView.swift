@@ -12,32 +12,64 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 // Profile section
-                Section("פרופיל") {
+                Section {
                     if let user = auth.user {
-                        LabeledContent("שם", value: user.name)
-                        LabeledContent("אימייל", value: user.email)
+                        HStack(spacing: 14) {
+                            Circle()
+                                .fill(SederTheme.brandGreen.opacity(0.12))
+                                .frame(width: 48, height: 48)
+                                .overlay(
+                                    Text(String(user.displayName.prefix(1)))
+                                        .font(.title2.weight(.semibold))
+                                        .foregroundStyle(SederTheme.brandGreen)
+                                )
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(user.displayName)
+                                    .font(.headline)
+                                Text(user.email)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
-                    Button("שינוי סיסמה") {
+                    Button {
                         showChangePassword = true
+                    } label: {
+                        Label("שינוי סיסמה", systemImage: "lock.rotation")
                     }
+                    .foregroundStyle(.primary)
+                } header: {
+                    Text("פרופיל")
                 }
 
                 // Preferences
                 Section("העדפות") {
-                    Toggle("מצב כהה", isOn: $darkMode)
+                    Toggle(isOn: $darkMode) {
+                        Label("מצב כהה", systemImage: "moon.fill")
+                    }
+                    .tint(SederTheme.brandGreen)
                 }
 
                 // Management
                 Section("ניהול") {
-                    Button("קטגוריות") {
+                    Button {
                         showCategories = true
+                    } label: {
+                        Label("קטגוריות", systemImage: "tag")
                     }
+                    .foregroundStyle(.primary)
                 }
 
                 // Sign out
                 Section {
-                    Button("התנתקות", role: .destructive) {
+                    Button(role: .destructive) {
                         showSignOutConfirm = true
+                    } label: {
+                        Label("התנתקות", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
             }

@@ -10,34 +10,58 @@ struct ClientsView: View {
             Group {
                 if viewModel.isLoading {
                     ProgressView()
+                        .tint(SederTheme.brandGreen)
                 } else if viewModel.clients.isEmpty {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Image(systemName: "person.2")
                             .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.quaternary)
                         Text("אין לקוחות")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        Button {
+                            showAddClient = true
+                        } label: {
+                            Label("הוספת לקוח", systemImage: "plus")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .foregroundStyle(SederTheme.brandGreen)
                     }
                 } else {
                     List(viewModel.clients) { client in
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text(client.name)
-                                .font(.headline)
-                            if let revenue = client.thisYearRevenue, revenue > 0 {
-                                HStack {
-                                    CurrencyText(amount: revenue, font: .subheadline, color: .secondary)
-                                    Text("השנה:")
-                                        .font(.subheadline)
+                        HStack(spacing: 12) {
+                            // Avatar circle
+                            Circle()
+                                .fill(SederTheme.brandGreen.opacity(0.12))
+                                .frame(width: 40, height: 40)
+                                .overlay(
+                                    Text(String(client.name.prefix(1)))
+                                        .font(.headline.weight(.semibold))
+                                        .foregroundStyle(SederTheme.brandGreen)
+                                )
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text(client.name)
+                                    .font(.headline)
+                                HStack(spacing: 12) {
+                                    if let jobs = client.jobCount, jobs > 0 {
+                                        HStack(spacing: 3) {
+                                            Text("\(jobs)")
+                                                .font(.caption.weight(.medium))
+                                            Image(systemName: "briefcase")
+                                                .font(.caption2)
+                                        }
                                         .foregroundStyle(.secondary)
+                                    }
+                                    if let revenue = client.thisYearRevenue, revenue > 0 {
+                                        CurrencyText(amount: revenue, font: .subheadline.weight(.medium), color: SederTheme.paidColor)
+                                    }
                                 }
                             }
-                            if let jobs = client.jobCount, jobs > 0 {
-                                Text("\(jobs) עבודות")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, 4)
                     }
                     .listStyle(.plain)
                     .refreshable { await viewModel.loadClients() }
@@ -49,7 +73,9 @@ struct ClientsView: View {
                     Button {
                         showAddClient = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(SederTheme.brandGreen)
                     }
                 }
             }
