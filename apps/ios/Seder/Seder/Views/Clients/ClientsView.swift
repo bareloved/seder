@@ -17,7 +17,10 @@ struct ClientsView: View {
                     Spacer()
                 }
                 .padding(.vertical, 12)
-                .background(SederTheme.brandGreen)
+                .padding(.top, UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first?.windows.first?.safeAreaInsets.top ?? 0)
+                .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
                 .environment(\.layoutDirection, .leftToRight)
 
                 Group {
@@ -98,6 +101,7 @@ struct ClientsView: View {
                 }
                 .background(SederTheme.pageBg)
             }
+            .ignoresSafeArea(edges: .top)
 
             // FAB
             VStack {

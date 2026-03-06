@@ -116,7 +116,7 @@ struct SettingsView: View {
                 }
                 Button("ביטול", role: .cancel) {}
             }
-            .preferredColorScheme(darkMode ? .dark : nil)
+            .preferredColorScheme(darkMode ? .dark : .light)
         }
     }
 }

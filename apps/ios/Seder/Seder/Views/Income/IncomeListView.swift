@@ -23,7 +23,7 @@ struct IncomeListView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // Green navbar
+                // Green navbar (extends into status bar)
                 GreenNavBar(
                     onSettingsTap: { showSettings = true },
                     onCalendarTap: { showCalendarImport = true }
@@ -187,6 +187,7 @@ struct IncomeListView: View {
                 .refreshable { await viewModel.loadEntries() }
                 .background(SederTheme.pageBg)
             }
+            .ignoresSafeArea(edges: .top)
 
             // Floating add button — use GeometryReader to force physical right side
             VStack {
@@ -276,7 +277,10 @@ struct GreenNavBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(SederTheme.brandGreen)
+        .padding(.top, UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0)
+        .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
         .environment(\.layoutDirection, .leftToRight)
     }
 }

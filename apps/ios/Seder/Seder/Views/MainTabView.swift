@@ -26,6 +26,6 @@ struct MainTabView: View {
                 }
         }
         .tint(SederTheme.brandGreen)
-        .preferredColorScheme(darkMode ? .dark : nil)
+        .preferredColorScheme(darkMode ? .dark : .light)
     }
 }
