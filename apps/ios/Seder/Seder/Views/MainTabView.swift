@@ -1,24 +1,30 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @AppStorage("darkMode") private var darkMode = false
+
     var body: some View {
         TabView {
-            Text("הכנסות")
+            IncomeListView()
                 .tabItem {
                     Label("הכנסות", systemImage: "banknote")
                 }
-            Text("אנליטיקס")
+
+            AnalyticsView()
                 .tabItem {
                     Label("אנליטיקס", systemImage: "chart.bar")
                 }
-            Text("לקוחות")
+
+            ClientsView()
                 .tabItem {
                     Label("לקוחות", systemImage: "person.2")
                 }
-            Text("הוצאות")
+
+            Text("הוצאות - בקרוב")
                 .tabItem {
                     Label("הוצאות", systemImage: "creditcard")
                 }
         }
+        .preferredColorScheme(darkMode ? .dark : nil)
     }
 }
