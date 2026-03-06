@@ -1,5 +1,9 @@
 import Foundation
 
+private nonisolated struct BetterAuthErrorResponse: Decodable {
+    let message: String?
+}
+
 nonisolated class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
@@ -92,17 +96,10 @@ nonisolated class APIClient: @unchecked Sendable {
         case 401:
             throw APIError.unauthorized
         case 422:
-            // Better Auth validation errors
-            struct BetterAuthError: Decodable {
-                let message: String?
-            }
-            let authError = try? decoder.decode(BetterAuthError.self, from: data)
+            let authError = try? decoder.decode(BetterAuthErrorResponse.self, from: data)
             throw APIError.validation(authError?.message ?? "Validation error")
         default:
-            struct BetterAuthError: Decodable {
-                let message: String?
-            }
-            let authError = try? decoder.decode(BetterAuthError.self, from: data)
+            let authError = try? decoder.decode(BetterAuthErrorResponse.self, from: data)
             throw APIError.server(authError?.message ?? "Server error (\(httpResponse.statusCode))")
         }
     }

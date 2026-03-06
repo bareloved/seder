@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-enum KeychainService {
+nonisolated enum KeychainService {
     private static let service = "com.bareloved.seder"
 
     static func save(key: String, data: Data) -> Bool {
