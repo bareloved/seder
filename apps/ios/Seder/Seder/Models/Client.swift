@@ -1,6 +1,6 @@
 import Foundation
 
-struct Client: Codable, Identifiable {
+nonisolated struct Client: Codable, Identifiable, Sendable {
     let id: String
     let name: String
     let email: String?
@@ -20,7 +20,7 @@ struct Client: Codable, Identifiable {
     let outstandingAmount: Double?
 }
 
-struct CreateClientRequest: Encodable {
+nonisolated struct CreateClientRequest: Encodable, Sendable {
     let name: String
     var email: String?
     var phone: String?

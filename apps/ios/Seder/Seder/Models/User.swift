@@ -1,6 +1,6 @@
 import Foundation
 
-struct User: Codable, Identifiable {
+nonisolated struct User: Codable, Identifiable, Sendable {
     let id: String
     let email: String
     let name: String
@@ -10,21 +10,24 @@ struct User: Codable, Identifiable {
     let updatedAt: String?
 }
 
-struct AuthSession: Codable {
+nonisolated struct AuthSession: Codable, Sendable {
+    let id: String?
     let token: String
+    let userId: String?
+    let expiresAt: String?
 }
 
-struct SignInResponse: Codable {
+nonisolated struct SignInResponse: Codable, Sendable {
     let user: User
     let session: AuthSession
 }
 
-struct SignInRequest: Encodable {
+nonisolated struct SignInRequest: Encodable, Sendable {
     let email: String
     let password: String
 }
 
-struct SignUpRequest: Encodable {
+nonisolated struct SignUpRequest: Encodable, Sendable {
     let email: String
     let password: String
     let name: String

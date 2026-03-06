@@ -1,13 +1,10 @@
 import Foundation
 
-class APIClient {
+nonisolated class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
-    #if DEBUG
-    private let baseURL = "http://localhost:3001"
-    #else
+    // Always use production URL — localhost isn't reachable from a physical device
     private let baseURL = "https://sedder.app"
-    #endif
 
     private let session = URLSession.shared
     private let decoder: JSONDecoder = {
@@ -36,7 +33,7 @@ class APIClient {
 
     var isAuthenticated: Bool { token != nil }
 
-    // MARK: - Generic Request
+    // MARK: - API v1 Request (wrapped in { success, data })
 
     func request<T: Decodable>(
         endpoint: String,
@@ -44,26 +41,9 @@ class APIClient {
         body: (any Encodable)? = nil,
         queryItems: [URLQueryItem]? = nil
     ) async throws -> T {
-        var components = URLComponents(string: baseURL + endpoint)!
-        if let queryItems { components.queryItems = queryItems }
-
-        var request = URLRequest(url: components.url!)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        if let token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        if let body {
-            request.httpBody = try encoder.encode(body)
-        }
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.network(URLError(.badServerResponse))
-        }
+        let (data, httpResponse) = try await rawRequest(
+            endpoint: endpoint, method: method, body: body, queryItems: queryItems
+        )
 
         switch httpResponse.statusCode {
         case 200, 201:
@@ -88,5 +68,74 @@ class APIClient {
             let apiResponse = try? decoder.decode(APIResponse<EmptyData>.self, from: data)
             throw APIError.server(apiResponse?.error ?? "Server error (\(httpResponse.statusCode))")
         }
+    }
+
+    // MARK: - Direct Request (no wrapper, for Better Auth endpoints)
+
+    func directRequest<T: Decodable>(
+        endpoint: String,
+        method: String = "GET",
+        body: (any Encodable)? = nil,
+        queryItems: [URLQueryItem]? = nil
+    ) async throws -> T {
+        let (data, httpResponse) = try await rawRequest(
+            endpoint: endpoint, method: method, body: body, queryItems: queryItems
+        )
+
+        switch httpResponse.statusCode {
+        case 200, 201:
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingFailed(error)
+            }
+        case 401:
+            throw APIError.unauthorized
+        case 422:
+            // Better Auth validation errors
+            struct BetterAuthError: Decodable {
+                let message: String?
+            }
+            let authError = try? decoder.decode(BetterAuthError.self, from: data)
+            throw APIError.validation(authError?.message ?? "Validation error")
+        default:
+            struct BetterAuthError: Decodable {
+                let message: String?
+            }
+            let authError = try? decoder.decode(BetterAuthError.self, from: data)
+            throw APIError.server(authError?.message ?? "Server error (\(httpResponse.statusCode))")
+        }
+    }
+
+    // MARK: - Raw Request
+
+    private func rawRequest(
+        endpoint: String,
+        method: String,
+        body: (any Encodable)?,
+        queryItems: [URLQueryItem]?
+    ) async throws -> (Data, HTTPURLResponse) {
+        var components = URLComponents(string: baseURL + endpoint)!
+        if let queryItems { components.queryItems = queryItems }
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        if let token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        if let body {
+            request.httpBody = try encoder.encode(body)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.network(URLError(.badServerResponse))
+        }
+
+        return (data, httpResponse)
     }
 }

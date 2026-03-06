@@ -1,6 +1,6 @@
 import Foundation
 
-struct IncomeEntry: Codable, Identifiable {
+nonisolated struct IncomeEntry: Codable, Identifiable, Sendable {
     let id: String
     let date: String
     let description: String
@@ -27,7 +27,7 @@ struct IncomeEntry: Codable, Identifiable {
     var vat: Double { Double(vatRate) ?? 18 }
 }
 
-enum InvoiceStatus: String, Codable, CaseIterable {
+nonisolated enum InvoiceStatus: String, Codable, CaseIterable, Sendable {
     case draft, sent, paid, cancelled
 
     var label: String {
@@ -40,7 +40,7 @@ enum InvoiceStatus: String, Codable, CaseIterable {
     }
 }
 
-enum PaymentStatus: String, Codable, CaseIterable {
+nonisolated enum PaymentStatus: String, Codable, CaseIterable, Sendable {
     case unpaid, partial, paid
 
     var label: String {
@@ -52,14 +52,14 @@ enum PaymentStatus: String, Codable, CaseIterable {
     }
 }
 
-struct CategoryData: Codable {
+nonisolated struct CategoryData: Codable, Sendable {
     let id: String
     let name: String
     let color: String
     let icon: String
 }
 
-struct CreateIncomeRequest: Encodable {
+nonisolated struct CreateIncomeRequest: Encodable, Sendable {
     let date: String
     let description: String
     var clientName: String = ""
@@ -74,7 +74,7 @@ struct CreateIncomeRequest: Encodable {
     var notes: String?
 }
 
-struct UpdateIncomeRequest: Encodable {
+nonisolated struct UpdateIncomeRequest: Encodable, Sendable {
     var date: String?
     var description: String?
     var clientName: String?

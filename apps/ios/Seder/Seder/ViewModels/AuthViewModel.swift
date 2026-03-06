@@ -23,7 +23,7 @@ class AuthViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let response: SignInResponse = try await api.request(
+            let response: SignInResponse = try await api.directRequest(
                 endpoint: "/api/auth/sign-in/email",
                 method: "POST",
                 body: SignInRequest(email: email, password: password)
@@ -44,7 +44,7 @@ class AuthViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let response: SignInResponse = try await api.request(
+            let response: SignInResponse = try await api.directRequest(
                 endpoint: "/api/auth/sign-up/email",
                 method: "POST",
                 body: SignUpRequest(email: email, password: password, name: name)

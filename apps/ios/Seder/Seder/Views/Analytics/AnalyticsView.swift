@@ -64,7 +64,7 @@ struct AnalyticsView: View {
             }
             .navigationTitle("אנליטיקס")
             .task { await viewModel.loadAll() }
-            .onChange(of: viewModel.selectedMonth) {
+            .onChange(of: viewModel.selectedMonth) { _ in
                 Task { await viewModel.loadAll() }
             }
         }
