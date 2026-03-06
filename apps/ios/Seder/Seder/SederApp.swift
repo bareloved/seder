@@ -1,6 +1,27 @@
+import CoreText
 import SwiftUI
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Force RTL at the UIKit level so ALL views are RTL
+        UIView.appearance().semanticContentAttribute = .forceRightToLeft
+
+        // Register Ploni fonts at runtime
+        let fontNames = [
+            "ploni-regular-aaa",
+            "ploni-medium-aaa",
+            "ploni-demibold-aaa",
+            "ploni-bold-aaa"
+        ]
+        for name in fontNames {
+            if let url = Bundle.main.url(forResource: name, withExtension: "otf") {
+                CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+            }
+        }
+
+        return true
+    }
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         NotificationService.shared.registerToken(deviceToken)
     }

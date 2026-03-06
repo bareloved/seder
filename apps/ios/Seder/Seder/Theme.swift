@@ -28,6 +28,20 @@ enum SederTheme {
     // Subtle backgrounds
     static var subtleBg: Color { Color(.systemGray6) }
 
+    // Ploni font (matching web app)
+    static func ploni(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        switch weight {
+        case .bold, .heavy, .black:
+            return .custom("PloniDL1.1AAA-Bold", size: size)
+        case .semibold:
+            return .custom("PloniDL1.1AAA-D-Bold", size: size)
+        case .medium:
+            return .custom("PloniDL1.1AAA-Medium", size: size)
+        default:
+            return .custom("PloniDL1.1AAA-Regular", size: size)
+        }
+    }
+
     // Category colors
     static func categoryColor(for name: String?) -> Color {
         guard let name else { return .gray }

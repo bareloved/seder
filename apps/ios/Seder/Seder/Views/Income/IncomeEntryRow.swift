@@ -27,12 +27,12 @@ struct IncomeEntryRow: View {
                 HStack(alignment: .top) {
                     CurrencyText(
                         amount: entry.grossAmount,
-                        font: .system(.body, design: .rounded).bold(),
+                        font: SederTheme.ploni(17, weight: .bold),
                         color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
                     )
                     Spacer()
                     Text(entry.description)
-                        .font(.subheadline.weight(.semibold))
+                        .font(SederTheme.ploni(15, weight: .semibold))
                         .foregroundStyle(SederTheme.textPrimary)
                         .lineLimit(1)
                 }
@@ -40,7 +40,7 @@ struct IncomeEntryRow: View {
                 // Row 2: Client name
                 if !entry.clientName.isEmpty {
                     Text(entry.clientName)
-                        .font(.caption)
+                        .font(SederTheme.ploni(13))
                         .foregroundStyle(SederTheme.textSecondary)
                         .padding(.top, 2)
                 }

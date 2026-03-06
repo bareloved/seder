@@ -89,7 +89,7 @@ struct IncomeListView: View {
 
                                 HStack(spacing: 6) {
                                     Text(monthName)
-                                        .font(.subheadline.weight(.medium))
+                                        .font(SederTheme.ploni(15, weight: .medium))
                                         .foregroundStyle(SederTheme.textPrimary)
                                     Circle()
                                         .fill(totalUnpaid > 0 ? Color.red : SederTheme.paidColor)
@@ -298,13 +298,13 @@ struct KPICard: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title)
-                .font(.caption)
+                .font(SederTheme.ploni(12))
                 .foregroundStyle(SederTheme.textSecondary)
                 .padding(.bottom, 6)
 
             CurrencyText(
                 amount: amount,
-                font: .system(size: 24, weight: .bold, design: .rounded),
+                font: SederTheme.ploni(24, weight: .bold),
                 color: amountColor ?? SederTheme.textPrimary
             )
 
