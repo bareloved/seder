@@ -1,0 +1,90 @@
+import Foundation
+
+struct IncomeEntry: Codable, Identifiable {
+    let id: String
+    let date: String
+    let description: String
+    let clientName: String
+    let clientId: String?
+    let amountGross: String // numeric from API
+    let amountPaid: String
+    let vatRate: String
+    let includesVat: Bool
+    let invoiceStatus: InvoiceStatus
+    let paymentStatus: PaymentStatus
+    let categoryId: String?
+    let categoryData: CategoryData?
+    let notes: String?
+    let invoiceSentDate: String?
+    let paidDate: String?
+    let calendarEventId: String?
+    let createdAt: String?
+    let updatedAt: String?
+
+    // Computed helpers
+    var grossAmount: Double { Double(amountGross) ?? 0 }
+    var paidAmount: Double { Double(amountPaid) ?? 0 }
+    var vat: Double { Double(vatRate) ?? 18 }
+}
+
+enum InvoiceStatus: String, Codable, CaseIterable {
+    case draft, sent, paid, cancelled
+
+    var label: String {
+        switch self {
+        case .draft: return "טיוטה"
+        case .sent: return "נשלח"
+        case .paid: return "שולם"
+        case .cancelled: return "בוטל"
+        }
+    }
+}
+
+enum PaymentStatus: String, Codable, CaseIterable {
+    case unpaid, partial, paid
+
+    var label: String {
+        switch self {
+        case .unpaid: return "לא שולם"
+        case .partial: return "שולם חלקית"
+        case .paid: return "שולם"
+        }
+    }
+}
+
+struct CategoryData: Codable {
+    let id: String
+    let name: String
+    let color: String
+    let icon: String
+}
+
+struct CreateIncomeRequest: Encodable {
+    let date: String
+    let description: String
+    var clientName: String = ""
+    var clientId: String?
+    let amountGross: Double
+    var amountPaid: Double = 0
+    var vatRate: Double = 18
+    var includesVat: Bool = true
+    var invoiceStatus: String = "draft"
+    var paymentStatus: String = "unpaid"
+    var categoryId: String?
+    var notes: String?
+}
+
+struct UpdateIncomeRequest: Encodable {
+    var date: String?
+    var description: String?
+    var clientName: String?
+    var clientId: String?
+    var amountGross: Double?
+    var amountPaid: Double?
+    var vatRate: Double?
+    var includesVat: Bool?
+    var invoiceStatus: String?
+    var paymentStatus: String?
+    var categoryId: String?
+    var notes: String?
+}
