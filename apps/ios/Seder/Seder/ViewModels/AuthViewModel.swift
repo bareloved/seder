@@ -12,7 +12,6 @@ class AuthViewModel: ObservableObject {
     private let api = APIClient.shared
 
     init() {
-        // Check for existing token on launch
         isAuthenticated = api.isAuthenticated
         isLoading = false
     }
@@ -28,7 +27,13 @@ class AuthViewModel: ObservableObject {
                 method: "POST",
                 body: SignInRequest(email: email, password: password)
             )
-            api.token = response.session.token
+            // Better Auth may return token at top level or inside session
+            let token = response.session?.token ?? response.token
+            guard let token else {
+                errorMessage = "לא התקבל טוקן מהשרת"
+                return
+            }
+            api.token = token
             user = response.user
             isAuthenticated = true
         } catch let error as APIError {
@@ -49,7 +54,12 @@ class AuthViewModel: ObservableObject {
                 method: "POST",
                 body: SignUpRequest(email: email, password: password, name: name)
             )
-            api.token = response.session.token
+            let token = response.session?.token ?? response.token
+            guard let token else {
+                errorMessage = "לא התקבל טוקן מהשרת"
+                return
+            }
+            api.token = token
             user = response.user
             isAuthenticated = true
         } catch let error as APIError {

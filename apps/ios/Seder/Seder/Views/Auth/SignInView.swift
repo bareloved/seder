@@ -7,141 +7,141 @@ struct SignInView: View {
     @State private var showSignUp = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Brand header
-                ZStack {
-                    LinearGradient(
-                        colors: [SederTheme.brandGreen, SederTheme.brandGreenDark, SederTheme.brandGreenDeep],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer().frame(height: 60)
 
-                    // Decorative circles
-                    Circle()
-                        .fill(.white.opacity(0.08))
-                        .frame(width: 200, height: 200)
-                        .offset(x: -80, y: -40)
-                    Circle()
-                        .fill(.white.opacity(0.05))
-                        .frame(width: 150, height: 150)
-                        .offset(x: 100, y: 30)
+                    // Logo (matches web: green rounded box + "סדר" text)
+                    HStack(spacing: 8) {
+                        Text("סדר")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(SederTheme.slate900)
 
-                    VStack(spacing: 8) {
-                        // Logo icon
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.white.opacity(0.2))
-                            .frame(width: 64, height: 64)
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(SederTheme.brandGreen)
+                            .frame(width: 40, height: 40)
                             .overlay(
-                                Text("S")
-                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                                Image(systemName: "square.grid.2x2.fill")
+                                    .font(.system(size: 18))
                                     .foregroundStyle(.white)
                             )
-
-                        Text("סדר")
-                            .font(.system(size: 36, weight: .bold))
-                            .foregroundStyle(.white)
-
-                        Text("ניהול הכנסות לפרילנסרים")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.85))
                     }
-                }
-                .frame(height: 260)
-                .clipShape(RoundedCornerShape(radius: 32, corners: [.bottomLeft, .bottomRight]))
+                    .padding(.bottom, 32)
 
-                // Form
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("אימייל")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        TextField("your@email.com", text: $email)
-                            .textFieldStyle(.plain)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .environment(\.layoutDirection, .leftToRight)
-                            .padding(12)
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
+                    // Welcome heading
+                    Text("ברוכים הבאים")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(SederTheme.slate900)
+                        .padding(.bottom, 8)
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("סיסמה")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        SecureField("********", text: $password)
-                            .textFieldStyle(.plain)
-                            .textContentType(.password)
-                            .environment(\.layoutDirection, .leftToRight)
-                            .padding(12)
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
+                    Text("התחברו כדי לנהל את ההכנסות שלכם")
+                        .font(.subheadline)
+                        .foregroundStyle(SederTheme.slate500)
+                        .padding(.bottom, 24)
 
+                    // Error
                     if let error = auth.errorMessage {
                         Text(error)
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.red)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(12)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.red.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .padding(.bottom, 16)
                     }
 
-                    Button {
-                        Task { await auth.signIn(email: email, password: password) }
-                    } label: {
-                        if auth.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 22)
-                        } else {
-                            Text("התחברות")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 22)
+                    // Form fields
+                    VStack(alignment: .trailing, spacing: 16) {
+                        // Email
+                        VStack(alignment: .trailing, spacing: 6) {
+                            Text("אימייל")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(SederTheme.slate600)
+                            TextField("your@email.com", text: $email)
+                                .textFieldStyle(.plain)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                .environment(\.layoutDirection, .leftToRight)
+                                .padding(12)
+                                .frame(height: 44)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                )
                         }
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(email.isEmpty || password.isEmpty || auth.isLoading
-                                  ? SederTheme.brandGreen.opacity(0.5)
-                                  : SederTheme.brandGreen)
-                    )
-                    .disabled(email.isEmpty || password.isEmpty || auth.isLoading)
 
-                    Button("אין לך חשבון? הירשם") {
-                        showSignUp = true
+                        // Password
+                        VStack(alignment: .trailing, spacing: 6) {
+                            Text("סיסמה")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(SederTheme.slate600)
+                            SecureField("••••••••", text: $password)
+                                .textFieldStyle(.plain)
+                                .textContentType(.password)
+                                .environment(\.layoutDirection, .leftToRight)
+                                .padding(12)
+                                .frame(height: 44)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                )
+                        }
+
+                        // Sign in button
+                        Button {
+                            Task { await auth.signIn(email: email, password: password) }
+                        } label: {
+                            if auth.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                            } else {
+                                Text("התחברות")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                            }
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(email.isEmpty || password.isEmpty || auth.isLoading
+                                      ? SederTheme.brandGreen.opacity(0.5)
+                                      : SederTheme.brandGreen)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .disabled(email.isEmpty || password.isEmpty || auth.isLoading)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(SederTheme.brandGreen)
+
+                    // Toggle to sign up
+                    HStack(spacing: 4) {
+                        Button("הרשמה") {
+                            showSignUp = true
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(SederTheme.brandGreen)
+
+                        Text("אין לכם חשבון עדיין?")
+                            .font(.subheadline)
+                            .foregroundStyle(SederTheme.slate500)
+                    }
+                    .padding(.top, 20)
                 }
-                .padding(.horizontal, 28)
-                .padding(.top, 32)
-
-                Spacer()
-            }
-            .ignoresSafeArea(edges: .top)
-            .sheet(isPresented: $showSignUp) {
-                SignUpView()
-                    .environmentObject(auth)
+                .padding(.horizontal, 24)
             }
         }
-    }
-}
-
-struct RoundedCornerShape: Shape {
-    var radius: CGFloat
-    var corners: UIRectCorner
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
+        .background(Color(.systemBackground))
+        .sheet(isPresented: $showSignUp) {
+            SignUpView()
+                .environmentObject(auth)
+        }
     }
 }

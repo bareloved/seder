@@ -7,22 +7,22 @@ struct MainTabView: View {
         TabView {
             IncomeListView()
                 .tabItem {
-                    Label("הכנסות", systemImage: "banknote")
-                }
-
-            AnalyticsView()
-                .tabItem {
-                    Label("אנליטיקס", systemImage: "chart.bar")
+                    Label("הכנסות", systemImage: "banknote.fill")
                 }
 
             ClientsView()
                 .tabItem {
-                    Label("לקוחות", systemImage: "person.2")
+                    Label("לקוחות", systemImage: "person.2.fill")
+                }
+
+            AnalyticsView()
+                .tabItem {
+                    Label("דוחות", systemImage: "chart.bar.fill")
                 }
 
             Text("הוצאות - בקרוב")
                 .tabItem {
-                    Label("הוצאות", systemImage: "creditcard")
+                    Label("הוצאות", systemImage: "dollarsign.circle")
                 }
         }
         .tint(SederTheme.brandGreen)

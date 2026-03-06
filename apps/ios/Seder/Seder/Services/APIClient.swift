@@ -86,11 +86,18 @@ nonisolated class APIClient: @unchecked Sendable {
             endpoint: endpoint, method: method, body: body, queryItems: queryItems
         )
 
+        #if DEBUG
+        if let rawJSON = String(data: data, encoding: .utf8) {
+            print("[\(endpoint)] status=\(httpResponse.statusCode) body=\(rawJSON)")
+        }
+        #endif
+
         switch httpResponse.statusCode {
         case 200, 201:
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                print("[DECODE ERROR] \(error)")
                 throw APIError.decodingFailed(error)
             }
         case 401:
