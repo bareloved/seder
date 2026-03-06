@@ -118,6 +118,7 @@ nonisolated class APIClient: @unchecked Sendable {
         var request = URLRequest(url: components.url!)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(baseURL, forHTTPHeaderField: "Origin")
 
         if let token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
