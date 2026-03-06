@@ -1,6 +1,6 @@
 import Foundation
 
-struct UserSettings: Codable {
+nonisolated struct UserSettings: Codable, Sendable {
     let language: String?
     let timezone: String?
     let theme: String?
@@ -9,7 +9,7 @@ struct UserSettings: Codable {
     let onboardingCompleted: Bool?
 }
 
-struct UpdateSettingsRequest: Encodable {
+nonisolated struct UpdateSettingsRequest: Encodable, Sendable {
     var theme: String?
     var language: String?
 }

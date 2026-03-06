@@ -1,13 +1,13 @@
 import Foundation
 
-struct APIResponse<T: Decodable>: Decodable {
+nonisolated struct APIResponse<T: Decodable>: Decodable {
     let success: Bool
     let data: T?
     let error: String?
     let code: String?
 }
 
-enum APIError: LocalizedError {
+nonisolated enum APIError: LocalizedError {
     case unauthorized
     case notFound(String)
     case validation(String)
@@ -27,4 +27,4 @@ enum APIError: LocalizedError {
     }
 }
 
-struct EmptyData: Decodable {}
+nonisolated struct EmptyData: Decodable {}

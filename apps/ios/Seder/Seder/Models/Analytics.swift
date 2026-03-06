@@ -1,6 +1,6 @@
 import Foundation
 
-struct IncomeAggregates: Codable {
+nonisolated struct IncomeAggregates: Codable, Sendable {
     let totalGross: Double
     let totalPaid: Double
     let totalUnpaid: Double
@@ -15,7 +15,7 @@ struct IncomeAggregates: Codable {
     let trend: Double
 }
 
-struct MonthTrend: Codable {
+nonisolated struct MonthTrend: Codable, Sendable {
     let month: Int
     let status: String // "all-paid" | "has-unpaid" | "empty"
 }

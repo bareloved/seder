@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { emailOTP } from "better-auth/plugins";
+import { bearer, emailOTP } from "better-auth/plugins";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import {
@@ -40,6 +40,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    bearer(),
     emailOTP({
       otpLength: 6,
       expiresIn: 300, // 5 minutes

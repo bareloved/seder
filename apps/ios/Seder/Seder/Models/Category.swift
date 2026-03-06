@@ -1,6 +1,6 @@
 import Foundation
 
-struct Category: Codable, Identifiable {
+nonisolated struct Category: Codable, Identifiable, Sendable {
     let id: String
     let name: String
     let color: String
@@ -13,13 +13,13 @@ struct Category: Codable, Identifiable {
     var order: Int { Int(displayOrder ?? "0") ?? 0 }
 }
 
-struct CreateCategoryRequest: Encodable {
+nonisolated struct CreateCategoryRequest: Encodable, Sendable {
     let name: String
     let color: String
     let icon: String
 }
 
-struct ReorderItem: Encodable {
+nonisolated struct ReorderItem: Encodable, Sendable {
     let id: String
     let displayOrder: Int
 }

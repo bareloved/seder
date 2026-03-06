@@ -58,7 +58,7 @@ struct ClientsView: View {
                 Button("ביטול", role: .cancel) { newClientName = "" }
                 Button("הוספה") {
                     Task {
-                        await viewModel.createClient(CreateClientRequest(name: newClientName))
+                        _ = await viewModel.createClient(CreateClientRequest(name: newClientName))
                         newClientName = ""
                     }
                 }

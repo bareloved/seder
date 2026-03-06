@@ -50,7 +50,7 @@ struct CategoriesView: View {
                 Button("ביטול", role: .cancel) { newName = "" }
                 Button("הוספה") {
                     Task {
-                        await viewModel.createCategory(
+                        _ = await viewModel.createCategory(
                             CreateCategoryRequest(name: newName, color: "blue", icon: "Circle")
                         )
                         newName = ""

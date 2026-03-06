@@ -109,7 +109,7 @@ struct IncomeListView: View {
                     .environmentObject(auth)
             }
             .task { await viewModel.loadEntries() }
-            .onChange(of: viewModel.selectedMonth) {
+            .onChange(of: viewModel.selectedMonth) { _ in
                 Task { await viewModel.loadEntries() }
             }
         }
