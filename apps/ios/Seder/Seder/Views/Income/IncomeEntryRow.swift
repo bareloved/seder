@@ -1,5 +1,11 @@
 import SwiftUI
 
+// In RTL layout:
+// - .leading = physical RIGHT
+// - .trailing = physical LEFT
+// - First HStack item = physical RIGHT
+// - Last HStack item = physical LEFT
+
 struct IncomeEntryRow: View {
     let entry: IncomeEntry
     var onMarkSent: (() -> Void)?
@@ -8,7 +14,7 @@ struct IncomeEntryRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Date box (FIRST = right side in RTL, matching web)
+            // Date box — first = physical RIGHT in RTL
             VStack(spacing: 1) {
                 Text("\(dayNumber)")
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
@@ -22,22 +28,24 @@ struct IncomeEntryRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
 
             // Main content
-            VStack(alignment: .trailing, spacing: 0) {
-                // Row 1: Description + Amount
+            VStack(alignment: .leading, spacing: 0) {
+                // Row 1: Description (right) + Amount (left)
                 HStack(alignment: .top) {
+                    // Description — first = physical RIGHT in RTL
+                    Text(entry.description)
+                        .font(SederTheme.ploni(15, weight: .semibold))
+                        .foregroundStyle(SederTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer()
+                    // Amount — last = physical LEFT in RTL
                     CurrencyText(
                         amount: entry.grossAmount,
                         font: SederTheme.ploni(17, weight: .bold),
                         color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
                     )
-                    Spacer()
-                    Text(entry.description)
-                        .font(SederTheme.ploni(15, weight: .semibold))
-                        .foregroundStyle(SederTheme.textPrimary)
-                        .lineLimit(1)
                 }
 
-                // Row 2: Client name
+                // Row 2: Client name (right-aligned via .leading in RTL)
                 if !entry.clientName.isEmpty {
                     Text(entry.clientName)
                         .font(SederTheme.ploni(13))
@@ -45,9 +53,38 @@ struct IncomeEntryRow: View {
                         .padding(.top, 2)
                 }
 
-                // Row 3: Category + Status badge + menu
+                // Row 3: Category + Status (right) ... menu (left)
                 HStack(spacing: 6) {
-                    // Menu button (left side in RTL = physical left)
+                    // Category chip — first = physical RIGHT
+                    if let cat = entry.categoryData {
+                        CategoryChip(name: cat.name, colorName: cat.color)
+                    } else {
+                        Text("-")
+                            .font(.caption)
+                            .foregroundStyle(SederTheme.textTertiary)
+                    }
+
+                    // Status badge
+                    StatusBadge(
+                        text: displayStatusLabel,
+                        color: displayStatusColor,
+                        icon: displayStatusIcon
+                    )
+
+                    // Overdue indicator
+                    if isOverdue {
+                        Text("מאחר")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(Color(red: 0.70, green: 0.15, blue: 0.15))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(red: 0.99, green: 0.88, blue: 0.88))
+                            .clipShape(Capsule())
+                    }
+
+                    Spacer()
+
+                    // Menu button — last = physical LEFT
                     Menu {
                         if entry.invoiceStatus == .draft {
                             Button { onMarkSent?() } label: {
@@ -69,35 +106,6 @@ struct IncomeEntryRow: View {
                             .foregroundStyle(SederTheme.textTertiary)
                             .frame(width: 24, height: 24)
                     }
-
-                    Spacer()
-
-                    // Overdue indicator
-                    if isOverdue {
-                        Text("מאחר")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(Color(red: 0.70, green: 0.15, blue: 0.15))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(red: 0.99, green: 0.88, blue: 0.88))
-                            .clipShape(Capsule())
-                    }
-
-                    // Status badge
-                    StatusBadge(
-                        text: displayStatusLabel,
-                        color: displayStatusColor,
-                        icon: displayStatusIcon
-                    )
-
-                    // Category chip
-                    if let cat = entry.categoryData {
-                        CategoryChip(name: cat.name, colorName: cat.color)
-                    } else {
-                        Text("-")
-                            .font(.caption)
-                            .foregroundStyle(SederTheme.textTertiary)
-                    }
                 }
                 .padding(.top, 8)
             }
@@ -113,7 +121,7 @@ struct IncomeEntryRow: View {
         .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
 
-    // MARK: - Display status (combined invoice + payment)
+    // MARK: - Display status
 
     private var displayStatusLabel: String {
         if entry.paymentStatus == .paid { return "שולם" }
@@ -170,10 +178,10 @@ struct CategoryChip: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            Text(name)
-                .font(.system(size: 11, weight: .medium))
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 9))
+            Text(name)
+                .font(.system(size: 11, weight: .medium))
         }
         .foregroundStyle(SederTheme.textPrimary)
         .padding(.horizontal, 8)

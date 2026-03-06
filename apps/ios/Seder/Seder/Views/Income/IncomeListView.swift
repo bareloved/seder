@@ -23,7 +23,7 @@ struct IncomeListView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // Green navbar (extends into status bar)
+                // Green navbar
                 GreenNavBar(
                     onSettingsTap: { showSettings = true },
                     onCalendarTap: { showCalendarImport = true }
@@ -65,82 +65,11 @@ struct IncomeListView: View {
                         .padding(.top, 8)
 
                         // Filter bar
-                        HStack(spacing: 8) {
-                            // Year
-                            Text(yearString)
-                                .font(.subheadline)
-                                .foregroundStyle(SederTheme.textPrimary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                )
-
-                            // Month picker
-                            HStack(spacing: 8) {
-                                Button {
-                                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
-                                } label: {
-                                    Image(systemName: "chevron.left")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(SederTheme.textSecondary)
-                                }
-
-                                HStack(spacing: 6) {
-                                    Text(monthName)
-                                        .font(SederTheme.ploni(15, weight: .medium))
-                                        .foregroundStyle(SederTheme.textPrimary)
-                                    Circle()
-                                        .fill(totalUnpaid > 0 ? Color.red : SederTheme.paidColor)
-                                        .frame(width: 6, height: 6)
-                                }
-
-                                Button {
-                                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
-                                } label: {
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(SederTheme.textSecondary)
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
-                            )
-
-                            Spacer()
-
-                            // Calendar import button
-                            Button { showCalendarImport = true } label: {
-                                Image(systemName: "calendar.badge.plus")
-                                    .font(.body)
-                                    .foregroundStyle(.blue)
-                                    .frame(width: 36, height: 36)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
-                            }
-
-                            // Filter button
-                            Button {} label: {
-                                Image(systemName: "line.3.horizontal.decrease")
-                                    .font(.body)
-                                    .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(width: 36, height: 36)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
-                            }
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(SederTheme.cardBg)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        FilterBar(
+                            selectedMonth: $viewModel.selectedMonth,
+                            hasUnpaid: totalUnpaid > 0,
+                            onCalendarTap: { showCalendarImport = true }
+                        )
                         .padding(.horizontal, 8)
 
                         // Entries
@@ -154,10 +83,10 @@ struct IncomeListView: View {
                                     .font(.system(size: 40))
                                     .foregroundStyle(SederTheme.textTertiary)
                                 Text("אין עבודות לחודש הזה")
-                                    .font(.headline)
+                                    .font(SederTheme.ploni(17, weight: .semibold))
                                     .foregroundStyle(SederTheme.textPrimary)
                                 Text("התחל על ידי הוספת עבודה חדשה")
-                                    .font(.subheadline)
+                                    .font(SederTheme.ploni(14))
                                     .foregroundStyle(SederTheme.textSecondary)
                             }
                             .padding(.top, 60)
@@ -189,11 +118,10 @@ struct IncomeListView: View {
             }
             .ignoresSafeArea(edges: .top)
 
-            // Floating add button — use GeometryReader to force physical right side
+            // Floating add button (physical bottom-right)
             VStack {
                 Spacer()
                 HStack {
-                    Spacer()
                     Button { showAddSheet = true } label: {
                         Image(systemName: "plus")
                             .font(.title2.weight(.semibold))
@@ -203,11 +131,10 @@ struct IncomeListView: View {
                             .clipShape(Circle())
                             .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
                     }
-                    .environment(\.layoutDirection, .leftToRight)
+                    Spacer()
                 }
-                .padding(.trailing, 16)
+                .padding(.leading, 16)
                 .padding(.bottom, 16)
-                .environment(\.layoutDirection, .leftToRight)
             }
         }
         .sheet(isPresented: $showAddSheet) {
@@ -232,15 +159,9 @@ struct IncomeListView: View {
         let month = Calendar.current.component(.month, from: viewModel.selectedMonth)
         return months[month - 1]
     }
-
-    private var monthName: String { currentMonthName }
-
-    private var yearString: String {
-        "\(Calendar.current.component(.year, from: viewModel.selectedMonth))"
-    }
 }
 
-// MARK: - Green Nav Bar
+// MARK: - Green Nav Bar (LTR internal layout - physical positioning)
 
 struct GreenNavBar: View {
     var onSettingsTap: () -> Void
@@ -248,17 +169,14 @@ struct GreenNavBar: View {
 
     var body: some View {
         HStack {
-            // Left side (physical): calendar icon
-            Button(action: onCalendarTap) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.title3)
-                    .foregroundStyle(.white)
-            }
-
-            Spacer()
-
-            // Right side (physical): dark mode + avatar
+            // Physical right: avatar + dark mode
             HStack(spacing: 12) {
+                Button(action: onSettingsTap) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+
                 Button {} label: {
                     Image(systemName: "moon.fill")
                         .font(.body)
@@ -267,12 +185,15 @@ struct GreenNavBar: View {
                         .background(.white.opacity(0.1))
                         .clipShape(Circle())
                 }
+            }
 
-                Button(action: onSettingsTap) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.white.opacity(0.9))
-                }
+            Spacer()
+
+            // Physical left: calendar icon
+            Button(action: onCalendarTap) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.title3)
+                    .foregroundStyle(.white)
             }
         }
         .padding(.horizontal, 16)
@@ -281,11 +202,101 @@ struct GreenNavBar: View {
             .compactMap { $0 as? UIWindowScene }
             .first?.windows.first?.safeAreaInsets.top ?? 0)
         .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
-        .environment(\.layoutDirection, .leftToRight)
+    }
+}
+
+// MARK: - Filter Bar
+
+struct FilterBar: View {
+    @Binding var selectedMonth: Date
+    var hasUnpaid: Bool
+    var onCalendarTap: () -> Void
+
+    private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+                          "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Filter button (physical left)
+            Button {} label: {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(.body)
+                    .foregroundStyle(SederTheme.textSecondary)
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                    )
+            }
+
+            // Calendar import button
+            Button(action: onCalendarTap) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.body)
+                    .foregroundStyle(.blue)
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                    )
+            }
+
+            Spacer()
+
+            // Month picker (physical right)
+            HStack(spacing: 8) {
+                Button {
+                    selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
+
+                HStack(spacing: 6) {
+                    Text(months[Calendar.current.component(.month, from: selectedMonth) - 1])
+                        .font(SederTheme.ploni(15, weight: .medium))
+                        .foregroundStyle(SederTheme.textPrimary)
+                    Circle()
+                        .fill(hasUnpaid ? Color.red : SederTheme.paidColor)
+                        .frame(width: 6, height: 6)
+                }
+
+                Button {
+                    selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+            )
+
+            // Year
+            Text("\(Calendar.current.component(.year, from: selectedMonth))")
+                .font(SederTheme.ploni(14))
+                .foregroundStyle(SederTheme.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                )
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(SederTheme.cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
 // MARK: - KPI Card
+// In RTL: .leading = physical RIGHT, first HStack item = physical RIGHT
 
 struct KPICard: View {
     let title: String
@@ -296,12 +307,14 @@ struct KPICard: View {
     var iconColor: Color? = nil
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Title (physical right in RTL via .leading)
             Text(title)
                 .font(SederTheme.ploni(12))
                 .foregroundStyle(SederTheme.textSecondary)
                 .padding(.bottom, 6)
 
+            // Amount (physical right in RTL via .leading)
             CurrencyText(
                 amount: amount,
                 font: SederTheme.ploni(24, weight: .bold),
@@ -310,16 +323,17 @@ struct KPICard: View {
 
             Spacer()
 
+            // Icon on physical left (last in HStack = left in RTL)
             HStack {
+                Spacer()
                 Image(systemName: icon)
                     .font(.caption)
                     .foregroundStyle(iconColor ?? SederTheme.textTertiary)
-                Spacer()
             }
         }
         .padding(12)
         .frame(height: 100)
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
