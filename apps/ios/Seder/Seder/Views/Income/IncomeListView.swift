@@ -5,6 +5,7 @@ struct IncomeListView: View {
     @EnvironmentObject var auth: AuthViewModel
     @State private var showAddSheet = false
     @State private var showSettings = false
+    @State private var showCalendarImport = false
 
     var body: some View {
         NavigationStack {
@@ -85,8 +86,13 @@ struct IncomeListView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddSheet = true
+                    Menu {
+                        Button { showAddSheet = true } label: {
+                            Label("הכנסה חדשה", systemImage: "plus")
+                        }
+                        Button { showCalendarImport = true } label: {
+                            Label("ייבוא מיומן", systemImage: "calendar")
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -94,6 +100,9 @@ struct IncomeListView: View {
             }
             .sheet(isPresented: $showAddSheet) {
                 IncomeFormSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showCalendarImport) {
+                CalendarImportView()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
