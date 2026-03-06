@@ -16,7 +16,7 @@ struct SignInView: View {
                     HStack(spacing: 8) {
                         Text("סדר")
                             .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(SederTheme.slate900)
+                            .foregroundStyle(SederTheme.textPrimary)
 
                         RoundedRectangle(cornerRadius: 8)
                             .fill(SederTheme.brandGreen)
@@ -32,12 +32,12 @@ struct SignInView: View {
                     // Welcome heading
                     Text("ברוכים הבאים")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(SederTheme.slate900)
+                        .foregroundStyle(SederTheme.textPrimary)
                         .padding(.bottom, 8)
 
                     Text("התחברו כדי לנהל את ההכנסות שלכם")
                         .font(.subheadline)
-                        .foregroundStyle(SederTheme.slate500)
+                        .foregroundStyle(SederTheme.textSecondary)
                         .padding(.bottom, 24)
 
                     // Error
@@ -62,7 +62,7 @@ struct SignInView: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             Text("אימייל")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.slate600)
+                                .foregroundStyle(SederTheme.textSecondary)
                             TextField("your@email.com", text: $email)
                                 .textFieldStyle(.plain)
                                 .textContentType(.emailAddress)
@@ -73,7 +73,7 @@ struct SignInView: View {
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
                         }
 
@@ -81,7 +81,7 @@ struct SignInView: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             Text("סיסמה")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.slate600)
+                                .foregroundStyle(SederTheme.textSecondary)
                             SecureField("••••••••", text: $password)
                                 .textFieldStyle(.plain)
                                 .textContentType(.password)
@@ -90,7 +90,7 @@ struct SignInView: View {
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
                         }
 
@@ -131,7 +131,7 @@ struct SignInView: View {
 
                         Text("אין לכם חשבון עדיין?")
                             .font(.subheadline)
-                            .foregroundStyle(SederTheme.slate500)
+                            .foregroundStyle(SederTheme.textSecondary)
                     }
                     .padding(.top, 20)
                 }

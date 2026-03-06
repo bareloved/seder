@@ -19,18 +19,20 @@ struct AnalyticsView: View {
             }
             .padding(.vertical, 12)
             .background(SederTheme.brandGreen)
+            .environment(\.layoutDirection, .leftToRight)
 
             ScrollView {
                 VStack(spacing: 12) {
-                    // Month picker (filter bar style)
+                    // Month filter bar
                     HStack(spacing: 8) {
                         Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
                             .font(.subheadline)
+                            .foregroundStyle(SederTheme.textPrimary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(SederTheme.slate200, lineWidth: 1)
+                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
 
                         HStack(spacing: 8) {
@@ -39,32 +41,33 @@ struct AnalyticsView: View {
                             } label: {
                                 Image(systemName: "chevron.left")
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                             }
 
                             Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
                                 .font(.subheadline.weight(.medium))
+                                .foregroundStyle(SederTheme.textPrimary)
 
                             Button {
                                 viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
                             } label: {
                                 Image(systemName: "chevron.right")
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                             }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(SederTheme.slate200, lineWidth: 1)
+                                .stroke(SederTheme.cardBorder, lineWidth: 1)
                         )
 
                         Spacer()
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
-                    .background(Color(.systemBackground))
+                    .background(SederTheme.cardBg)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal, 8)
                     .padding(.top, 8)
@@ -74,7 +77,7 @@ struct AnalyticsView: View {
                             .tint(SederTheme.brandGreen)
                             .padding(.top, 40)
                     } else if let agg = viewModel.aggregates {
-                        // KPI Cards (2-col, matching web style)
+                        // KPI Cards
                         LazyVGrid(columns: [
                             GridItem(.flexible(), spacing: 8),
                             GridItem(.flexible(), spacing: 8)
@@ -90,7 +93,7 @@ struct AnalyticsView: View {
                             HStack(spacing: 4) {
                                 Text("\(Int(abs(agg.trend)))% לעומת חודש קודם")
                                     .font(.caption)
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                                 Image(systemName: agg.trend > 0 ? "arrow.up.right" : "arrow.down.right")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(agg.trend > 0 ? SederTheme.paidColor : SederTheme.unpaidColor)
@@ -103,7 +106,7 @@ struct AnalyticsView: View {
                             VStack(alignment: .trailing, spacing: 8) {
                                 Text("הכנסות לאורך זמן")
                                     .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(SederTheme.slate800)
+                                    .foregroundStyle(SederTheme.textPrimary)
                                     .padding(.horizontal, 16)
                                     .padding(.top, 12)
 
@@ -120,20 +123,20 @@ struct AnalyticsView: View {
                                     AxisMarks { _ in
                                         AxisValueLabel()
                                             .font(.system(size: 10))
-                                            .foregroundStyle(SederTheme.slate500)
+                                            .foregroundStyle(SederTheme.textSecondary)
                                     }
                                 }
                                 .frame(height: 120)
                                 .padding(.horizontal, 16)
                                 .padding(.bottom, 12)
                             }
-                            .background(Color(.systemBackground))
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(SederTheme.slate200.opacity(0.6), lineWidth: 1)
+                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
-                            .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+                            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
                             .padding(.horizontal, 8)
                         }
                     }
@@ -153,7 +156,7 @@ struct AnalyticsView: View {
         switch status {
         case "all-paid": return SederTheme.paidColor
         case "has-unpaid": return SederTheme.sentColor
-        default: return SederTheme.slate200
+        default: return SederTheme.subtleBg
         }
     }
 }
@@ -169,19 +172,19 @@ struct AnalyticsKPICard: View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(SederTheme.slate500)
+                .foregroundStyle(SederTheme.textSecondary)
                 .padding(.bottom, 6)
 
             if let amount {
                 CurrencyText(
                     amount: amount,
                     font: .system(size: 22, weight: .bold, design: .rounded),
-                    color: amountColor ?? SederTheme.slate800
+                    color: amountColor ?? SederTheme.textPrimary
                 )
             } else if let count {
                 Text("\(count)")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(amountColor ?? SederTheme.slate800)
+                    .foregroundStyle(amountColor ?? SederTheme.textPrimary)
             }
 
             Spacer()
@@ -189,19 +192,19 @@ struct AnalyticsKPICard: View {
             HStack {
                 Image(systemName: icon)
                     .font(.caption)
-                    .foregroundStyle(SederTheme.slate400)
+                    .foregroundStyle(SederTheme.textTertiary)
                 Spacer()
             }
         }
         .padding(12)
         .frame(height: 100)
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .background(Color(.systemBackground))
+        .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(SederTheme.slate100, lineWidth: 1)
+                .stroke(SederTheme.cardBorder, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
 }

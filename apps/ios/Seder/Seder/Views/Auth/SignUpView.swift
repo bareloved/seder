@@ -15,12 +15,12 @@ struct SignUpView: View {
 
                     Text("יצירת חשבון")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(SederTheme.slate900)
+                        .foregroundStyle(SederTheme.textPrimary)
                         .padding(.bottom, 8)
 
                     Text("הרשמו כדי להתחיל לנהל את ההכנסות")
                         .font(.subheadline)
-                        .foregroundStyle(SederTheme.slate500)
+                        .foregroundStyle(SederTheme.textSecondary)
                         .padding(.bottom, 24)
 
                     if let error = auth.errorMessage {
@@ -43,7 +43,7 @@ struct SignUpView: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             Text("שם מלא")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.slate600)
+                                .foregroundStyle(SederTheme.textSecondary)
                             TextField("השם שלכם", text: $name)
                                 .textFieldStyle(.plain)
                                 .textContentType(.name)
@@ -51,7 +51,7 @@ struct SignUpView: View {
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
                         }
 
@@ -59,7 +59,7 @@ struct SignUpView: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             Text("אימייל")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.slate600)
+                                .foregroundStyle(SederTheme.textSecondary)
                             TextField("your@email.com", text: $email)
                                 .textFieldStyle(.plain)
                                 .textContentType(.emailAddress)
@@ -70,7 +70,7 @@ struct SignUpView: View {
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
                         }
 
@@ -78,7 +78,7 @@ struct SignUpView: View {
                         VStack(alignment: .trailing, spacing: 6) {
                             Text("סיסמה")
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.slate600)
+                                .foregroundStyle(SederTheme.textSecondary)
                             SecureField("••••••••", text: $password)
                                 .textFieldStyle(.plain)
                                 .textContentType(.newPassword)
@@ -87,15 +87,12 @@ struct SignUpView: View {
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
 
-                            // Password requirements
                             if !password.isEmpty {
-                                VStack(alignment: .trailing, spacing: 4) {
-                                    PasswordCheck(label: "לפחות 8 תווים", passed: password.count >= 8)
-                                }
-                                .padding(.top, 4)
+                                PasswordCheck(label: "לפחות 8 תווים", passed: password.count >= 8)
+                                    .padding(.top, 4)
                             }
                         }
 
@@ -135,7 +132,7 @@ struct SignUpView: View {
                             .foregroundStyle(SederTheme.brandGreen)
                         Text("כבר יש לכם חשבון?")
                             .font(.subheadline)
-                            .foregroundStyle(SederTheme.slate500)
+                            .foregroundStyle(SederTheme.textSecondary)
                     }
                     .padding(.top, 20)
                 }
@@ -160,10 +157,10 @@ struct PasswordCheck: View {
         HStack(spacing: 6) {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.slate400)
+                .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.textTertiary)
             Image(systemName: passed ? "checkmark.circle.fill" : "circle")
                 .font(.caption)
-                .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.slate400)
+                .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.textTertiary)
         }
     }
 }

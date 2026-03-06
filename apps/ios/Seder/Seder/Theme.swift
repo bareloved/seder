@@ -15,17 +15,18 @@ enum SederTheme {
     static let unpaidColor = Color(red: 0.86, green: 0.15, blue: 0.15) // red-600
     static let partialColor = Color(red: 0.92, green: 0.34, blue: 0.05) // orange-600
 
-    // Slate palette (matching Tailwind slate)
-    static let slate100 = Color(red: 0.95, green: 0.96, blue: 0.98) // #f1f5f9
-    static let slate200 = Color(red: 0.89, green: 0.91, blue: 0.94) // #e2e8f0
-    static let slate400 = Color(red: 0.58, green: 0.64, blue: 0.72) // #94a3b8
-    static let slate500 = Color(red: 0.39, green: 0.45, blue: 0.56) // #64748b
-    static let slate600 = Color(red: 0.28, green: 0.33, blue: 0.42) // #475569
-    static let slate800 = Color(red: 0.12, green: 0.16, blue: 0.22) // #1e293b
-    static let slate900 = Color(red: 0.06, green: 0.09, blue: 0.16) // #0f172a
+    // Adaptive colors (light/dark)
+    static var pageBg: Color { Color(.systemGroupedBackground) }
+    static var cardBg: Color { Color(.secondarySystemGroupedBackground) }
+    static var cardBorder: Color { Color(.separator).opacity(0.3) }
 
-    // Page background
-    static let pageBg = Color(red: 0.94, green: 0.95, blue: 0.96) // #F0F2F5
+    // Text (adaptive via UIKit dynamic colors)
+    static var textPrimary: Color { Color(.label) }
+    static var textSecondary: Color { Color(.secondaryLabel) }
+    static var textTertiary: Color { Color(.tertiaryLabel) }
+
+    // Subtle backgrounds
+    static var subtleBg: Color { Color(.systemGray6) }
 
     // Category colors
     static func categoryColor(for name: String?) -> Color {

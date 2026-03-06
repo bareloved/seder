@@ -15,7 +15,6 @@ struct SettingsView: View {
                     // Profile card
                     if let user = auth.user {
                         VStack(spacing: 12) {
-                            // Avatar
                             Text(String(user.displayName.prefix(1)))
                                 .font(.title.weight(.semibold))
                                 .foregroundStyle(SederTheme.brandGreen)
@@ -25,30 +24,30 @@ struct SettingsView: View {
 
                             Text(user.displayName)
                                 .font(.headline)
-                                .foregroundStyle(SederTheme.slate800)
+                                .foregroundStyle(SederTheme.textPrimary)
                             Text(user.email)
                                 .font(.caption)
-                                .foregroundStyle(SederTheme.slate500)
+                                .foregroundStyle(SederTheme.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
-                        .background(Color(.systemBackground))
+                        .background(SederTheme.cardBg)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(SederTheme.slate200.opacity(0.6), lineWidth: 1)
+                                .stroke(SederTheme.cardBorder, lineWidth: 1)
                         )
-                        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+                        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
                     }
 
-                    // Account section
+                    // Account
                     SettingsSection(title: "חשבון") {
                         SettingsRow(icon: "lock.rotation", label: "שינוי סיסמה") {
                             showChangePassword = true
                         }
                     }
 
-                    // Preferences section
+                    // Preferences
                     SettingsSection(title: "העדפות") {
                         HStack {
                             Toggle("", isOn: $darkMode)
@@ -58,17 +57,17 @@ struct SettingsView: View {
                             HStack(spacing: 8) {
                                 Text("מצב כהה")
                                     .font(.subheadline)
-                                    .foregroundStyle(SederTheme.slate800)
+                                    .foregroundStyle(SederTheme.textPrimary)
                                 Image(systemName: "moon.fill")
                                     .font(.body)
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                             }
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                     }
 
-                    // Management section
+                    // Management
                     SettingsSection(title: "ניהול") {
                         SettingsRow(icon: "tag", label: "קטגוריות") {
                             showCategories = true
@@ -86,7 +85,7 @@ struct SettingsView: View {
                             Spacer()
                         }
                         .padding(.vertical, 14)
-                        .background(Color(.systemBackground))
+                        .background(SederTheme.cardBg)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
@@ -130,20 +129,20 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(SederTheme.slate500)
+                .foregroundStyle(SederTheme.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
 
             VStack(spacing: 0) {
                 content()
             }
-            .background(Color(.systemBackground))
+            .background(SederTheme.cardBg)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(SederTheme.slate200.opacity(0.6), lineWidth: 1)
+                    .stroke(SederTheme.cardBorder, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
         }
     }
 }
@@ -158,15 +157,15 @@ struct SettingsRow: View {
             HStack {
                 Image(systemName: "chevron.left")
                     .font(.caption)
-                    .foregroundStyle(SederTheme.slate400)
+                    .foregroundStyle(SederTheme.textTertiary)
                 Spacer()
                 HStack(spacing: 8) {
                     Text(label)
                         .font(.subheadline)
-                        .foregroundStyle(SederTheme.slate800)
+                        .foregroundStyle(SederTheme.textPrimary)
                     Image(systemName: icon)
                         .font(.body)
-                        .foregroundStyle(SederTheme.slate500)
+                        .foregroundStyle(SederTheme.textSecondary)
                 }
             }
             .padding(.horizontal, 16)

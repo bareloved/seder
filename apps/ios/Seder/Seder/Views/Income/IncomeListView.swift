@@ -21,7 +21,7 @@ struct IncomeListView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack {
             VStack(spacing: 0) {
                 // Green navbar
                 GreenNavBar(
@@ -50,14 +50,15 @@ struct IncomeListView: View {
                             KPICard(
                                 title: "מחכה לתשלום",
                                 amount: totalUnpaid,
-                                icon: "doc.plaintext"
+                                icon: "doc.plaintext",
+                                iconColor: SederTheme.sentColor
                             )
                             KPICard(
                                 title: "התקבל החודש",
                                 amount: totalPaid,
                                 icon: "arrow.up.right",
                                 amountColor: SederTheme.paidColor,
-                                showTrend: true
+                                iconColor: SederTheme.paidColor
                             )
                         }
                         .padding(.horizontal, 8)
@@ -68,11 +69,12 @@ struct IncomeListView: View {
                             // Year
                             Text(yearString)
                                 .font(.subheadline)
+                                .foregroundStyle(SederTheme.textPrimary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.slate200, lineWidth: 1)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
 
                             // Month picker
@@ -82,12 +84,13 @@ struct IncomeListView: View {
                                 } label: {
                                     Image(systemName: "chevron.left")
                                         .font(.caption.weight(.semibold))
-                                        .foregroundStyle(SederTheme.slate500)
+                                        .foregroundStyle(SederTheme.textSecondary)
                                 }
 
                                 HStack(spacing: 6) {
                                     Text(monthName)
                                         .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(SederTheme.textPrimary)
                                     Circle()
                                         .fill(totalUnpaid > 0 ? Color.red : SederTheme.paidColor)
                                         .frame(width: 6, height: 6)
@@ -98,14 +101,14 @@ struct IncomeListView: View {
                                 } label: {
                                     Image(systemName: "chevron.right")
                                         .font(.caption.weight(.semibold))
-                                        .foregroundStyle(SederTheme.slate500)
+                                        .foregroundStyle(SederTheme.textSecondary)
                                 }
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(SederTheme.slate200, lineWidth: 1)
+                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
 
                             Spacer()
@@ -118,7 +121,7 @@ struct IncomeListView: View {
                                     .frame(width: 36, height: 36)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.slate200, lineWidth: 1)
+                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
                                     )
                             }
 
@@ -126,17 +129,17 @@ struct IncomeListView: View {
                             Button {} label: {
                                 Image(systemName: "line.3.horizontal.decrease")
                                     .font(.body)
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                                     .frame(width: 36, height: 36)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.slate200, lineWidth: 1)
+                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
                                     )
                             }
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
-                        .background(Color(.systemBackground))
+                        .background(SederTheme.cardBg)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal, 8)
 
@@ -149,13 +152,13 @@ struct IncomeListView: View {
                             VStack(spacing: 12) {
                                 Image(systemName: "calendar")
                                     .font(.system(size: 40))
-                                    .foregroundStyle(SederTheme.slate400)
+                                    .foregroundStyle(SederTheme.textTertiary)
                                 Text("אין עבודות לחודש הזה")
                                     .font(.headline)
-                                    .foregroundStyle(SederTheme.slate800)
+                                    .foregroundStyle(SederTheme.textPrimary)
                                 Text("התחל על ידי הוספת עבודה חדשה")
                                     .font(.subheadline)
-                                    .foregroundStyle(SederTheme.slate500)
+                                    .foregroundStyle(SederTheme.textSecondary)
                             }
                             .padding(.top, 60)
                         } else {
@@ -185,18 +188,26 @@ struct IncomeListView: View {
                 .background(SederTheme.pageBg)
             }
 
-            // Floating add button
-            Button { showAddSheet = true } label: {
-                Image(systemName: "plus")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(SederTheme.brandGreen)
-                    .clipShape(Circle())
-                    .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
+            // Floating add button — use GeometryReader to force physical right side
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button { showAddSheet = true } label: {
+                        Image(systemName: "plus")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(SederTheme.brandGreen)
+                            .clipShape(Circle())
+                            .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
+                    }
+                    .environment(\.layoutDirection, .leftToRight)
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 16)
+                .environment(\.layoutDirection, .leftToRight)
             }
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
         }
         .sheet(isPresented: $showAddSheet) {
             IncomeFormSheet(viewModel: viewModel)
@@ -236,7 +247,7 @@ struct GreenNavBar: View {
 
     var body: some View {
         HStack {
-            // Left: calendar icon
+            // Left side (physical): calendar icon
             Button(action: onCalendarTap) {
                 Image(systemName: "calendar.badge.clock")
                     .font(.title3)
@@ -245,7 +256,7 @@ struct GreenNavBar: View {
 
             Spacer()
 
-            // Right: dark mode toggle + avatar
+            // Right side (physical): dark mode + avatar
             HStack(spacing: 12) {
                 Button {} label: {
                     Image(systemName: "moon.fill")
@@ -266,6 +277,7 @@ struct GreenNavBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(SederTheme.brandGreen)
+        .environment(\.layoutDirection, .leftToRight)
     }
 }
 
@@ -277,19 +289,19 @@ struct KPICard: View {
     var icon: String = "banknote"
     var isHighlighted: Bool = false
     var amountColor: Color? = nil
-    var showTrend: Bool = false
+    var iconColor: Color? = nil
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(SederTheme.slate500)
+                .foregroundStyle(SederTheme.textSecondary)
                 .padding(.bottom, 6)
 
             CurrencyText(
                 amount: amount,
                 font: .system(size: 24, weight: .bold, design: .rounded),
-                color: amountColor ?? SederTheme.slate800
+                color: amountColor ?? SederTheme.textPrimary
             )
 
             Spacer()
@@ -297,26 +309,22 @@ struct KPICard: View {
             HStack {
                 Image(systemName: icon)
                     .font(.caption)
-                    .foregroundStyle(
-                        showTrend ? SederTheme.paidColor :
-                        icon == "doc.plaintext" ? SederTheme.sentColor :
-                        SederTheme.slate400
-                    )
+                    .foregroundStyle(iconColor ?? SederTheme.textTertiary)
                 Spacer()
             }
         }
         .padding(12)
         .frame(height: 100)
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .background(Color(.systemBackground))
+        .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
-                    isHighlighted ? SederTheme.slate800 : SederTheme.slate100,
+                    isHighlighted ? SederTheme.textPrimary.opacity(0.3) : SederTheme.cardBorder,
                     lineWidth: isHighlighted ? 1.5 : 1
                 )
         )
-        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
 }

@@ -8,31 +8,46 @@ struct IncomeEntryRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Main content (left in RTL = right visually)
+            // Date box (FIRST = right side in RTL, matching web)
+            VStack(spacing: 1) {
+                Text("\(dayNumber)")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(SederTheme.textPrimary)
+                Text(weekdayName)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(SederTheme.textTertiary)
+            }
+            .frame(width: 48, height: 48)
+            .background(SederTheme.subtleBg)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            // Main content
             VStack(alignment: .trailing, spacing: 0) {
                 // Row 1: Description + Amount
                 HStack(alignment: .top) {
                     CurrencyText(
                         amount: entry.grossAmount,
                         font: .system(.body, design: .rounded).bold(),
-                        color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.slate800
+                        color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
                     )
                     Spacer()
                     Text(entry.description)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(SederTheme.slate800)
+                        .foregroundStyle(SederTheme.textPrimary)
                         .lineLimit(1)
                 }
 
                 // Row 2: Client name
-                Text(entry.clientName.isEmpty ? "" : entry.clientName)
-                    .font(.caption)
-                    .foregroundStyle(SederTheme.slate500)
-                    .padding(.top, 2)
+                if !entry.clientName.isEmpty {
+                    Text(entry.clientName)
+                        .font(.caption)
+                        .foregroundStyle(SederTheme.textSecondary)
+                        .padding(.top, 2)
+                }
 
-                // Row 3: Badges + menu
+                // Row 3: Category + Status badge + menu
                 HStack(spacing: 6) {
-                    // Menu button
+                    // Menu button (left side in RTL = physical left)
                     Menu {
                         if entry.invoiceStatus == .draft {
                             Button { onMarkSent?() } label: {
@@ -51,18 +66,11 @@ struct IncomeEntryRow: View {
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(.caption)
-                            .foregroundStyle(SederTheme.slate400)
+                            .foregroundStyle(SederTheme.textTertiary)
                             .frame(width: 24, height: 24)
                     }
 
                     Spacer()
-
-                    // Status badge
-                    StatusBadge(
-                        text: invoiceStatusLabel,
-                        color: invoiceStatusColor,
-                        icon: invoiceStatusIcon
-                    )
 
                     // Overdue indicator
                     if isOverdue {
@@ -75,52 +83,45 @@ struct IncomeEntryRow: View {
                             .clipShape(Capsule())
                     }
 
+                    // Status badge
+                    StatusBadge(
+                        text: displayStatusLabel,
+                        color: displayStatusColor,
+                        icon: displayStatusIcon
+                    )
+
                     // Category chip
                     if let cat = entry.categoryData {
                         CategoryChip(name: cat.name, colorName: cat.color)
                     } else {
                         Text("-")
                             .font(.caption)
-                            .foregroundStyle(SederTheme.slate400)
+                            .foregroundStyle(SederTheme.textTertiary)
                     }
                 }
                 .padding(.top, 8)
             }
-
-            // Date box (right side in RTL)
-            VStack(spacing: 1) {
-                Text("\(dayNumber)")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundStyle(SederTheme.slate800)
-                Text(weekdayName)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(SederTheme.slate400)
-            }
-            .frame(width: 48, height: 48)
-            .background(SederTheme.slate100)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color(.systemBackground))
+        .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(SederTheme.slate100, lineWidth: 1)
+                .stroke(SederTheme.cardBorder, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
 
-    // MARK: - Computed
+    // MARK: - Display status (combined invoice + payment)
 
-    private var invoiceStatusLabel: String {
-        // Use combined status like the web
+    private var displayStatusLabel: String {
         if entry.paymentStatus == .paid { return "שולם" }
         if entry.invoiceStatus == .sent { return "נשלח" }
         return entry.invoiceStatus.label
     }
 
-    private var invoiceStatusColor: Color {
+    private var displayStatusColor: Color {
         if entry.paymentStatus == .paid { return SederTheme.paidColor }
         if entry.invoiceStatus == .sent { return SederTheme.sentColor }
         switch entry.invoiceStatus {
@@ -131,7 +132,7 @@ struct IncomeEntryRow: View {
         }
     }
 
-    private var invoiceStatusIcon: String {
+    private var displayStatusIcon: String {
         if entry.paymentStatus == .paid { return "checkmark" }
         if entry.invoiceStatus == .sent { return "paperplane.fill" }
         return ""
@@ -174,7 +175,7 @@ struct CategoryChip: View {
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 9))
         }
-        .foregroundStyle(SederTheme.slate800)
+        .foregroundStyle(SederTheme.textPrimary)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(SederTheme.categoryColor(for: colorName).opacity(0.08))
