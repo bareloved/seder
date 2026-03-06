@@ -4,7 +4,6 @@
   "scripts": {
     "dev": "turbo dev",
     "dev:web": "turbo dev --filter=@seder/web",
-    "dev:mobile": "turbo dev --filter=@seder/mobile",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
@@ -24,7 +23,5 @@
       "unrs-resolver"
     ]
   },
-  "dependencies": {
-    "expo": "^55.0.4"
-  }
+  "version": "1.0.0"
 }
