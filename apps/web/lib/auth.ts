@@ -10,11 +10,17 @@ import {
 } from "./email";
 
 export const auth = betterAuth({
-  trustedOrigins: [
-    "https://sedder.app",
-    "http://localhost:3000",
-    "http://localhost:3001",
-  ],
+  trustedOrigins: (request) => {
+    const origin = request.headers.get("origin");
+    // Allow requests with no Origin header (native mobile apps)
+    if (!origin) return true;
+    const trusted = [
+      "https://sedder.app",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ];
+    return trusted.includes(origin);
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
