@@ -6,18 +6,18 @@ struct StatusBadge: View {
     var icon: String = ""
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             if !icon.isEmpty {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 9, weight: .medium))
             }
             Text(text)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 11, weight: .medium))
         }
         .foregroundStyle(color)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
         .background(color.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }

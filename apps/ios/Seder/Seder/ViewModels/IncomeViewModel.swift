@@ -7,6 +7,8 @@ class IncomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var selectedMonth = Date()
+    enum MonthStatus { case empty, allPaid, hasUnpaid }
+    @Published var monthStatuses: [Int: MonthStatus] = [:]
 
     private let api = APIClient.shared
 
@@ -26,10 +28,46 @@ class IncomeViewModel: ObservableObject {
                 endpoint: "/api/v1/income",
                 queryItems: [URLQueryItem(name: "month", value: monthString)]
             )
+            // Update status for this month
+            let month = Calendar.current.component(.month, from: selectedMonth)
+            if entries.isEmpty {
+                monthStatuses[month] = .empty
+            } else {
+                monthStatuses[month] = entries.contains(where: { $0.paymentStatus != .paid }) ? .hasUnpaid : .allPaid
+            }
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
             errorMessage = "שגיאה בטעינת נתונים"
+        }
+    }
+
+    func loadAllMonthStatuses() async {
+        let year = Calendar.current.component(.year, from: selectedMonth)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+
+        for month in 1...12 {
+            var components = DateComponents()
+            components.year = year
+            components.month = month
+            components.day = 1
+            guard let date = Calendar.current.date(from: components) else { continue }
+            let monthStr = formatter.string(from: date)
+
+            do {
+                let entries: [IncomeEntry] = try await api.request(
+                    endpoint: "/api/v1/income",
+                    queryItems: [URLQueryItem(name: "month", value: monthStr)]
+                )
+                if entries.isEmpty {
+                    monthStatuses[month] = .empty
+                } else {
+                    monthStatuses[month] = entries.contains(where: { $0.paymentStatus != .paid }) ? .hasUnpaid : .allPaid
+                }
+            } catch {
+                // Skip failed months
+            }
         }
     }
 

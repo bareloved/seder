@@ -55,7 +55,8 @@ struct ClientsView: View {
                                             if let revenue = client.thisYearRevenue, revenue > 0 {
                                                 CurrencyText(
                                                     amount: revenue,
-                                                    font: .subheadline.weight(.semibold),
+                                                    size: 15,
+                                                    weight: .medium,
                                                     color: SederTheme.paidColor
                                                 )
                                             }

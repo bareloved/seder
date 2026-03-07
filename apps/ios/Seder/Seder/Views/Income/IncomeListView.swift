@@ -1,11 +1,19 @@
 import SwiftUI
 
+enum KPIFilter: String, CaseIterable {
+    case all
+    case readyToInvoice
+    case invoiced
+    case paid
+}
+
 struct IncomeListView: View {
     @StateObject private var viewModel = IncomeViewModel()
     @EnvironmentObject var auth: AuthViewModel
     @State private var showAddSheet = false
     @State private var showSettings = false
     @State private var showCalendarImport = false
+    @State private var activeFilter: KPIFilter = .all
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -18,6 +26,19 @@ struct IncomeListView: View {
     }
     private var readyToInvoice: Double {
         viewModel.entries.filter { $0.invoiceStatus == .draft }.reduce(0) { $0 + $1.grossAmount }
+    }
+
+    private var filteredEntries: [IncomeEntry] {
+        switch activeFilter {
+        case .all:
+            return viewModel.entries
+        case .readyToInvoice:
+            return viewModel.entries.filter { $0.invoiceStatus == .draft }
+        case .invoiced:
+            return viewModel.entries.filter { $0.invoiceStatus == .sent && $0.paymentStatus != .paid }
+        case .paid:
+            return viewModel.entries.filter { $0.paymentStatus == .paid }
+        }
     }
 
     var body: some View {
@@ -40,25 +61,37 @@ struct IncomeListView: View {
                                 title: "סה״כ \(currentMonthName)",
                                 amount: totalGross,
                                 icon: "calendar",
-                                isHighlighted: true
+                                filter: .all,
+                                activeFilter: $activeFilter,
+                                activeRingColor: SederTheme.textPrimary
                             )
                             KPICard(
                                 title: "לפני חיוב",
                                 amount: readyToInvoice,
-                                icon: "doc.text"
+                                icon: "doc.text",
+                                iconColor: Color(red: 0.02, green: 0.71, blue: 0.83),
+                                filter: .readyToInvoice,
+                                activeFilter: $activeFilter,
+                                activeRingColor: Color(red: 0.02, green: 0.71, blue: 0.83)
                             )
                             KPICard(
                                 title: "מחכה לתשלום",
                                 amount: totalUnpaid,
                                 icon: "doc.plaintext",
-                                iconColor: SederTheme.sentColor
+                                iconColor: SederTheme.sentColor,
+                                filter: .invoiced,
+                                activeFilter: $activeFilter,
+                                activeRingColor: SederTheme.sentColor
                             )
                             KPICard(
                                 title: "התקבל החודש",
                                 amount: totalPaid,
                                 icon: "arrow.up.right",
                                 amountColor: SederTheme.paidColor,
-                                iconColor: SederTheme.paidColor
+                                iconColor: SederTheme.paidColor,
+                                filter: .paid,
+                                activeFilter: $activeFilter,
+                                activeRingColor: SederTheme.paidColor
                             )
                         }
                         .padding(.horizontal, 8)
@@ -68,7 +101,8 @@ struct IncomeListView: View {
                         FilterBar(
                             selectedMonth: $viewModel.selectedMonth,
                             hasUnpaid: totalUnpaid > 0,
-                            onCalendarTap: { showCalendarImport = true }
+                            onCalendarTap: { showCalendarImport = true },
+                            monthStatuses: viewModel.monthStatuses
                         )
                         .padding(.horizontal, 8)
 
@@ -77,7 +111,7 @@ struct IncomeListView: View {
                             ProgressView()
                                 .tint(SederTheme.brandGreen)
                                 .padding(.top, 40)
-                        } else if viewModel.entries.isEmpty {
+                        } else if filteredEntries.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "calendar")
                                     .font(.system(size: 40))
@@ -92,7 +126,7 @@ struct IncomeListView: View {
                             .padding(.top, 60)
                         } else {
                             LazyVStack(spacing: 4) {
-                                ForEach(viewModel.entries) { entry in
+                                ForEach(filteredEntries) { entry in
                                     IncomeEntryRow(
                                         entry: entry,
                                         onMarkSent: {
@@ -124,12 +158,12 @@ struct IncomeListView: View {
                 HStack {
                     Button { showAddSheet = true } label: {
                         Image(systemName: "plus")
-                            .font(.title2.weight(.semibold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
+                            .frame(width: 48, height: 48)
                             .background(SederTheme.brandGreen)
                             .clipShape(Circle())
-                            .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
+                            .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 6, y: 3)
                     }
                     Spacer()
                 }
@@ -147,7 +181,10 @@ struct IncomeListView: View {
             SettingsView()
                 .environmentObject(auth)
         }
-        .task { await viewModel.loadEntries() }
+        .task {
+            await viewModel.loadEntries()
+            await viewModel.loadAllMonthStatuses()
+        }
         .onChange(of: viewModel.selectedMonth) { _ in
             Task { await viewModel.loadEntries() }
         }
@@ -170,19 +207,19 @@ struct GreenNavBar: View {
     var body: some View {
         HStack {
             // Physical right: avatar + dark mode
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button(action: onSettingsTap) {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.title2)
+                        .font(.system(size: 22))
                         .foregroundStyle(.white.opacity(0.9))
                 }
 
                 Button {} label: {
                     Image(systemName: "moon.fill")
-                        .font(.body)
+                        .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.8))
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.1))
+                        .frame(width: 28, height: 28)
+                        .background(.white.opacity(0.12))
                         .clipShape(Circle())
                 }
             }
@@ -192,12 +229,12 @@ struct GreenNavBar: View {
             // Physical left: calendar icon
             Button(action: onCalendarTap) {
                 Image(systemName: "calendar.badge.clock")
-                    .font(.title3)
+                    .font(.system(size: 18))
                     .foregroundStyle(.white)
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
         .padding(.top, UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first?.windows.first?.safeAreaInsets.top ?? 0)
@@ -211,87 +248,198 @@ struct FilterBar: View {
     @Binding var selectedMonth: Date
     var hasUnpaid: Bool
     var onCalendarTap: () -> Void
+    var monthStatuses: [Int: IncomeViewModel.MonthStatus]
+
+    @State private var showMonthPicker = false
+    @State private var showYearPicker = false
 
     private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
                           "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
 
+    private var borderColor: Color { Color(.separator).opacity(0.3) }
+
     var body: some View {
         HStack(spacing: 8) {
-            // Filter button (physical left)
-            Button {} label: {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .font(.body)
-                    .foregroundStyle(SederTheme.textSecondary)
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                    )
-            }
-
-            // Calendar import button
-            Button(action: onCalendarTap) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(.body)
-                    .foregroundStyle(.blue)
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                    )
-            }
+            // Physical left: Filter + Calendar buttons
+            outlinedButton(icon: "line.3.horizontal.decrease", color: SederTheme.textPrimary) {}
+            outlinedButton(icon: "calendar.badge.plus", color: .blue, action: onCalendarTap)
 
             Spacer()
 
-            // Month picker (physical right)
-            HStack(spacing: 8) {
-                Button {
-                    selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth)!
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SederTheme.textSecondary)
-                }
-
-                HStack(spacing: 6) {
-                    Text(months[Calendar.current.component(.month, from: selectedMonth) - 1])
-                        .font(SederTheme.ploni(15, weight: .medium))
-                        .foregroundStyle(SederTheme.textPrimary)
-                    Circle()
-                        .fill(hasUnpaid ? Color.red : SederTheme.paidColor)
-                        .frame(width: 6, height: 6)
-                }
-
+            // Center: Month picker
+            HStack(spacing: 0) {
                 Button {
                     selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth)!
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(SederTheme.textSecondary)
+                        .frame(width: 30, height: 36)
+                        .environment(\.layoutDirection, .leftToRight)
+                }
+
+                Button { showMonthPicker.toggle() } label: {
+                    HStack(spacing: 5) {
+                        Text(months[Calendar.current.component(.month, from: selectedMonth) - 1])
+                            .font(SederTheme.ploni(15, weight: .regular))
+                            .foregroundStyle(SederTheme.textPrimary)
+                            .lineLimit(1)
+                            .fixedSize()
+                        Circle()
+                            .fill(hasUnpaid ? Color.red.opacity(0.8) : SederTheme.paidColor.opacity(0.8))
+                            .frame(width: 6, height: 6)
+                    }
+                    .frame(minWidth: 120)
+                }
+                .popover(isPresented: $showMonthPicker, arrowEdge: .top) {
+                    monthPickerList
+                        .presentationCompactAdaptation(.popover)
+                }
+
+                Button {
+                    selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                        .frame(width: 30, height: 36)
+                        .environment(\.layoutDirection, .leftToRight)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 2)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             )
 
-            // Year
-            Text("\(Calendar.current.component(.year, from: selectedMonth))")
-                .font(SederTheme.ploni(14))
-                .foregroundStyle(SederTheme.textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                )
+            Spacer()
+
+            // Physical right: Year
+            Button { showYearPicker.toggle() } label: {
+                Text(String(Calendar.current.component(.year, from: selectedMonth)))
+                    .font(SederTheme.ploni(15, weight: .regular))
+                    .foregroundStyle(SederTheme.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(height: 36)
+                    .padding(.horizontal, 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
+            }
+            .popover(isPresented: $showYearPicker, arrowEdge: .top) {
+                yearPickerList
+                    .presentationCompactAdaptation(.popover)
+            }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.leading, 10)
+        .padding(.trailing, 16)
+        .padding(.vertical, 8)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+    }
+
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: selectedMonth)
+    }
+
+    private var monthPickerList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(0..<12, id: \.self) { i in
+                    let monthNum = i + 1
+                    let isCurrent = currentMonthIndex == monthNum
+                    let monthHasUnpaid = monthStatuses[monthNum]
+
+                    Button {
+                        var components = Calendar.current.dateComponents([.year, .month, .day], from: selectedMonth)
+                        components.month = monthNum
+                        if let newDate = Calendar.current.date(from: components) {
+                            selectedMonth = newDate
+                        }
+                        showMonthPicker = false
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(months[i])
+                                .font(SederTheme.ploni(16, weight: isCurrent ? .semibold : .regular))
+                                .foregroundStyle(SederTheme.textPrimary)
+                            Spacer()
+                            Circle()
+                                .fill(dotColor(for: monthHasUnpaid))
+                                .frame(width: 8, height: 8)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)
+                        .background(isCurrent ? SederTheme.subtleBg : Color.clear)
+                    }
+
+                    if i < 11 {
+                        Divider().padding(.horizontal, 12)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+        .frame(width: 180, height: 400)
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: selectedMonth)
+    }
+
+    private var yearPickerList: some View {
+        let thisYear = Calendar.current.component(.year, from: Date())
+        let years = Array((thisYear - 3)...(thisYear + 1))
+
+        return VStack(spacing: 0) {
+            ForEach(years, id: \.self) { year in
+                Button {
+                    var components = Calendar.current.dateComponents([.year, .month, .day], from: selectedMonth)
+                    components.year = year
+                    if let newDate = Calendar.current.date(from: components) {
+                        selectedMonth = newDate
+                    }
+                    showYearPicker = false
+                } label: {
+                    Text(String(year))
+                        .font(.system(size: 16, weight: currentYear == year ? .semibold : .regular, design: .rounded).monospacedDigit())
+                        .foregroundStyle(SederTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(currentYear == year ? SederTheme.subtleBg : Color.clear)
+                }
+
+                if year != years.last {
+                    Divider().padding(.horizontal, 12)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(width: 120)
+    }
+
+    private func dotColor(for status: IncomeViewModel.MonthStatus?) -> Color {
+        switch status {
+        case .hasUnpaid: return Color.red.opacity(0.7)
+        case .allPaid: return SederTheme.paidColor.opacity(0.8)
+        case .empty, .none: return .clear
+        }
+    }
+
+    private func outlinedButton(icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(color)
+                .frame(width: 40, height: 36)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(borderColor, lineWidth: 1)
+                )
+        }
     }
 }
 
@@ -302,47 +450,55 @@ struct KPICard: View {
     let title: String
     let amount: Double
     var icon: String = "banknote"
-    var isHighlighted: Bool = false
     var amountColor: Color? = nil
     var iconColor: Color? = nil
+    var filter: KPIFilter = .all
+    @Binding var activeFilter: KPIFilter
+    var activeRingColor: Color = .gray
+
+    private var isActive: Bool { activeFilter == filter }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Title (physical right in RTL via .leading)
-            Text(title)
-                .font(SederTheme.ploni(12))
-                .foregroundStyle(SederTheme.textSecondary)
-                .padding(.bottom, 6)
-
-            // Amount (physical right in RTL via .leading)
-            CurrencyText(
-                amount: amount,
-                font: SederTheme.ploni(24, weight: .bold),
-                color: amountColor ?? SederTheme.textPrimary
-            )
-
-            Spacer()
-
-            // Icon on physical left (last in HStack = left in RTL)
-            HStack {
-                Spacer()
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundStyle(iconColor ?? SederTheme.textTertiary)
+        Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                activeFilter = (activeFilter == filter) ? .all : filter
             }
-        }
-        .padding(12)
-        .frame(height: 100)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(SederTheme.cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(
-                    isHighlighted ? SederTheme.textPrimary.opacity(0.3) : SederTheme.cardBorder,
-                    lineWidth: isHighlighted ? 1.5 : 1
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(SederTheme.ploni(15))
+                    .foregroundStyle(SederTheme.textSecondary)
+
+                Spacer()
+
+                CurrencyText(
+                    amount: amount,
+                    size: 26,
+                    weight: .regular,
+                    color: amountColor ?? SederTheme.textPrimary
                 )
-        )
-        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+
+                HStack {
+                    Spacer()
+                    Image(systemName: icon)
+                        .font(.system(size: 12))
+                        .foregroundStyle(iconColor ?? SederTheme.textTertiary)
+                }
+            }
+            .padding(12)
+            .frame(height: 92)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(SederTheme.cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(
+                        isActive ? activeRingColor : SederTheme.cardBorder,
+                        lineWidth: isActive ? 1.5 : 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+        }
+        .buttonStyle(.plain)
     }
 }

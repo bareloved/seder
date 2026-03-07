@@ -40,7 +40,8 @@ struct IncomeEntryRow: View {
                     // Amount — last = physical LEFT in RTL
                     CurrencyText(
                         amount: entry.grossAmount,
-                        font: SederTheme.ploni(17, weight: .bold),
+                        size: 18,
+                        weight: .medium,
                         color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
                     )
                 }
@@ -54,7 +55,7 @@ struct IncomeEntryRow: View {
                 }
 
                 // Row 3: Category + Status (right) ... menu (left)
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     // Category chip — first = physical RIGHT
                     if let cat = entry.categoryData {
                         CategoryChip(name: cat.name, colorName: cat.color)
@@ -74,7 +75,7 @@ struct IncomeEntryRow: View {
                     // Overdue indicator
                     if isOverdue {
                         Text("מאחר")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundStyle(Color(red: 0.70, green: 0.15, blue: 0.15))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -177,16 +178,16 @@ struct CategoryChip: View {
     let colorName: String?
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 2) {
             Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 9))
+                .font(.system(size: 8))
             Text(name)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 10, weight: .medium))
         }
         .foregroundStyle(SederTheme.textPrimary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
         .background(SederTheme.categoryColor(for: colorName).opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }

@@ -182,7 +182,8 @@ struct AnalyticsKPICard: View {
             if let amount {
                 CurrencyText(
                     amount: amount,
-                    font: .system(size: 22, weight: .bold, design: .rounded),
+                    size: 22,
+                    weight: .regular,
                     color: amountColor ?? SederTheme.textPrimary
                 )
             } else if let count {
