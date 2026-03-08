@@ -13,7 +13,26 @@ class AuthViewModel: ObservableObject {
 
     init() {
         isAuthenticated = api.isAuthenticated
-        isLoading = false
+        if isAuthenticated {
+            isLoading = true
+            Task { await fetchUser() }
+        } else {
+            isLoading = false
+        }
+    }
+
+    private struct SessionResponse: Codable {
+        let user: User?
+    }
+
+    func fetchUser() async {
+        defer { isLoading = false }
+        do {
+            let response: SessionResponse = try await api.request(endpoint: "/api/auth/get-session")
+            user = response.user
+        } catch {
+            // Token might be expired
+        }
     }
 
     func signIn(email: String, password: String) async {

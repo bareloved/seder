@@ -42,134 +42,126 @@ struct IncomeListView: View {
     }
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                // Green navbar
-                GreenNavBar(
-                    onSettingsTap: { showSettings = true },
-                    onCalendarTap: { showCalendarImport = true }
-                )
+        VStack(spacing: 0) {
+            // Green navbar
+            GreenNavBar(
+                onSettingsTap: { showSettings = true },
+                avatarURL: auth.user?.image
+            )
 
-                ScrollView {
-                    VStack(spacing: 8) {
-                        // KPI Cards (2x2 grid)
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 8),
-                            GridItem(.flexible(), spacing: 8)
-                        ], spacing: 8) {
-                            KPICard(
-                                title: "סה״כ \(currentMonthName)",
-                                amount: totalGross,
-                                icon: "calendar",
-                                filter: .all,
-                                activeFilter: $activeFilter,
-                                activeRingColor: SederTheme.textPrimary
-                            )
-                            KPICard(
-                                title: "לפני חיוב",
-                                amount: readyToInvoice,
-                                icon: "doc.text",
-                                iconColor: Color(red: 0.02, green: 0.71, blue: 0.83),
-                                filter: .readyToInvoice,
-                                activeFilter: $activeFilter,
-                                activeRingColor: Color(red: 0.02, green: 0.71, blue: 0.83)
-                            )
-                            KPICard(
-                                title: "מחכה לתשלום",
-                                amount: totalUnpaid,
-                                icon: "doc.plaintext",
-                                iconColor: SederTheme.sentColor,
-                                filter: .invoiced,
-                                activeFilter: $activeFilter,
-                                activeRingColor: SederTheme.sentColor
-                            )
-                            KPICard(
-                                title: "התקבל החודש",
-                                amount: totalPaid,
-                                icon: "arrow.up.right",
-                                amountColor: SederTheme.paidColor,
-                                iconColor: SederTheme.paidColor,
-                                filter: .paid,
-                                activeFilter: $activeFilter,
-                                activeRingColor: SederTheme.paidColor
-                            )
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.top, 8)
+            // Filter bar (pinned below navbar)
+            FilterBar(
+                selectedMonth: $viewModel.selectedMonth,
+                hasUnpaid: totalUnpaid > 0,
+                onCalendarTap: { showCalendarImport = true },
+                monthStatuses: viewModel.monthStatuses
+            )
+            .padding(.horizontal, 16)
 
-                        // Filter bar
-                        FilterBar(
-                            selectedMonth: $viewModel.selectedMonth,
-                            hasUnpaid: totalUnpaid > 0,
-                            onCalendarTap: { showCalendarImport = true },
-                            monthStatuses: viewModel.monthStatuses
+            ScrollView {
+                VStack(spacing: 8) {
+                    // KPI Cards (2x2 grid)
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 8),
+                        GridItem(.flexible(), spacing: 8)
+                    ], spacing: 8) {
+                        KPICard(
+                            title: "סה״כ \(currentMonthName)",
+                            amount: totalGross,
+                            icon: "calendar",
+                            filter: .all,
+                            activeFilter: $activeFilter,
+                            activeRingColor: SederTheme.textPrimary
                         )
-                        .padding(.horizontal, 8)
+                        KPICard(
+                            title: "לפני חיוב",
+                            amount: readyToInvoice,
+                            icon: "doc.text",
+                            iconColor: Color(red: 0.02, green: 0.71, blue: 0.83),
+                            filter: .readyToInvoice,
+                            activeFilter: $activeFilter,
+                            activeRingColor: Color(red: 0.02, green: 0.71, blue: 0.83)
+                        )
+                        KPICard(
+                            title: "מחכה לתשלום",
+                            amount: totalUnpaid,
+                            icon: "doc.plaintext",
+                            iconColor: SederTheme.sentColor,
+                            filter: .invoiced,
+                            activeFilter: $activeFilter,
+                            activeRingColor: SederTheme.sentColor
+                        )
+                        KPICard(
+                            title: "התקבל החודש",
+                            amount: totalPaid,
+                            icon: "arrow.up.right",
+                            amountColor: SederTheme.paidColor,
+                            iconColor: SederTheme.paidColor,
+                            filter: .paid,
+                            activeFilter: $activeFilter,
+                            activeRingColor: SederTheme.paidColor
+                        )
+                    }
+                    .padding(.top, 8)
 
-                        // Entries
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .tint(SederTheme.brandGreen)
-                                .padding(.top, 40)
-                        } else if filteredEntries.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "calendar")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(SederTheme.textTertiary)
-                                Text("אין עבודות לחודש הזה")
-                                    .font(SederTheme.ploni(17, weight: .semibold))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                Text("התחל על ידי הוספת עבודה חדשה")
-                                    .font(SederTheme.ploni(14))
-                                    .foregroundStyle(SederTheme.textSecondary)
-                            }
-                            .padding(.top, 60)
-                        } else {
-                            LazyVStack(spacing: 4) {
-                                ForEach(filteredEntries) { entry in
-                                    IncomeEntryRow(
-                                        entry: entry,
-                                        onMarkSent: {
-                                            Task { await viewModel.markSent(entry.id) }
-                                        },
-                                        onMarkPaid: {
-                                            Task { await viewModel.markPaid(entry.id) }
-                                        },
-                                        onDelete: {
-                                            Task { await viewModel.deleteEntry(entry.id) }
-                                        }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 8)
+                    // Entries
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .tint(SederTheme.brandGreen)
+                            .padding(.top, 40)
+                    } else if filteredEntries.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 40))
+                                .foregroundStyle(SederTheme.textTertiary)
+                            Text("אין עבודות לחודש הזה")
+                                .font(SederTheme.ploni(17, weight: .semibold))
+                                .foregroundStyle(SederTheme.textPrimary)
+                            Text("התחל על ידי הוספת עבודה חדשה")
+                                .font(SederTheme.ploni(14))
+                                .foregroundStyle(SederTheme.textSecondary)
                         }
-
-                        Spacer().frame(height: 80)
+                        .padding(.top, 60)
+                    } else {
+                        LazyVStack(spacing: 4) {
+                            ForEach(filteredEntries) { entry in
+                                IncomeEntryRow(
+                                    entry: entry,
+                                    onMarkSent: {
+                                        Task { await viewModel.markSent(entry.id) }
+                                    },
+                                    onMarkPaid: {
+                                        Task { await viewModel.markPaid(entry.id) }
+                                    },
+                                    onDelete: {
+                                        Task { await viewModel.deleteEntry(entry.id) }
+                                    }
+                                )
+                            }
+                        }
                     }
-                }
-                .refreshable { await viewModel.loadEntries() }
-                .background(SederTheme.pageBg)
-            }
-            .ignoresSafeArea(edges: .top)
 
-            // Floating add button (physical bottom-right)
-            VStack {
-                Spacer()
-                HStack {
-                    Button { showAddSheet = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
-                            .background(SederTheme.brandGreen)
-                            .clipShape(Circle())
-                            .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 6, y: 3)
-                    }
-                    Spacer()
+                    Spacer().frame(height: 80)
                 }
-                .padding(.leading, 16)
-                .padding(.bottom, 16)
+                .frame(width: UIScreen.main.bounds.width - 24)
+                .frame(maxWidth: .infinity)
             }
+            .refreshable { await viewModel.loadEntries() }
+            .background(SederTheme.pageBg)
+        }
+        .ignoresSafeArea(edges: .top)
+        .overlay(alignment: .bottomLeading) {
+            Button { showAddSheet = true } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(SederTheme.brandGreen)
+                    .clipShape(Circle())
+                    .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 6, y: 3)
+            }
+            .padding(.leading, 16)
+            .padding(.bottom, 16)
         }
         .sheet(isPresented: $showAddSheet) {
             IncomeFormSheet(viewModel: viewModel)
@@ -186,7 +178,10 @@ struct IncomeListView: View {
             await viewModel.loadAllMonthStatuses()
         }
         .onChange(of: viewModel.selectedMonth) { _ in
-            Task { await viewModel.loadEntries() }
+            Task {
+                await viewModel.loadEntries()
+                await viewModel.loadAllMonthStatuses()
+            }
         }
     }
 
@@ -202,35 +197,43 @@ struct IncomeListView: View {
 
 struct GreenNavBar: View {
     var onSettingsTap: () -> Void
-    var onCalendarTap: () -> Void
+    var avatarURL: String?
+    @AppStorage("darkMode") private var darkMode = false
 
     var body: some View {
         HStack {
-            // Physical right: avatar + dark mode
-            HStack(spacing: 10) {
-                Button(action: onSettingsTap) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
+            Spacer()
 
-                Button {} label: {
-                    Image(systemName: "moon.fill")
+            // Physical left: dark mode + avatar
+            HStack(spacing: 10) {
+                Button { darkMode.toggle() } label: {
+                    Image(systemName: darkMode ? "sun.max.fill" : "moon.fill")
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.8))
                         .frame(width: 28, height: 28)
                         .background(.white.opacity(0.12))
                         .clipShape(Circle())
                 }
-            }
 
-            Spacer()
-
-            // Physical left: calendar icon
-            Button(action: onCalendarTap) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 18))
-                    .foregroundStyle(.white)
+                Button(action: onSettingsTap) {
+                    if let urlString = avatarURL, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        .frame(width: 34, height: 34)
+                        .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                }
             }
         }
         .padding(.horizontal, 16)

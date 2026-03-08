@@ -94,8 +94,9 @@ struct ClientsView: View {
                                     .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
                                 }
                             }
-                            .padding(.horizontal, 8)
                             .padding(.top, 8)
+                            .frame(width: UIScreen.main.bounds.width - 24)
+                            .frame(maxWidth: .infinity)
                         }
                         .refreshable { await viewModel.loadClients() }
                     }

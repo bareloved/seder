@@ -72,7 +72,6 @@ struct AnalyticsView: View {
                     .padding(.vertical, 6)
                     .background(SederTheme.cardBg)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 8)
                     .padding(.top, 8)
 
                     if viewModel.isLoading {
@@ -89,7 +88,6 @@ struct AnalyticsView: View {
                             AnalyticsKPICard(title: "עבודות", count: agg.jobsCount, icon: "briefcase", amountColor: SederTheme.draftColor)
                             AnalyticsKPICard(title: "לא שולם", amount: agg.totalUnpaid, icon: "clock", amountColor: SederTheme.sentColor)
                         }
-                        .padding(.horizontal, 8)
 
                         // Trend
                         if agg.trend != 0 {
@@ -140,13 +138,13 @@ struct AnalyticsView: View {
                                     .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
                             .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
-                            .padding(.horizontal, 8)
                         }
                     }
 
                     Spacer().frame(height: 40)
                 }
             }
+            .safeAreaPadding(.horizontal, 16)
             .background(SederTheme.pageBg)
         }
         .ignoresSafeArea(edges: .top)

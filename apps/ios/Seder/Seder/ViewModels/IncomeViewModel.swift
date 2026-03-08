@@ -42,6 +42,16 @@ class IncomeViewModel: ObservableObject {
         }
     }
 
+    /// Refresh statuses after a mutation so the month picker dots stay current
+    private func refreshCurrentMonthStatus() {
+        let month = Calendar.current.component(.month, from: selectedMonth)
+        if entries.isEmpty {
+            monthStatuses[month] = .empty
+        } else {
+            monthStatuses[month] = entries.contains(where: { $0.paymentStatus != .paid }) ? .hasUnpaid : .allPaid
+        }
+    }
+
     func loadAllMonthStatuses() async {
         let year = Calendar.current.component(.year, from: selectedMonth)
         let formatter = DateFormatter()
@@ -78,6 +88,7 @@ class IncomeViewModel: ObservableObject {
                 method: "DELETE"
             )
             entries.removeAll { $0.id == id }
+            refreshCurrentMonthStatus()
         } catch {
             errorMessage = "שגיאה במחיקה"
         }
@@ -91,6 +102,7 @@ class IncomeViewModel: ObservableObject {
                 body: request
             )
             entries.insert(entry, at: 0)
+            refreshCurrentMonthStatus()
             return true
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -111,6 +123,7 @@ class IncomeViewModel: ObservableObject {
             if let index = entries.firstIndex(where: { $0.id == id }) {
                 entries[index] = updated
             }
+            refreshCurrentMonthStatus()
             return true
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -130,6 +143,7 @@ class IncomeViewModel: ObservableObject {
             if let index = entries.firstIndex(where: { $0.id == id }) {
                 entries[index] = updated
             }
+            refreshCurrentMonthStatus()
         } catch {
             errorMessage = "שגיאה בעדכון סטטוס"
         }
@@ -144,6 +158,7 @@ class IncomeViewModel: ObservableObject {
             if let index = entries.firstIndex(where: { $0.id == id }) {
                 entries[index] = updated
             }
+            refreshCurrentMonthStatus()
         } catch {
             errorMessage = "שגיאה בעדכון סטטוס"
         }
