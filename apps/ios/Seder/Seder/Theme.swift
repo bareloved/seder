@@ -55,17 +55,18 @@ enum SederTheme {
     static func categoryColor(for name: String?) -> Color {
         guard let name else { return .gray }
         switch name {
-        case "emerald": return paidColor
-        case "indigo": return Color(red: 0.31, green: 0.33, blue: 0.85)
-        case "sky": return draftColor
-        case "amber": return Color(red: 0.85, green: 0.65, blue: 0.01)
-        case "purple": return Color(red: 0.58, green: 0.25, blue: 0.83)
-        case "blue": return Color(red: 0.23, green: 0.51, blue: 0.96)
-        case "rose": return Color(red: 0.88, green: 0.17, blue: 0.34)
-        case "teal": return Color(red: 0.05, green: 0.60, blue: 0.53)
-        case "orange": return sentColor
-        case "pink": return Color(red: 0.85, green: 0.21, blue: 0.58)
-        case "cyan": return Color(red: 0.05, green: 0.65, blue: 0.68)
+        case "emerald": return Color(red: 0.20, green: 0.78, blue: 0.52)
+        case "indigo": return Color(red: 0.45, green: 0.36, blue: 0.85)
+        case "sky": return Color(red: 0.33, green: 0.64, blue: 0.95)
+        case "amber": return Color(red: 0.90, green: 0.72, blue: 0.15)
+        case "purple": return Color(red: 0.62, green: 0.35, blue: 0.85)
+        case "slate": return Color(red: 0.60, green: 0.60, blue: 0.62)
+        case "blue": return Color(red: 0.35, green: 0.55, blue: 0.96)
+        case "rose": return Color(red: 0.92, green: 0.30, blue: 0.45)
+        case "teal": return Color(red: 0.18, green: 0.72, blue: 0.65)
+        case "orange": return Color(red: 0.95, green: 0.45, blue: 0.20)
+        case "pink": return Color(red: 0.90, green: 0.30, blue: 0.60)
+        case "cyan": return Color(red: 0.20, green: 0.72, blue: 0.82)
         default: return .gray
         }
     }
@@ -95,7 +96,7 @@ enum SederTheme {
         case "headphones": return "headphones"
         case "guitar": return "guitars.fill"
         case "piano": return "pianokeys"
-        case "drum": return "drum.fill"
+        case "drum": return "music.note.list"
         case "radio": return "radio.fill"
         case "video": return "video.fill"
         case "camera": return "camera.fill"

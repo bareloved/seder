@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "system"
+    @StateObject private var clientsVM = ClientsViewModel()
 
     var body: some View {
         TabView {
@@ -11,7 +12,7 @@ struct MainTabView: View {
                     Label("הכנסות", systemImage: "banknote.fill")
                 }
 
-            ClientsView()
+            ClientsView(viewModel: clientsVM)
                 .environment(\.layoutDirection, .rightToLeft)
                 .tabItem {
                     Label("לקוחות", systemImage: "person.2.fill")
@@ -31,5 +32,8 @@ struct MainTabView: View {
         }
         .tint(SederTheme.brandGreen)
         .preferredColorScheme(appearanceMode == "dark" ? .dark : appearanceMode == "light" ? .light : nil)
+        .task {
+            await clientsVM.loadClients()
+        }
     }
 }

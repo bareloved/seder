@@ -37,6 +37,38 @@ class CategoriesViewModel: ObservableObject {
         }
     }
 
+    func updateCategory(_ id: String, name: String, color: String, icon: String) async -> Bool {
+        do {
+            let updated: Category = try await api.request(
+                endpoint: "/api/v1/categories/\(id)",
+                method: "PUT",
+                body: UpdateCategoryRequest(name: name, color: color, icon: icon)
+            )
+            if let idx = categories.firstIndex(where: { $0.id == id }) {
+                categories[idx] = updated
+            }
+            return true
+        } catch {
+            errorMessage = "שגיאה בעדכון קטגוריה"
+            return false
+        }
+    }
+
+    func archiveCategory(_ id: String) async -> Bool {
+        do {
+            let _: Category = try await api.request(
+                endpoint: "/api/v1/categories/\(id)",
+                method: "PUT",
+                body: UpdateCategoryRequest(action: "archive")
+            )
+            categories.removeAll { $0.id == id }
+            return true
+        } catch {
+            errorMessage = "שגיאה במחיקת קטגוריה"
+            return false
+        }
+    }
+
     func moveCategory(from source: IndexSet, to destination: Int) {
         categories.move(fromOffsets: source, toOffset: destination)
         Task { await saveOrder() }

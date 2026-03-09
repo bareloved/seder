@@ -60,6 +60,12 @@ nonisolated class APIClient: @unchecked Sendable {
             } catch let error as APIError {
                 throw error
             } catch {
+                #if DEBUG
+                if let rawJSON = String(data: data, encoding: .utf8) {
+                    print("[API DECODE ERROR] \(endpoint) → \(error)")
+                    print("[API RAW JSON] \(rawJSON.prefix(2000))")
+                }
+                #endif
                 throw APIError.decodingFailed(error)
             }
         case 401:

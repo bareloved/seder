@@ -248,7 +248,7 @@ struct IncomeListView: View {
                 categories: categoriesVM.categories,
                 clientNames: uniqueClientNames
             )
-            .presentationDetents([.large])
+            .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showFilterSheet) {
             FilterSheet(

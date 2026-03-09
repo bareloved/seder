@@ -19,6 +19,13 @@ nonisolated struct CreateCategoryRequest: Encodable, Sendable {
     let icon: String
 }
 
+nonisolated struct UpdateCategoryRequest: Encodable, Sendable {
+    var name: String?
+    var color: String?
+    var icon: String?
+    var action: String?
+}
+
 nonisolated struct ReorderItem: Encodable, Sendable {
     let id: String
     let displayOrder: Int

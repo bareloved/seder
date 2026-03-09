@@ -14,6 +14,10 @@ struct IncomeDetailSheet: View {
     @State private var selectedCategoryId: String?
     @State private var notes = ""
     @State private var isSaving = false
+    @State private var showDatePicker = false
+    @State private var showCategoryPicker = false
+    @State private var previousAmount = ""
+    @FocusState private var amountFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,11 +39,11 @@ struct IncomeDetailSheet: View {
                             } label: {
                                 HStack {
                                     Text(clientName.isEmpty ? "בחר לקוח" : clientName)
-                                        .font(SederTheme.ploni(16))
+                                        .font(SederTheme.ploni(18))
                                         .foregroundStyle(clientName.isEmpty ? SederTheme.textTertiary : SederTheme.textPrimary)
                                     Spacer()
                                     Image(systemName: "chevron.down")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 14))
                                         .foregroundStyle(SederTheme.textTertiary)
                                 }
                                 .padding(.horizontal, 12)
@@ -55,27 +59,29 @@ struct IncomeDetailSheet: View {
 
                         // Date — last = physical LEFT in RTL
                         fieldColumn(label: "תאריך", icon: "calendar") {
-                            DatePicker("", selection: $date, displayedComponents: .date)
-                                .datePickerStyle(.compact)
-                                .labelsHidden()
-                                .environment(\.calendar, Calendar(identifier: .gregorian))
-                                .environment(\.locale, Locale(identifier: "he_IL"))
-                                .tint(SederTheme.brandGreen)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, 10)
-                                .background(SederTheme.subtleBg)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                )
+                            Button {
+                                showDatePicker.toggle()
+                            } label: {
+                                Text(date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "he_IL"))))
+                                    .font(SederTheme.ploni(18))
+                                    .foregroundStyle(SederTheme.textPrimary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 12)
+                                    .background(SederTheme.subtleBg)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                    )
+                            }
                         }
                     }
 
                     // Row 2: Description
                     fieldColumn(label: "תיאור עבודה", icon: "doc.text") {
                         TextField("תיאור", text: $description)
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(18))
                             .multilineTextAlignment(.leading)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 12)
@@ -93,14 +99,32 @@ struct IncomeDetailSheet: View {
                         fieldColumn(label: "סכום", icon: "wallet.bifold") {
                             HStack {
                                 Text("₪")
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
                                     .foregroundStyle(SederTheme.textTertiary)
                                 Spacer()
                                 TextField("0", text: $amountGross)
-                                    .font(.system(size: 18, weight: .medium, design: .rounded).monospacedDigit())
-                                    .keyboardType(.decimalPad)
+                                    .font(.system(size: 19, weight: .regular, design: .rounded).monospacedDigit())
+                                    .keyboardType(.numberPad)
                                     .multilineTextAlignment(.trailing)
                                     .environment(\.layoutDirection, .leftToRight)
+                                    .focused($amountFocused)
+                                    .onChange(of: amountFocused) {
+                                        if amountFocused {
+                                            previousAmount = amountGross
+                                            amountGross = ""
+                                        } else if amountGross.isEmpty {
+                                            amountGross = previousAmount
+                                        }
+                                    }
+                                    .onChange(of: amountGross) {
+                                        // Strip decimal point and anything after
+                                        if let dotIndex = amountGross.firstIndex(of: ".") {
+                                            amountGross = String(amountGross[..<dotIndex])
+                                        }
+                                        if let dotIndex = amountGross.firstIndex(of: ",") {
+                                            amountGross = String(amountGross[..<dotIndex])
+                                        }
+                                    }
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
@@ -114,19 +138,21 @@ struct IncomeDetailSheet: View {
 
                         // Category — last = physical LEFT in RTL
                         fieldColumn(label: "קטגוריה", icon: "tag") {
-                            Menu {
-                                Button("ללא קטגוריה") { selectedCategoryId = nil }
-                                ForEach(categories) { cat in
-                                    Button(cat.name) { selectedCategoryId = cat.id }
-                                }
+                            Button {
+                                showCategoryPicker = true
                             } label: {
-                                HStack {
+                                HStack(spacing: 8) {
+                                    if let cat = selectedCategory {
+                                        Image(systemName: SederTheme.sfSymbol(for: cat.icon))
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundStyle(SederTheme.categoryColor(for: cat.color))
+                                    }
                                     Text(selectedCategoryName)
-                                        .font(SederTheme.ploni(16))
+                                        .font(SederTheme.ploni(18))
                                         .foregroundStyle(selectedCategoryId == nil ? SederTheme.textTertiary : SederTheme.textPrimary)
                                     Spacer()
                                     Image(systemName: "chevron.down")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 14))
                                         .foregroundStyle(SederTheme.textTertiary)
                                 }
                                 .padding(.horizontal, 12)
@@ -138,13 +164,17 @@ struct IncomeDetailSheet: View {
                                         .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
                             }
+                            .popover(isPresented: $showCategoryPicker) {
+                                categoryPickerContent
+                                    .presentationCompactAdaptation(.popover)
+                            }
                         }
                     }
 
                     // Row 4: Notes
                     fieldColumn(label: "הערות", icon: "text.quote") {
                         TextField("הערות", text: $notes, axis: .vertical)
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(18))
                             .multilineTextAlignment(.leading)
                             .lineLimit(3...6)
                             .padding(.horizontal, 12)
@@ -177,6 +207,78 @@ struct IncomeDetailSheet: View {
         .background(SederTheme.pageBg)
         .environment(\.layoutDirection, .rightToLeft)
         .onAppear { populateFromEntry() }
+        .sheet(isPresented: $showDatePicker) {
+            DatePicker("", selection: $date, displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .environment(\.calendar, Calendar(identifier: .gregorian))
+                .environment(\.locale, Locale(identifier: "he_IL"))
+                .tint(SederTheme.brandGreen)
+                .padding()
+                .presentationDetents([.medium])
+                .onChange(of: date) {
+                    showDatePicker = false
+                }
+        }
+    }
+
+    // MARK: - Category Picker
+
+    private var categoryPickerContent: some View {
+        VStack(spacing: 4) {
+            Button {
+                selectedCategoryId = nil
+                showCategoryPicker = false
+            } label: {
+                HStack(spacing: 10) {
+                    Text("ללא קטגוריה")
+                        .font(SederTheme.ploni(18))
+                        .foregroundStyle(SederTheme.textSecondary)
+                    Spacer()
+                    if selectedCategoryId == nil {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(SederTheme.brandGreen)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+            }
+            Divider().padding(.horizontal, 14)
+
+            ForEach(categories) { cat in
+                Button {
+                    selectedCategoryId = cat.id
+                    showCategoryPicker = false
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: SederTheme.sfSymbol(for: cat.icon))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(SederTheme.categoryColor(for: cat.color))
+                            .frame(width: 28, height: 28)
+                            .background(SederTheme.categoryColor(for: cat.color).opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        Text(cat.name)
+                            .font(SederTheme.ploni(18))
+                            .foregroundStyle(SederTheme.textPrimary)
+                        Spacer()
+                        if selectedCategoryId == cat.id {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(SederTheme.brandGreen)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                }
+                if cat.id != categories.last?.id {
+                    Divider().padding(.horizontal, 14)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(width: 190)
+        .fixedSize(horizontal: false, vertical: true)
+        .environment(\.layoutDirection, .rightToLeft)
     }
 
     // MARK: - Header
@@ -185,7 +287,7 @@ struct IncomeDetailSheet: View {
         HStack {
             // Physical RIGHT in RTL: title
             Text("פרטי עבודה")
-                .font(SederTheme.ploni(20, weight: .semibold))
+                .font(SederTheme.ploni(22, weight: .semibold))
                 .foregroundStyle(SederTheme.textPrimary)
 
             Spacer()
@@ -209,7 +311,8 @@ struct IncomeDetailSheet: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.top, 20)
+        .padding(.bottom, 14)
     }
 
     // MARK: - Field Column Helper
@@ -217,12 +320,12 @@ struct IncomeDetailSheet: View {
     private func fieldColumn<Content: View>(label: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
-                Text(label)
-                    .font(SederTheme.ploni(13, weight: .medium))
-                    .foregroundStyle(SederTheme.textSecondary)
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(SederTheme.textTertiary)
+                Text(label)
+                    .font(SederTheme.ploni(15, weight: .medium))
+                    .foregroundStyle(SederTheme.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -231,6 +334,11 @@ struct IncomeDetailSheet: View {
     }
 
     // MARK: - Helpers
+
+    private var selectedCategory: Category? {
+        guard let id = selectedCategoryId else { return nil }
+        return categories.first(where: { $0.id == id })
+    }
 
     private var selectedCategoryName: String {
         if let id = selectedCategoryId,
