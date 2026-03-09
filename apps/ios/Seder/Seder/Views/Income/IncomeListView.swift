@@ -13,7 +13,14 @@ struct IncomeListView: View {
     @State private var showAddSheet = false
     @State private var showSettings = false
     @State private var showCalendarImport = false
+    @State private var showFilterSheet = false
     @State private var activeFilter: KPIFilter = .all
+    @State private var searchQuery = ""
+    @State private var selectedCategoryId: String?
+    @State private var selectedClientName: String?
+    @State private var sortColumn: SortColumn = .date
+    @State private var sortDirection: SortDirection = .asc
+    @StateObject private var categoriesVM = CategoriesViewModel()
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -29,16 +36,68 @@ struct IncomeListView: View {
     }
 
     private var filteredEntries: [IncomeEntry] {
+        var result = viewModel.entries
+
+        // KPI filter
         switch activeFilter {
-        case .all:
-            return viewModel.entries
+        case .all: break
         case .readyToInvoice:
-            return viewModel.entries.filter { $0.invoiceStatus == .draft }
+            result = result.filter { $0.invoiceStatus == .draft }
         case .invoiced:
-            return viewModel.entries.filter { $0.invoiceStatus == .sent && $0.paymentStatus != .paid }
+            result = result.filter { $0.invoiceStatus == .sent && $0.paymentStatus != .paid }
         case .paid:
-            return viewModel.entries.filter { $0.paymentStatus == .paid }
+            result = result.filter { $0.paymentStatus == .paid }
         }
+
+        // Category filter
+        if let catId = selectedCategoryId {
+            result = result.filter { $0.categoryId == catId }
+        }
+
+        // Client filter
+        if let client = selectedClientName {
+            result = result.filter { $0.clientName == client }
+        }
+
+        // Search
+        if !searchQuery.isEmpty {
+            let q = searchQuery.lowercased()
+            result = result.filter {
+                $0.description.lowercased().contains(q) ||
+                $0.clientName.lowercased().contains(q) ||
+                ($0.categoryData?.name.lowercased().contains(q) ?? false)
+            }
+        }
+
+        // Sort
+        result.sort { a, b in
+            let cmp: Bool
+            switch sortColumn {
+            case .date:
+                cmp = a.date < b.date
+            case .description:
+                cmp = a.description.localizedCompare(b.description) == .orderedAscending
+            case .amount:
+                cmp = a.grossAmount < b.grossAmount
+            case .client:
+                cmp = a.clientName.localizedCompare(b.clientName) == .orderedAscending
+            case .category:
+                cmp = (a.categoryData?.name ?? "").localizedCompare(b.categoryData?.name ?? "") == .orderedAscending
+            case .status:
+                cmp = a.invoiceStatus.rawValue < b.invoiceStatus.rawValue
+            }
+            return sortDirection == .asc ? cmp : !cmp
+        }
+
+        return result
+    }
+
+    private var uniqueClientNames: [String] {
+        Array(Set(viewModel.entries.map(\.clientName))).sorted()
+    }
+
+    private var hasActiveFilter: Bool {
+        !searchQuery.isEmpty || selectedCategoryId != nil || selectedClientName != nil || sortColumn != .date || sortDirection != .asc
     }
 
     var body: some View {
@@ -54,6 +113,8 @@ struct IncomeListView: View {
                 selectedMonth: $viewModel.selectedMonth,
                 hasUnpaid: totalUnpaid > 0,
                 onCalendarTap: { showCalendarImport = true },
+                onFilterTap: { showFilterSheet = true },
+                hasActiveFilter: hasActiveFilter,
                 monthStatuses: viewModel.monthStatuses
             )
             .padding(.horizontal, 16)
@@ -103,6 +164,18 @@ struct IncomeListView: View {
                         )
                     }
                     .padding(.top, 8)
+
+                    // Active filters bar
+                    if hasActiveFilter {
+                        ActiveFiltersBar(
+                            searchQuery: $searchQuery,
+                            selectedCategoryId: $selectedCategoryId,
+                            selectedClientName: $selectedClientName,
+                            sortColumn: $sortColumn,
+                            sortDirection: $sortDirection,
+                            categories: categoriesVM.categories
+                        )
+                    }
 
                     // Entries
                     if viewModel.isLoading {
@@ -160,14 +233,28 @@ struct IncomeListView: View {
                     .clipShape(Circle())
                     .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 6, y: 3)
             }
-            .padding(.leading, 16)
-            .padding(.bottom, 16)
+            .padding(.leading, 24)
+            .padding(.bottom, 24)
         }
         .sheet(isPresented: $showAddSheet) {
             IncomeFormSheet(viewModel: viewModel)
         }
+        .sheet(isPresented: $showFilterSheet) {
+            FilterSheet(
+                searchQuery: $searchQuery,
+                selectedCategoryId: $selectedCategoryId,
+                selectedClientName: $selectedClientName,
+                sortColumn: $sortColumn,
+                sortDirection: $sortDirection,
+                categories: categoriesVM.categories,
+                clientNames: uniqueClientNames
+            )
+            .presentationDetents([.medium, .large])
+        }
         .sheet(isPresented: $showCalendarImport) {
-            CalendarImportView()
+            CalendarImportView(onImportComplete: {
+                Task { await viewModel.loadEntries() }
+            })
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -176,6 +263,7 @@ struct IncomeListView: View {
         .task {
             await viewModel.loadEntries()
             await viewModel.loadAllMonthStatuses()
+            await categoriesVM.loadCategories()
         }
         .onChange(of: viewModel.selectedMonth) { _ in
             Task {
@@ -198,7 +286,6 @@ struct IncomeListView: View {
 struct GreenNavBar: View {
     var onSettingsTap: () -> Void
     var avatarURL: String?
-    @AppStorage("darkMode") private var darkMode = false
 
     var body: some View {
         HStack {
@@ -206,15 +293,6 @@ struct GreenNavBar: View {
 
             // Physical left: dark mode + avatar
             HStack(spacing: 10) {
-                Button { darkMode.toggle() } label: {
-                    Image(systemName: darkMode ? "sun.max.fill" : "moon.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.12))
-                        .clipShape(Circle())
-                }
-
                 Button(action: onSettingsTap) {
                     if let urlString = avatarURL, let url = URL(string: urlString) {
                         AsyncImage(url: url) { image in
@@ -241,7 +319,7 @@ struct GreenNavBar: View {
         .padding(.top, UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first?.windows.first?.safeAreaInsets.top ?? 0)
-        .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
+        .background(SederTheme.headerBg.ignoresSafeArea(edges: .top))
     }
 }
 
@@ -251,6 +329,8 @@ struct FilterBar: View {
     @Binding var selectedMonth: Date
     var hasUnpaid: Bool
     var onCalendarTap: () -> Void
+    var onFilterTap: () -> Void
+    var hasActiveFilter: Bool
     var monthStatuses: [Int: IncomeViewModel.MonthStatus]
 
     @State private var showMonthPicker = false
@@ -264,7 +344,7 @@ struct FilterBar: View {
     var body: some View {
         HStack(spacing: 8) {
             // Physical left: Filter + Calendar buttons
-            outlinedButton(icon: "line.3.horizontal.decrease", color: SederTheme.textPrimary) {}
+            outlinedButton(icon: "line.3.horizontal.decrease", color: hasActiveFilter ? SederTheme.brandGreen : SederTheme.textPrimary, action: onFilterTap)
             outlinedButton(icon: "calendar.badge.plus", color: .blue, action: onCalendarTap)
 
             Spacer()
@@ -503,5 +583,92 @@ struct KPICard: View {
             .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Active Filters Bar
+
+struct ActiveFiltersBar: View {
+    @Binding var searchQuery: String
+    @Binding var selectedCategoryId: String?
+    @Binding var selectedClientName: String?
+    @Binding var sortColumn: SortColumn
+    @Binding var sortDirection: SortDirection
+    var categories: [Category]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                if !searchQuery.isEmpty {
+                    filterChip(label: "\"\(searchQuery)\"", icon: "magnifyingglass") {
+                        searchQuery = ""
+                    }
+                }
+
+                if let catId = selectedCategoryId,
+                   let cat = categories.first(where: { $0.id == catId }) {
+                    filterChip(label: cat.name, icon: "tag") {
+                        selectedCategoryId = nil
+                    }
+                }
+
+                if let client = selectedClientName {
+                    filterChip(label: client, icon: "person") {
+                        selectedClientName = nil
+                    }
+                }
+
+                if sortColumn != .date || sortDirection != .asc {
+                    filterChip(label: "\(sortColumn.label) \(sortDirection == .asc ? "↑" : "↓")", icon: "arrow.up.arrow.down") {
+                        sortColumn = .date
+                        sortDirection = .asc
+                    }
+                }
+
+                // Clear all
+                Button {
+                    withAnimation {
+                        searchQuery = ""
+                        selectedCategoryId = nil
+                        selectedClientName = nil
+                        sortColumn = .date
+                        sortDirection = .asc
+                    }
+                } label: {
+                    Text("נקה הכל")
+                        .font(SederTheme.ploni(12, weight: .medium))
+                        .foregroundStyle(SederTheme.brandGreen)
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private func filterChip(label: String, icon: String, onRemove: @escaping () -> Void) -> some View {
+        HStack(spacing: 4) {
+            Button {
+                withAnimation { onRemove() }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(SederTheme.textTertiary)
+            }
+
+            Text(label)
+                .font(SederTheme.ploni(12))
+                .foregroundStyle(SederTheme.textPrimary)
+                .lineLimit(1)
+
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundStyle(SederTheme.textSecondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(SederTheme.cardBg)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule().stroke(SederTheme.cardBorder, lineWidth: 1)
+        )
     }
 }
