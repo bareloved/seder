@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from "../_lib/response";
 import { ValidationError } from "../_lib/errors";
 import {
   getIncomeEntriesForMonth,
+  getRecentEntriesForClient,
   createIncomeEntry,
 } from "@/app/income/data";
 import { createIncomeEntrySchema } from "@seder/shared";
@@ -13,6 +14,12 @@ export async function GET(request: NextRequest) {
     const userId = await requireAuth();
     const { searchParams } = request.nextUrl;
     const month = searchParams.get("month"); // "2026-03" format
+    const clientId = searchParams.get("clientId");
+
+    if (clientId) {
+      const entries = await getRecentEntriesForClient({ clientId, userId });
+      return apiSuccess(entries);
+    }
 
     let year: number;
     let m: number;

@@ -4,17 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is Seder?
 
-Seder is an income tracking platform for freelancers and musicians. It includes a **web app** (Next.js) and **iOS app** (Expo/React Native), structured as a **Turborepo monorepo** with shared packages. It provides income entry management, KPI dashboards, analytics, and Google Calendar integration. The app is RTL-friendly (Hebrew-first) with ILS currency.
+Seder is an income tracking platform for freelancers and musicians. It includes a **web app** (Next.js) and **native iOS app** (Swift/SwiftUI), structured as a **Turborepo monorepo** with shared packages. It provides income entry management, KPI dashboards, analytics, and Google Calendar integration. The app is RTL-friendly (Hebrew-first) with ILS currency.
 
 ## Monorepo Structure
 
 ```
 apps/
   web/         - Next.js 16 web app (main codebase)
-  mobile/      - Expo/React Native iOS app
+  ios/         - Native iOS app (Swift/SwiftUI, Xcode project)
 packages/
-  shared/      - @seder/shared — types, Zod schemas, constants
-  api-client/  - @seder/api-client — typed HTTP client (ky)
+  shared/      - @seder/shared — types, Zod schemas, constants, utils, classification engine
+  api-client/  - @seder/api-client — typed HTTP client (ky, used by web API routes)
+scripts/
+  generate-api-contract.ts  - Generates docs/api-contract.json from @seder/shared
+  check-ios-sync.ts         - Reports mismatches between shared contract and iOS Swift models
 ```
 
 ## Commands
@@ -23,7 +26,6 @@ packages/
 # Monorepo (from root)
 pnpm dev                 # Start all apps in development
 pnpm dev:web             # Start web app only (http://localhost:3001)
-pnpm dev:mobile          # Start Expo dev server only
 pnpm build               # Build all packages/apps
 pnpm lint                # Lint all workspaces
 pnpm test                # Run all tests
@@ -34,9 +36,13 @@ pnpm db:push             # Push schema directly to database (skip migrations)
 pnpm db:migrate          # Run pending migrations
 pnpm db:studio           # Open Drizzle Studio for data management
 
-# Mobile (from apps/mobile)
-npx expo start           # Start Expo dev server
-npx expo start --ios     # Start with iOS simulator
+# Cross-platform sync
+pnpm sync:contract       # Generate API contract JSON from @seder/shared
+pnpm sync:check-ios      # Check iOS Swift models against the contract
+
+# iOS (open in Xcode)
+# Open apps/ios/Seder/Seder.xcodeproj in Xcode
+# Build and run on simulator or device from Xcode
 ```
 
 ## RTL / Hebrew-First UI
@@ -63,16 +69,26 @@ npx expo start --ios     # Start with iOS simulator
 - **AI**: Gemini API
 - **Testing**: Vitest
 
-### Mobile App
-- **Framework**: Expo SDK 55, Expo Router
-- **Language**: TypeScript 5, React 19, React Native 0.83
-- **Data Fetching**: TanStack Query v5 + @seder/api-client (ky)
-- **Auth Storage**: expo-secure-store
-- **Push Notifications**: expo-notifications + Expo Push API
+### iOS App
+- **Language**: Swift, SwiftUI
+- **Networking**: URLSession (async/await)
+- **Auth Storage**: Keychain (via KeychainService)
+- **Push Notifications**: APNs via Expo Push API
+- **State**: ObservableObject ViewModels
 
 ### Build & Tooling
 - **Monorepo**: Turborepo + pnpm workspaces
 - **Package Manager**: pnpm (corepack-managed)
+
+## What Goes Where
+
+| Layer | What belongs here |
+|---|---|
+| `@seder/shared` | Types, Zod schemas, constants, pure business logic (Currency math, status mapping, classification engine, date helpers, KPI calculations) |
+| `apps/web` | Lucide icons, Tailwind classes, zfd schemas (form validation), server actions, localStorage wrappers, Intl formatters, DOM APIs |
+| `apps/ios` | Swift Codable models (must match shared types), SwiftUI views, SF Symbols, Keychain, URLSession APIClient |
+
+**Rule**: If logic is platform-agnostic (no DOM, no Intl, no Swift-specific APIs), it belongs in `@seder/shared`.
 
 ## Architecture
 
@@ -82,6 +98,7 @@ npx expo start --ios     # Start with iOS simulator
 2. **Client Components** (`*Client.tsx`) manage UI state, filters, and optimistic updates
 3. **Server Actions** (`actions.ts`) handle mutations with `"use server"` directive
 4. **Database layer**: Drizzle ORM with type-safe queries in `db/schema.ts`
+5. **REST API** (`app/api/v1/`) consumed by the iOS app via URLSession
 
 ### Key Directories
 
@@ -91,25 +108,33 @@ npx expo start --ios     # Start with iOS simulator
   - `IncomePageClient.tsx` - Client state management
   - `actions.ts` - Server actions for CRUD
   - `data.ts` - Data fetching & aggregation helpers
-  - `types.ts`, `schemas.ts` - TypeScript types and Zod schemas
+  - `types.ts` - Re-exports from `@seder/shared` + web-specific DB types
+  - `utils.ts` - Re-exports shared utils + web-only formatters (Intl, DOM)
+  - `schemas.ts` - zfd form validation schemas (web-specific)
+  - `currency.ts` - Re-exports `Currency` from `@seder/shared`
+  - `status-mapper.ts` - Re-exports status mapping from `@seder/shared`
   - `components/` - Feature-specific React components
-- `app/api/v1/` - REST API routes (used by mobile app)
+- `app/api/v1/` - REST API routes (consumed by iOS app)
   - `_lib/` - Middleware (auth, errors, response helpers)
   - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`
 
-**Mobile App (`apps/mobile/`):**
-- `app/(auth)/` - Sign-in/sign-up screens
-- `app/(tabs)/` - Tab navigation (income, analytics, clients, expenses)
-- `hooks/` - TanStack Query hooks (useIncomeEntries, useAuth, etc.)
-- `providers/` - React context providers (ApiProvider, QueryProvider)
-- `components/` - Feature components (income, analytics, calendar)
-- `lib/auth-storage.ts` - Secure token storage
+**iOS App (`apps/ios/Seder/Seder/`):**
+- `Models/` - Swift Codable structs (IncomeEntry, Category, Client, etc.)
+- `Services/` - APIClient (URLSession), KeychainService, NotificationManager
+- `ViewModels/` - ObservableObject state management
+- `Views/` - SwiftUI views organized by feature
+- `Lib/` - Classification engine (Swift port of shared logic)
+- `Theme.swift` - Colors, fonts, SF Symbol icon mappings
 
-**Shared Packages:**
-- `packages/shared/src/types/` - Domain type definitions
-- `packages/shared/src/schemas/` - Zod validation schemas
-- `packages/shared/src/constants/` - Status configs, VAT rates
-- `packages/api-client/src/` - Typed API client modules
+**Shared Packages (`packages/shared/src/`):**
+- `types/` - Domain type definitions (IncomeEntry, Category, Client, etc.)
+- `schemas/` - Zod validation schemas (API-level, platform-agnostic)
+- `constants/` - Status configs, VAT rates, default categories
+- `utils/` - Pure business logic (currency, dates, status mapping, KPI calculations)
+- `classification/` - Calendar event classification engine
+
+**API Client (`packages/api-client/src/`):**
+- Typed HTTP client modules (used by web API routes)
 
 ### Mobile vs Desktop Views (Income Page)
 
@@ -130,7 +155,7 @@ npx expo start --ios     # Start with iOS simulator
 - `db/client.ts` - Lazy-loading Drizzle client instance
 - `lib/auth.ts` - Better Auth configuration
 - `lib/googleCalendar.ts` - Google Calendar API integration
-- `lib/classificationRules.ts` - Smart calendar event classification
+- `lib/classificationRules.ts` - Re-exports shared classification + localStorage wrappers
 
 ### Core Domain Model
 
@@ -156,9 +181,23 @@ All data is scoped by `userId`. Row-Level Security (RLS) is enabled at the datab
 - `lib/classificationRules.ts` auto-categorizes events (business vs personal)
 - Calendar imports create draft income entries with unique `calendarEventId` per user
 
+### Cross-Platform Development Workflow
+
+When adding or modifying a feature that spans web and iOS:
+
+1. **Define types/schemas** in `packages/shared/` first
+2. **Add API endpoint** in `apps/web/app/api/v1/` (if needed)
+3. **Build web UI** — import types from `@seder/shared`, keep platform code local
+4. **Run `pnpm sync:contract`** to update `docs/api-contract.json`
+5. **Run `pnpm sync:check-ios`** to see what Swift models need updating
+6. **Update Swift models** in `apps/ios/Seder/Seder/Models/`
+7. **Add iOS ViewModel + Views**
+
+See `docs/CROSS_PLATFORM_GUIDE.md` for the full guide.
+
 ## Environment Variables
 
-See `apps/web/.env.example` and `apps/mobile/.env.example` for full lists.
+See `apps/web/.env.example` for full list.
 
 Required (web app):
 ```
@@ -178,15 +217,12 @@ EMAIL_FROM=xxx             # Sender email
 CRON_SECRET=xxx            # Push notification cron endpoint
 ```
 
-Required (mobile app):
-```
-EXPO_PUBLIC_API_URL=http://localhost:3001  # API base URL
-```
-
 ## Project Documentation
 
 - `docs/CONTRIB.md` - Development workflow, scripts reference, environment setup
 - `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
+- `docs/CROSS_PLATFORM_GUIDE.md` - Cross-platform development guide (web + iOS)
+- `docs/api-contract.json` - Generated API contract (from `pnpm sync:contract`)
 - `docs/plans/` - Implementation plans and design documents
 
 

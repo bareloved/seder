@@ -1,9 +1,12 @@
 import { type Client as DBClient } from "@/db/schema";
 
-// Re-export DB Client type
+// Re-export DB Client type for data layer
 export type { DBClient as Client };
 
-// Client with analytics data
+// Re-export shared client types (except ClientWithAnalytics which uses DB Client base)
+export type { ClientOption, DuplicateGroup } from "@seder/shared";
+
+// Client with analytics data — extends DB Client (Drizzle-inferred) for type accuracy
 export interface ClientWithAnalytics extends DBClient {
   totalEarned: number;
   thisMonthRevenue: number;
@@ -13,21 +16,4 @@ export interface ClientWithAnalytics extends DBClient {
   outstandingAmount: number;
   avgDaysToPayment: number | null;
   overdueInvoices: number;
-}
-
-// Client for dropdown selection (simplified)
-export interface ClientOption {
-  id: string;
-  name: string;
-  defaultRate?: number | null;
-}
-
-// Duplicate client group for merge tool
-export interface DuplicateGroup {
-  normalizedName: string;
-  clients: Array<{
-    name: string;
-    count: number;
-    lastUsed: string | null;
-  }>;
 }

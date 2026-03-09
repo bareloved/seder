@@ -10,9 +10,12 @@
     "db:generate": "turbo db:generate --filter=@seder/web",
     "db:push": "turbo db:push --filter=@seder/web",
     "db:migrate": "turbo db:migrate --filter=@seder/web",
-    "db:studio": "turbo db:studio --filter=@seder/web"
+    "db:studio": "turbo db:studio --filter=@seder/web",
+    "sync:contract": "tsx scripts/generate-api-contract.ts",
+    "sync:check-ios": "tsx scripts/check-ios-sync.ts"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "turbo": "^2"
   },
   "packageManager": "pnpm@10.30.3",
