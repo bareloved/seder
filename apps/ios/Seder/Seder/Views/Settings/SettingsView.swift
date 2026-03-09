@@ -60,17 +60,17 @@ struct SettingsView: View {
                     // MARK: - Preferences
                     SettingsSection(title: "העדפות") {
                         VStack(spacing: 0) {
-                            // Appearance
+                            // Appearance — first = RIGHT in RTL
                             HStack {
-                                Spacer()
                                 HStack(spacing: 8) {
-                                    Text("מראה")
-                                        .font(SederTheme.ploni(16))
-                                        .foregroundStyle(SederTheme.textPrimary)
                                     Image(systemName: "paintbrush")
                                         .font(.body)
                                         .foregroundStyle(SederTheme.textSecondary)
+                                    Text("מראה")
+                                        .font(SederTheme.ploni(16))
+                                        .foregroundStyle(SederTheme.textPrimary)
                                 }
+                                Spacer()
                             }
                             .padding(.horizontal, 16)
                             .padding(.top, 12)
@@ -115,17 +115,17 @@ struct SettingsView: View {
                     // MARK: - Calendar
                     SettingsSection(title: "יומן") {
                         HStack {
-                            // First = RIGHT in RTL: status info
+                            // First = RIGHT in RTL: icon, dot, text
                             HStack(spacing: 8) {
-                                Text(viewModel.calendarConnected ? "מחובר" : "לא מחובר")
-                                    .font(SederTheme.ploni(16))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                Circle()
-                                    .fill(viewModel.calendarConnected ? Color.green : Color.red)
-                                    .frame(width: 8, height: 8)
                                 Image(systemName: "calendar")
                                     .font(.body)
                                     .foregroundStyle(SederTheme.textSecondary)
+                                Circle()
+                                    .fill(viewModel.calendarConnected ? Color.green : Color.red)
+                                    .frame(width: 8, height: 8)
+                                Text(viewModel.calendarConnected ? "מחובר" : "לא מחובר")
+                                    .font(SederTheme.ploni(16))
+                                    .foregroundStyle(SederTheme.textPrimary)
                             }
 
                             Spacer()
@@ -165,11 +165,11 @@ struct SettingsView: View {
                             showDeleteConfirm = true
                         } label: {
                             HStack {
-                                // First = RIGHT in RTL: label + icon
+                                // First = RIGHT in RTL: icon + label
                                 HStack(spacing: 8) {
+                                    Image(systemName: "trash")
                                     Text("מחיקת חשבון")
                                         .font(SederTheme.ploni(16))
-                                    Image(systemName: "trash")
                                 }
                                 .foregroundStyle(.red)
 
@@ -265,29 +265,47 @@ struct SettingsView: View {
             .onChange(of: viewModel.timezone) { _ in Task { await viewModel.savePreferences() } }
             .onChange(of: viewModel.language) { _ in Task { await viewModel.savePreferences() } }
         }
+        .environment(\.layoutDirection, .rightToLeft)
     }
 
     // MARK: - Preference Picker
 
     private func preferencePicker(icon: String, label: String, selection: Binding<String>, options: [(String, String)]) -> some View {
         HStack {
-            Picker("", selection: selection) {
-                ForEach(options, id: \.0) { value, display in
-                    Text(display).tag(value)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(SederTheme.textPrimary)
-
-            Spacer()
-
+            // First = RIGHT in RTL: icon + label
             HStack(spacing: 8) {
-                Text(label)
-                    .font(SederTheme.ploni(16))
-                    .foregroundStyle(SederTheme.textPrimary)
                 Image(systemName: icon)
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
+                Text(label)
+                    .font(SederTheme.ploni(16))
+                    .foregroundStyle(SederTheme.textPrimary)
+            }
+
+            Spacer()
+
+            // Last = LEFT in RTL: menu value
+            Menu {
+                ForEach(options, id: \.0) { value, display in
+                    Button {
+                        selection.wrappedValue = value
+                    } label: {
+                        if value == selection.wrappedValue {
+                            Label(display, systemImage: "checkmark")
+                        } else {
+                            Text(display)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(options.first(where: { $0.0 == selection.wrappedValue })?.1 ?? "")
+                        .font(SederTheme.ploni(16))
+                        .foregroundStyle(SederTheme.textSecondary)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 10))
+                        .foregroundStyle(SederTheme.textTertiary)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -298,8 +316,50 @@ struct SettingsView: View {
 
     private var languageRow: some View {
         HStack {
-            // First = RIGHT in RTL: would be picker, but here we show badge for "en"
+            // First = RIGHT in RTL: icon + label
             HStack(spacing: 8) {
+                Image(systemName: "globe")
+                    .font(.body)
+                    .foregroundStyle(SederTheme.textSecondary)
+                Text("שפה")
+                    .font(SederTheme.ploni(16))
+                    .foregroundStyle(SederTheme.textPrimary)
+            }
+
+            Spacer()
+
+            // Last = LEFT in RTL: menu + badge
+            HStack(spacing: 8) {
+                Menu {
+                    Button {
+                        viewModel.language = "he"
+                    } label: {
+                        if viewModel.language == "he" {
+                            Label("עברית", systemImage: "checkmark")
+                        } else {
+                            Text("עברית")
+                        }
+                    }
+                    Button {
+                        viewModel.language = "en"
+                    } label: {
+                        if viewModel.language == "en" {
+                            Label("English", systemImage: "checkmark")
+                        } else {
+                            Text("English")
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(viewModel.language == "he" ? "עברית" : "English")
+                            .font(SederTheme.ploni(16))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundStyle(SederTheme.textTertiary)
+                    }
+                }
+
                 if viewModel.language == "en" {
                     Text("בקרוב")
                         .font(SederTheme.ploni(12, weight: .medium))
@@ -309,24 +369,6 @@ struct SettingsView: View {
                         .background(SederTheme.brandGreen)
                         .clipShape(Capsule())
                 }
-
-                Picker("", selection: $viewModel.language) {
-                    Text("עברית").tag("he")
-                    Text("English").tag("en")
-                }
-                .pickerStyle(.menu)
-                .tint(SederTheme.textPrimary)
-            }
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                Text("שפה")
-                    .font(SederTheme.ploni(16))
-                    .foregroundStyle(SederTheme.textPrimary)
-                Image(systemName: "globe")
-                    .font(.body)
-                    .foregroundStyle(SederTheme.textSecondary)
             }
         }
         .padding(.horizontal, 16)
@@ -339,7 +381,7 @@ struct SettingsSection<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(title)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(SederTheme.textSecondary)
@@ -368,18 +410,20 @@ struct SettingsRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Image(systemName: "chevron.left")
-                    .font(.caption)
-                    .foregroundStyle(SederTheme.textTertiary)
-                Spacer()
+                // First = RIGHT in RTL: icon + label
                 HStack(spacing: 8) {
-                    Text(label)
-                        .font(.subheadline)
-                        .foregroundStyle(SederTheme.textPrimary)
                     Image(systemName: icon)
                         .font(.body)
                         .foregroundStyle(SederTheme.textSecondary)
+                    Text(label)
+                        .font(.subheadline)
+                        .foregroundStyle(SederTheme.textPrimary)
                 }
+                Spacer()
+                // Last = LEFT in RTL: chevron
+                Image(systemName: "chevron.left")
+                    .font(.caption)
+                    .foregroundStyle(SederTheme.textTertiary)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
