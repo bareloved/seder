@@ -122,7 +122,7 @@ struct ClientsView: View {
         }
         .sheet(item: $selectedClient) { client in
             ClientDetailSheet(client: client, viewModel: viewModel)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
         }
         .refreshable { await viewModel.loadClients() }
     }
@@ -164,11 +164,11 @@ struct ClientsView: View {
             Text(String(client.name.prefix(1)))
                 .font(SederTheme.ploni(16, weight: .semibold))
                 .foregroundStyle(SederTheme.brandGreen)
-                .frame(width: 38, height: 38)
+                .frame(width: 40, height: 40)
                 .background(SederTheme.brandGreen.opacity(0.1))
                 .clipShape(Circle())
 
-            // Name + contact info
+            // Name + email
             VStack(alignment: .leading, spacing: 2) {
                 Text(client.name)
                     .font(SederTheme.ploni(17, weight: .semibold))
@@ -177,12 +177,13 @@ struct ClientsView: View {
                     Text(email)
                         .font(SederTheme.ploni(13))
                         .foregroundStyle(SederTheme.textTertiary)
+                        .lineLimit(1)
                 }
             }
 
             Spacer()
 
-            // Revenue + jobs (last = left in RTL)
+            // Revenue + stats (last = left in RTL)
             VStack(alignment: .trailing, spacing: 2) {
                 if let revenue = client.thisYearRevenue, revenue > 0 {
                     CurrencyText(
@@ -194,27 +195,34 @@ struct ClientsView: View {
                 }
                 if let jobs = client.jobCount, jobs > 0 {
                     Text("\(jobs) עבודות")
-                        .font(SederTheme.ploni(13))
+                        .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textSecondary)
                 }
                 if let outstanding = client.outstandingAmount, outstanding > 0 {
-                    CurrencyText(
-                        amount: outstanding,
-                        size: 13,
-                        weight: .regular,
-                        color: SederTheme.sentColor
-                    )
+                    HStack(spacing: 2) {
+                        Text("חוב")
+                            .font(SederTheme.ploni(11))
+                        CurrencyText(
+                            amount: outstanding,
+                            size: 12,
+                            weight: .regular,
+                            color: SederTheme.sentColor
+                        )
+                    }
+                    .foregroundStyle(SederTheme.sentColor)
                 }
             }
+
+            // Chevron (far left in RTL)
+            Image(systemName: "chevron.left")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(SederTheme.textTertiary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(SederTheme.cardBorder, lineWidth: 1)
-        )
+        .shadow(color: .black.opacity(0.04), radius: 3, y: 1)
     }
 
     // MARK: - Empty State
@@ -222,15 +230,15 @@ struct ClientsView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Spacer()
-            Image(systemName: "person.2")
-                .font(.system(size: 40))
+            Image(systemName: "person.crop.rectangle.stack")
+                .font(.system(size: 44))
                 .foregroundStyle(SederTheme.textTertiary)
 
-            Text("אין לקוחות")
+            Text("אין לקוחות עדיין")
                 .font(SederTheme.ploni(18, weight: .medium))
                 .foregroundStyle(SederTheme.textSecondary)
 
-            Text("הוסף לקוחות כדי לעקוב אחרי ההכנסות שלך")
+            Text("הוסף לקוח ראשון כדי להתחיל לעקוב")
                 .font(SederTheme.ploni(15))
                 .foregroundStyle(SederTheme.textTertiary)
                 .multilineTextAlignment(.center)
@@ -260,22 +268,66 @@ struct ClientDetailSheet: View {
     let client: Client
     @ObservedObject var viewModel: ClientsViewModel
     @Environment(\.dismiss) var dismiss
+    @State private var selectedEntry: IncomeEntry?
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(client.name)
-                    .font(SederTheme.ploni(22, weight: .semibold))
-                    .foregroundStyle(SederTheme.textPrimary)
-                Spacer()
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(SederTheme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(SederTheme.subtleBg)
-                        .clipShape(Circle())
+            // Header with avatar + name + contact actions
+            VStack(spacing: 12) {
+                HStack {
+                    // Name + avatar (right in RTL)
+                    HStack(spacing: 12) {
+                        Text(String(client.name.prefix(1)))
+                            .font(SederTheme.ploni(20, weight: .semibold))
+                            .foregroundStyle(SederTheme.brandGreen)
+                            .frame(width: 48, height: 48)
+                            .background(SederTheme.brandGreen.opacity(0.1))
+                            .clipShape(Circle())
+
+                        Text(client.name)
+                            .font(SederTheme.ploni(22, weight: .semibold))
+                            .foregroundStyle(SederTheme.textPrimary)
+                    }
+
+                    Spacer()
+
+                    // Dismiss (left in RTL)
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(SederTheme.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(SederTheme.subtleBg)
+                            .clipShape(Circle())
+                    }
+                }
+
+                // Contact action buttons
+                if client.phone != nil || client.email != nil {
+                    HStack(spacing: 12) {
+                        if let phone = client.phone, !phone.isEmpty {
+                            contactActionButton(
+                                icon: "phone.fill",
+                                label: "חייג",
+                                color: SederTheme.brandGreen
+                            ) {
+                                if let url = URL(string: "tel:\(phone)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        }
+                        if let email = client.email, !email.isEmpty {
+                            contactActionButton(
+                                icon: "envelope.fill",
+                                label: "אימייל",
+                                color: SederTheme.draftColor
+                            ) {
+                                if let url = URL(string: "mailto:\(email)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 20)
@@ -285,10 +337,10 @@ struct ClientDetailSheet: View {
             Divider()
 
             ScrollView {
-                VStack(spacing: 16) {
-                    // Analytics
+                VStack(spacing: 20) {
+                    // Analytics grid
                     if client.jobCount ?? 0 > 0 {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                             analyticsCard(label: "סה״כ הכנסות", value: formatCurrency(client.totalEarned ?? 0))
                             analyticsCard(label: "השנה", value: formatCurrency(client.thisYearRevenue ?? 0))
                             analyticsCard(label: "עבודות", value: "\(client.jobCount ?? 0)")
@@ -299,16 +351,27 @@ struct ClientDetailSheet: View {
                         }
                     }
 
-                    // Contact info
-                    if client.email != nil || client.phone != nil {
-                        VStack(spacing: 8) {
-                            if let email = client.email, !email.isEmpty {
-                                contactRow(icon: "envelope", value: email)
-                            }
-                            if let phone = client.phone, !phone.isEmpty {
-                                contactRow(icon: "phone", value: phone)
+                    // Recent jobs
+                    if !viewModel.clientEntries.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("עבודות אחרונות")
+                                .font(SederTheme.ploni(15, weight: .medium))
+                                .foregroundStyle(SederTheme.textSecondary)
+
+                            ForEach(viewModel.clientEntries.prefix(5)) { entry in
+                                Button {
+                                    selectedEntry = entry
+                                } label: {
+                                    recentJobRow(entry)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
+                    } else if viewModel.isLoadingEntries {
+                        ProgressView()
+                            .tint(SederTheme.brandGreen)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                     }
 
                     // Notes
@@ -338,6 +401,70 @@ struct ClientDetailSheet: View {
         }
         .background(SederTheme.pageBg)
         .environment(\.layoutDirection, .rightToLeft)
+        .task { await viewModel.loadClientEntries(client.name) }
+        .sheet(item: $selectedEntry) { entry in
+            IncomeDetailSheet(
+                viewModel: IncomeViewModel(),
+                entry: entry,
+                categories: [],
+                clientNames: []
+            )
+            .presentationDetents([.medium, .large])
+        }
+    }
+
+    // MARK: - Helper Views
+
+    private func contactActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .medium))
+                Text(label)
+                    .font(SederTheme.ploni(14, weight: .medium))
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(color.opacity(0.1))
+            .clipShape(Capsule())
+        }
+    }
+
+    private func recentJobRow(_ entry: IncomeEntry) -> some View {
+        HStack(spacing: 10) {
+            // Date
+            Text(shortDate(entry.date))
+                .font(.system(size: 13, weight: .medium, design: .rounded).monospacedDigit())
+                .foregroundStyle(SederTheme.textSecondary)
+                .frame(width: 42)
+
+            // Description
+            Text(entry.description)
+                .font(SederTheme.ploni(15))
+                .foregroundStyle(SederTheme.textPrimary)
+                .lineLimit(1)
+
+            Spacer()
+
+            // Amount
+            CurrencyText(
+                amount: entry.grossAmount,
+                size: 14,
+                weight: .medium,
+                color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
+            )
+
+            // Status badge
+            StatusBadge(
+                text: entry.invoiceStatus.label,
+                color: jobStatusColor(entry)
+            )
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(SederTheme.subtleBg)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private func analyticsCard(label: String, value: String, color: Color = SederTheme.textPrimary) -> some View {
@@ -355,21 +482,16 @@ struct ClientDetailSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private func contactRow(icon: String, value: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(SederTheme.textTertiary)
-                .frame(width: 28)
-            Text(value)
-                .font(SederTheme.ploni(16))
-                .foregroundStyle(SederTheme.textPrimary)
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(SederTheme.subtleBg)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+    private func shortDate(_ dateStr: String) -> String {
+        let parts = dateStr.split(separator: "-")
+        guard parts.count >= 3 else { return dateStr }
+        return "\(parts[2])/\(parts[1])"
+    }
+
+    private func jobStatusColor(_ entry: IncomeEntry) -> Color {
+        if entry.paymentStatus == .paid { return SederTheme.paidColor }
+        if entry.invoiceStatus == .sent { return SederTheme.sentColor }
+        return SederTheme.draftColor
     }
 
     private func formatCurrency(_ amount: Double) -> String {
