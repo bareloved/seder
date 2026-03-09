@@ -4,6 +4,7 @@ struct CalendarImportView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = CalendarImportViewModel()
     @State private var importedCount: Int?
+    @State private var showCalendarPicker = false
     var onImportComplete: (() -> Void)?
 
     var body: some View {
@@ -36,56 +37,89 @@ struct CalendarImportView: View {
         .task { await viewModel.loadCalendars() }
     }
 
-    // MARK: - Step 1: Calendar Selection
+    // MARK: - Calendar summary text
+
+    private var calendarSummary: String {
+        let selected = viewModel.calendars.filter { viewModel.selectedCalendarIds.contains($0.id) }
+        if selected.isEmpty { return "לא נבחרו יומנים" }
+        if selected.count == 1 { return selected[0].summary }
+        return "\(selected[0].summary) +\(selected.count - 1)"
+    }
+
+    // MARK: - Step 1
 
     private var calendarSelectionStep: some View {
-        VStack(spacing: 20) {
-            Text("בחר חודש ויומנים לייבוא אירועים")
-                .font(SederTheme.ploni(16))
+        VStack(spacing: 0) {
+            Spacer()
+
+            // Hero icon
+            Image(systemName: "calendar.badge.plus")
+                .font(.system(size: 56))
+                .foregroundStyle(SederTheme.brandGreen)
+                .padding(.bottom, 12)
+
+            Text("ייבוא אירועים מהיומן")
+                .font(SederTheme.ploni(22, weight: .semibold))
+                .foregroundStyle(SederTheme.textPrimary)
+                .padding(.bottom, 4)
+
+            Text("בחר חודש ויומנים לייבוא")
+                .font(SederTheme.ploni(15))
                 .foregroundStyle(SederTheme.textSecondary)
-                .padding(.top, 8)
+                .padding(.bottom, 28)
 
-            // Calendars — compact chip selector
-            VStack(alignment: .leading, spacing: 8) {
-                Text("יומנים")
-                    .font(SederTheme.ploni(16, weight: .semibold))
-                    .foregroundStyle(SederTheme.textSecondary)
+            // Settings rows
+            VStack(spacing: 0) {
+                // Calendar picker row — first = right in RTL
+                Button { showCalendarPicker = true } label: {
+                    HStack {
+                        Text("יומנים")
+                            .font(SederTheme.ploni(16))
+                            .foregroundStyle(SederTheme.textPrimary)
 
-                if viewModel.isLoading && viewModel.calendars.isEmpty {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                } else {
-                    FlowLayout(spacing: 8) {
-                        ForEach(viewModel.calendars) { cal in
-                            let isSelected = viewModel.selectedCalendarIds.contains(cal.id)
-                            Button { viewModel.toggleCalendar(cal.id) } label: {
-                                Text(cal.summary)
-                                    .font(SederTheme.ploni(14, weight: isSelected ? .semibold : .regular))
-                                    .foregroundStyle(isSelected ? .white : SederTheme.textPrimary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(isSelected ? SederTheme.brandGreen : SederTheme.cardBg)
-                                    .clipShape(Capsule())
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(isSelected ? SederTheme.brandGreen : SederTheme.cardBorder, lineWidth: 1)
-                                    )
-                            }
-                        }
+                        Spacer()
+
+                        Text(calendarSummary)
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                            .lineLimit(1)
+
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(SederTheme.textTertiary)
                     }
+                    .padding(14)
                 }
-            }
 
-            // Month picker
-            MonthPicker(selectedDate: $viewModel.selectedMonth)
+                Divider().padding(.horizontal, 14)
+
+                // Month row
+                HStack {
+                    Text("חודש")
+                        .font(SederTheme.ploni(16))
+                        .foregroundStyle(SederTheme.textPrimary)
+
+                    Spacer()
+
+                    MonthPicker(selectedDate: $viewModel.selectedMonth)
+                }
+                .padding(14)
+            }
+            .background(SederTheme.cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+            )
 
             if let error = viewModel.errorMessage {
                 Text(error)
                     .font(SederTheme.ploni(14))
                     .foregroundStyle(.red)
+                    .padding(.top, 12)
             }
 
+            Spacer()
             Spacer()
 
             // Next button
@@ -108,14 +142,56 @@ struct CalendarImportView: View {
             .buttonStyle(.borderedProminent)
             .tint(SederTheme.brandGreen)
             .disabled(viewModel.isLoading || viewModel.selectedCalendarIds.isEmpty)
-
-            Button { dismiss() } label: {
-                Text("ביטול")
-                    .font(SederTheme.ploni(16))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
         }
         .padding(16)
+        .sheet(isPresented: $showCalendarPicker) {
+            CalendarPickerSheet(viewModel: viewModel)
+        }
+    }
+}
+
+// MARK: - Calendar Picker Sub-Sheet
+
+struct CalendarPickerSheet: View {
+    @ObservedObject var viewModel: CalendarImportViewModel
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(viewModel.calendars) { cal in
+                    let isSelected = viewModel.selectedCalendarIds.contains(cal.id)
+                    Button { viewModel.toggleCalendar(cal.id) } label: {
+                        HStack {
+                            Text(cal.summary)
+                                .font(SederTheme.ploni(16))
+                                .foregroundStyle(SederTheme.textPrimary)
+
+                            Spacer()
+
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 22))
+                                .foregroundStyle(isSelected ? SederTheme.brandGreen : SederTheme.textTertiary)
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("בחירת יומנים")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("סיום")
+                            .font(SederTheme.ploni(16, weight: .semibold))
+                            .foregroundStyle(SederTheme.brandGreen)
+                    }
+                }
+            }
+        }
+        .environment(\.layoutDirection, .rightToLeft)
+        .presentationDetents([.medium])
     }
 }
