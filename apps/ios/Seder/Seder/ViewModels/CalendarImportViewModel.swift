@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 
@@ -104,7 +105,7 @@ class CalendarImportViewModel: ObservableObject {
 
     func loadRules() async {
         do {
-            let settings: UserSettings = try await api.request(
+            let settings: CalendarSettingsResponse = try await api.request(
                 endpoint: "/api/v1/settings"
             )
             if let calSettings = settings.calendarSettings,
@@ -118,11 +119,11 @@ class CalendarImportViewModel: ObservableObject {
     }
 
     func saveRules() async {
-        let body = SettingsUpdateRequest(
+        let body = CalendarSettingsUpdateRequest(
             calendarSettings: CalendarSettingsPayload(rules: rules)
         )
         do {
-            let _: UserSettings = try await api.request(
+            let _: CalendarSettingsResponse = try await api.request(
                 endpoint: "/api/v1/settings",
                 method: "PUT",
                 body: body
@@ -224,19 +225,19 @@ private struct CalendarListResponse: Decodable {
     let calendars: [GoogleCalendar]
 }
 
-struct UserSettings: Decodable {
+private struct CalendarSettingsResponse: Decodable {
     let calendarSettings: CalendarSettingsData?
 }
 
-struct CalendarSettingsData: Decodable {
+private struct CalendarSettingsData: Decodable {
     let rules: [ClassificationRule]?
     let selectedCalendarIds: [String]?
 }
 
-struct SettingsUpdateRequest: Encodable {
+private struct CalendarSettingsUpdateRequest: Encodable {
     let calendarSettings: CalendarSettingsPayload
 }
 
-struct CalendarSettingsPayload: Encodable {
+private struct CalendarSettingsPayload: Encodable {
     let rules: [ClassificationRule]
 }
