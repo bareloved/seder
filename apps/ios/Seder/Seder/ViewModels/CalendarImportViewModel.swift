@@ -229,11 +229,6 @@ private struct CalendarSettingsResponse: Decodable {
     let calendarSettings: CalendarSettingsData?
 }
 
-private struct CalendarSettingsData: Decodable {
-    let rules: [ClassificationRule]?
-    let selectedCalendarIds: [String]?
-}
-
 private struct CalendarSettingsUpdateRequest: Encodable {
     let calendarSettings: CalendarSettingsPayload
 }
