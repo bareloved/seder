@@ -22,7 +22,57 @@ struct ClientsView: View {
                     .compactMap { $0 as? UIWindowScene }
                     .first?.windows.first?.safeAreaInsets.top ?? 0)
                 .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
-                .environment(\.layoutDirection, .leftToRight)
+
+                // Search + Sort bar
+                if !viewModel.clients.isEmpty {
+                    HStack(spacing: 8) {
+                        // Search field (first = right in RTL)
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 14))
+                                .foregroundStyle(SederTheme.textTertiary)
+                            TextField("חיפוש לקוח...", text: $viewModel.searchQuery)
+                                .font(SederTheme.ploni(16))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(SederTheme.subtleBg)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        // Sort button (last = left in RTL)
+                        Menu {
+                            ForEach(ClientSortOption.allCases, id: \.self) { option in
+                                Button {
+                                    if viewModel.sortOption == option {
+                                        viewModel.sortAscending.toggle()
+                                    } else {
+                                        viewModel.sortOption = option
+                                        viewModel.sortAscending = true
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(option.label)
+                                        if viewModel.sortOption == option {
+                                            Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(
+                                    viewModel.sortOption == .name ? SederTheme.textSecondary : SederTheme.brandGreen
+                                )
+                                .frame(width: 36, height: 36)
+                                .background(SederTheme.subtleBg)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+                }
 
                 Group {
                     if viewModel.isLoading {
@@ -60,9 +110,9 @@ struct ClientsView: View {
                 }
                 .padding(.trailing, 16)
                 .padding(.bottom, 16)
-                .environment(\.layoutDirection, .leftToRight)
             }
         }
+        .environment(\.layoutDirection, .rightToLeft)
         .sheet(isPresented: $showFormSheet) {
             ClientFormSheet(
                 viewModel: viewModel,
@@ -82,7 +132,7 @@ struct ClientsView: View {
     private var clientList: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
-                ForEach(viewModel.clients) { client in
+                ForEach(viewModel.filteredClients) { client in
                     clientRow(client)
                         .onTapGesture { selectedClient = client }
                         .contextMenu {
@@ -110,8 +160,30 @@ struct ClientsView: View {
 
     private func clientRow(_ client: Client) -> some View {
         HStack(spacing: 12) {
-            // Revenue + jobs (left in RTL)
+            // Avatar (first = right in RTL)
+            Text(String(client.name.prefix(1)))
+                .font(SederTheme.ploni(16, weight: .semibold))
+                .foregroundStyle(SederTheme.brandGreen)
+                .frame(width: 38, height: 38)
+                .background(SederTheme.brandGreen.opacity(0.1))
+                .clipShape(Circle())
+
+            // Name + contact info
             VStack(alignment: .leading, spacing: 2) {
+                Text(client.name)
+                    .font(SederTheme.ploni(17, weight: .semibold))
+                    .foregroundStyle(SederTheme.textPrimary)
+                if let email = client.email, !email.isEmpty {
+                    Text(email)
+                        .font(SederTheme.ploni(13))
+                        .foregroundStyle(SederTheme.textTertiary)
+                }
+            }
+
+            Spacer()
+
+            // Revenue + jobs (last = left in RTL)
+            VStack(alignment: .trailing, spacing: 2) {
                 if let revenue = client.thisYearRevenue, revenue > 0 {
                     CurrencyText(
                         amount: revenue,
@@ -134,28 +206,6 @@ struct ClientsView: View {
                     )
                 }
             }
-
-            Spacer()
-
-            // Name + contact info (right in RTL)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(client.name)
-                    .font(SederTheme.ploni(17, weight: .semibold))
-                    .foregroundStyle(SederTheme.textPrimary)
-                if let email = client.email, !email.isEmpty {
-                    Text(email)
-                        .font(SederTheme.ploni(13))
-                        .foregroundStyle(SederTheme.textTertiary)
-                }
-            }
-
-            // Avatar
-            Text(String(client.name.prefix(1)))
-                .font(SederTheme.ploni(16, weight: .semibold))
-                .foregroundStyle(SederTheme.brandGreen)
-                .frame(width: 38, height: 38)
-                .background(SederTheme.brandGreen.opacity(0.1))
-                .clipShape(Circle())
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

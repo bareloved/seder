@@ -2,8 +2,7 @@ import { db } from "@/db/client";
 import { incomeEntries, account, categories, userSettings, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
 import { eq, and, gte, lte, asc, desc, sql, count, lt, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
-import { Currency } from "./currency";
-import { DEFAULT_VAT_RATE } from "./types";
+import { Currency, DEFAULT_VAT_RATE } from "@seder/shared";
 import { GoogleCalendarAuthError } from "@/lib/googleCalendar";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -581,6 +580,47 @@ export async function deleteIncomeEntry(id: string, userId: string): Promise<boo
     .returning({ id: incomeEntries.id });
 
   return result.length > 0;
+}
+
+export async function getRecentEntriesForClient({
+  clientName,
+  userId,
+  limit = 5,
+}: {
+  clientName: string;
+  userId: string;
+  limit?: number;
+}) {
+  return db
+    .select({
+      id: incomeEntries.id,
+      date: incomeEntries.date,
+      description: incomeEntries.description,
+      clientName: incomeEntries.clientName,
+      clientId: incomeEntries.clientId,
+      amountGross: incomeEntries.amountGross,
+      amountPaid: incomeEntries.amountPaid,
+      vatRate: incomeEntries.vatRate,
+      includesVat: incomeEntries.includesVat,
+      invoiceStatus: incomeEntries.invoiceStatus,
+      paymentStatus: incomeEntries.paymentStatus,
+      categoryId: incomeEntries.categoryId,
+      notes: incomeEntries.notes,
+      invoiceSentDate: incomeEntries.invoiceSentDate,
+      paidDate: incomeEntries.paidDate,
+      calendarEventId: incomeEntries.calendarEventId,
+      createdAt: incomeEntries.createdAt,
+      updatedAt: incomeEntries.updatedAt,
+    })
+    .from(incomeEntries)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        eq(incomeEntries.clientName, clientName)
+      )
+    )
+    .orderBy(desc(incomeEntries.date))
+    .limit(limit);
 }
 
 export async function getUniqueClients(userId: string): Promise<string[]> {
