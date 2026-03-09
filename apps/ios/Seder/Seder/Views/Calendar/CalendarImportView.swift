@@ -100,9 +100,9 @@ struct CalendarImportView: View {
                         .frame(maxWidth: .infinity)
                 } else {
                     HStack(spacing: 8) {
-                        Image(systemName: "calendar")
                         Text("המשך")
                             .font(SederTheme.ploni(18, weight: .semibold))
+                        Image(systemName: "calendar")
                     }
                     .frame(maxWidth: .infinity)
                 }

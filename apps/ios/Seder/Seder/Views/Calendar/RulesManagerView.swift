@@ -33,14 +33,14 @@ struct RulesManagerView: View {
                     FlowLayout(spacing: 8) {
                         ForEach(activeKeywords, id: \.self) { keyword in
                             HStack(spacing: 4) {
+                                Text(keyword)
+                                    .font(SederTheme.ploni(14))
+                                    .foregroundStyle(SederTheme.textPrimary)
                                 Button { removeKeyword(keyword) } label: {
                                     Image(systemName: "xmark")
                                         .font(.system(size: 10, weight: .bold))
                                         .foregroundStyle(SederTheme.textTertiary)
                                 }
-                                Text(keyword)
-                                    .font(SederTheme.ploni(14))
-                                    .foregroundStyle(SederTheme.textPrimary)
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -54,17 +54,17 @@ struct RulesManagerView: View {
 
                 // Add keyword
                 HStack {
+                    TextField("הוסף מילת מפתח...", text: $newKeyword)
+                        .font(SederTheme.ploni(16))
+                        .multilineTextAlignment(.leading)
+                        .onSubmit { addKeyword() }
+
                     Button { addKeyword() } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(SederTheme.brandGreen)
                     }
                     .disabled(newKeyword.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                    TextField("הוסף מילת מפתח...", text: $newKeyword)
-                        .font(SederTheme.ploni(16))
-                        .multilineTextAlignment(.leading)
-                        .onSubmit { addKeyword() }
                 }
                 .padding(12)
                 .background(SederTheme.cardBg)

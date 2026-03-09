@@ -7,18 +7,8 @@ struct EventPreviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar
+            // Toolbar — RTL: first = right
             HStack {
-                // Settings button (left in RTL)
-                Button { showRulesManager = true } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 16))
-                        .foregroundStyle(SederTheme.textSecondary)
-                }
-
-                Spacer()
-
-                // Action buttons (right in RTL)
                 HStack(spacing: 12) {
                     Button { viewModel.selectAllWork() } label: {
                         Text("בחר הכל עבודה (\(viewModel.workCount))")
@@ -34,13 +24,21 @@ struct EventPreviewView: View {
 
                     Button { viewModel.hidePersonal.toggle() } label: {
                         HStack(spacing: 4) {
-                            Text(viewModel.hidePersonal ? "הצג הכל" : "הסתר אישי")
-                                .font(SederTheme.ploni(13, weight: .medium))
                             Image(systemName: viewModel.hidePersonal ? "eye.slash" : "eye")
                                 .font(.system(size: 12))
+                            Text(viewModel.hidePersonal ? "הצג הכל" : "הסתר אישי")
+                                .font(SederTheme.ploni(13, weight: .medium))
                         }
                         .foregroundStyle(SederTheme.textSecondary)
                     }
+                }
+
+                Spacer()
+
+                Button { showRulesManager = true } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 16))
+                        .foregroundStyle(SederTheme.textSecondary)
                 }
             }
             .padding(.horizontal, 16)
@@ -133,24 +131,9 @@ struct EventRow: View {
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: 10) {
-                // Checkbox (left in RTL)
-                Image(systemName: item.event.alreadyImported ? "checkmark.square.fill" : item.selected ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
-                    .foregroundStyle(
-                        item.event.alreadyImported ? .blue.opacity(0.5) :
-                        item.selected ? SederTheme.brandGreen : SederTheme.textTertiary
-                    )
-
-                Spacer()
-
-                // Event info (right in RTL)
+                // Event info — first = right in RTL
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Text(item.event.summary)
-                            .font(SederTheme.ploni(16))
-                            .foregroundStyle(SederTheme.textPrimary)
-                            .lineLimit(1)
-
                         Text(badgeText)
                             .font(SederTheme.ploni(11, weight: .medium))
                             .foregroundStyle(badgeColor)
@@ -158,12 +141,27 @@ struct EventRow: View {
                             .padding(.vertical, 2)
                             .background(badgeColor.opacity(0.1))
                             .clipShape(Capsule())
+
+                        Text(item.event.summary)
+                            .font(SederTheme.ploni(16))
+                            .foregroundStyle(SederTheme.textPrimary)
+                            .lineLimit(1)
                     }
 
                     Text(dateString)
                         .font(SederTheme.ploni(13))
                         .foregroundStyle(SederTheme.textSecondary)
                 }
+
+                Spacer()
+
+                // Checkbox — last = left in RTL
+                Image(systemName: item.event.alreadyImported ? "checkmark.square.fill" : item.selected ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 20))
+                    .foregroundStyle(
+                        item.event.alreadyImported ? .blue.opacity(0.5) :
+                        item.selected ? SederTheme.brandGreen : SederTheme.textTertiary
+                    )
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
