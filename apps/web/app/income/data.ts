@@ -583,11 +583,11 @@ export async function deleteIncomeEntry(id: string, userId: string): Promise<boo
 }
 
 export async function getRecentEntriesForClient({
-  clientName,
+  clientId,
   userId,
   limit = 5,
 }: {
-  clientName: string;
+  clientId: string;
   userId: string;
   limit?: number;
 }) {
@@ -616,7 +616,7 @@ export async function getRecentEntriesForClient({
     .where(
       and(
         eq(incomeEntries.userId, userId),
-        eq(incomeEntries.clientName, clientName)
+        eq(incomeEntries.clientId, clientId)
       )
     )
     .orderBy(desc(incomeEntries.date))

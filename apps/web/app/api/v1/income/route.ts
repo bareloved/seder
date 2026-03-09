@@ -14,10 +14,10 @@ export async function GET(request: NextRequest) {
     const userId = await requireAuth();
     const { searchParams } = request.nextUrl;
     const month = searchParams.get("month"); // "2026-03" format
-    const clientName = searchParams.get("clientName");
+    const clientId = searchParams.get("clientId");
 
-    if (clientName) {
-      const entries = await getRecentEntriesForClient({ clientName, userId });
+    if (clientId) {
+      const entries = await getRecentEntriesForClient({ clientId, userId });
       return apiSuccess(entries);
     }
 

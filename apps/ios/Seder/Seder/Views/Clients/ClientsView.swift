@@ -401,7 +401,7 @@ struct ClientDetailSheet: View {
         }
         .background(SederTheme.pageBg)
         .environment(\.layoutDirection, .rightToLeft)
-        .task { await viewModel.loadClientEntries(client.name) }
+        .task { await viewModel.loadClientEntries(clientId: client.id) }
         .sheet(item: $selectedEntry) { entry in
             IncomeDetailSheet(
                 viewModel: IncomeViewModel(),

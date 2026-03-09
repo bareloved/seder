@@ -59,17 +59,17 @@ class ClientsViewModel: ObservableObject {
         return result
     }
 
-    func loadClientEntries(_ clientName: String) async {
+    func loadClientEntries(clientId: String) async {
         isLoadingEntries = true
         defer { isLoadingEntries = false }
 
         do {
             clientEntries = try await api.request(
                 endpoint: "/api/v1/income",
-                queryItems: [URLQueryItem(name: "clientName", value: clientName)]
+                queryItems: [URLQueryItem(name: "clientId", value: clientId)]
             )
         } catch {
-            print("[CLIENTS] Failed to load entries for \(clientName): \(error)")
+            print("[CLIENTS] Failed to load entries for \(clientId): \(error)")
             clientEntries = []
         }
     }
