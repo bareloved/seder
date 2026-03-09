@@ -12,7 +12,7 @@ struct StatusBadge: View {
                     .font(.system(size: 9, weight: .medium))
             }
             Text(text)
-                .font(.system(size: 11, weight: .medium))
+                .font(SederTheme.ploni(11, weight: .medium))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 6)

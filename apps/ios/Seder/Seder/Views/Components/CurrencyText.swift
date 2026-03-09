@@ -14,7 +14,7 @@ struct CurrencyText: View {
                 .font(.system(size: size, weight: weight, design: .rounded).monospacedDigit())
         }
         .foregroundStyle(color)
-        .tracking(-1.5)
+        .tracking(-0.5)
         .environment(\.layoutDirection, .leftToRight)
     }
 

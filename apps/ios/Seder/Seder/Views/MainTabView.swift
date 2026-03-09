@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @AppStorage("darkMode") private var darkMode = false
+    @AppStorage("appearanceMode") private var appearanceMode = "system"
 
     var body: some View {
         TabView {
@@ -30,6 +30,6 @@ struct MainTabView: View {
                 }
         }
         .tint(SederTheme.brandGreen)
-        .preferredColorScheme(darkMode ? .dark : .light)
+        .preferredColorScheme(appearanceMode == "dark" ? .dark : appearanceMode == "light" ? .light : nil)
     }
 }
