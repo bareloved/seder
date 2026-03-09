@@ -133,6 +133,11 @@ struct EventRow: View {
             HStack(spacing: 10) {
                 // Event info — first = right in RTL
                 VStack(alignment: .leading, spacing: 4) {
+                    Text(item.event.summary)
+                        .font(SederTheme.ploni(18))
+                        .foregroundStyle(SederTheme.textPrimary)
+                        .lineLimit(2)
+
                     HStack(spacing: 6) {
                         Text(badgeText)
                             .font(SederTheme.ploni(13, weight: .medium))
@@ -142,15 +147,10 @@ struct EventRow: View {
                             .background(badgeColor.opacity(0.1))
                             .clipShape(Capsule())
 
-                        Text(item.event.summary)
-                            .font(SederTheme.ploni(18))
-                            .foregroundStyle(SederTheme.textPrimary)
-                            .lineLimit(1)
+                        Text(dateString)
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
                     }
-
-                    Text(dateString)
-                        .font(SederTheme.ploni(15))
-                        .foregroundStyle(SederTheme.textSecondary)
                 }
 
                 Spacer()
