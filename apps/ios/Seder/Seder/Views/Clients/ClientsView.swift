@@ -95,32 +95,35 @@ struct ClientsView: View {
                 .background(SederTheme.subtleBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                // Sort button (last = left in RTL)
+                // Sort picker (last = left in RTL)
                 Menu {
-                    ForEach(ClientSortOption.allCases, id: \.self) { option in
-                        Button {
-                            if viewModel.sortOption == option {
-                                viewModel.sortAscending.toggle()
-                            } else {
-                                viewModel.sortOption = option
-                                viewModel.sortAscending = true
-                            }
-                        } label: {
-                            HStack {
-                                Text(option.label)
-                                if viewModel.sortOption == option {
-                                    Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
-                                }
-                            }
+                    Picker("מיון", selection: $viewModel.sortOption) {
+                        ForEach(ClientSortOption.allCases, id: \.self) { option in
+                            Text(option.label).tag(option)
                         }
                     }
                 } label: {
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(
-                            viewModel.sortOption == .name ? SederTheme.textSecondary : SederTheme.brandGreen
-                        )
-                        .frame(width: 36, height: 36)
+                    HStack(spacing: 4) {
+                        Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(viewModel.sortOption.label)
+                            .font(SederTheme.ploni(13, weight: .medium))
+                    }
+                    .foregroundStyle(SederTheme.brandGreen)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(SederTheme.subtleBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+
+                // Direction toggle
+                Button {
+                    viewModel.sortAscending.toggle()
+                } label: {
+                    Image(systemName: viewModel.sortAscending ? "arrow.up" : "arrow.down")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(SederTheme.textSecondary)
+                        .frame(width: 32, height: 32)
                         .background(SederTheme.subtleBg)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -131,7 +134,7 @@ struct ClientsView: View {
 
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    ForEach(viewModel.filteredClients) { client in
+                    ForEach(viewModel.filteredClients, id: \.id) { client in
                         clientRow(client)
                             .onTapGesture { selectedClient = client }
                             .contextMenu {

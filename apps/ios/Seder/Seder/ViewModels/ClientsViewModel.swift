@@ -64,10 +64,12 @@ class ClientsViewModel: ObservableObject {
         defer { isLoadingEntries = false }
 
         do {
-            clientEntries = try await api.request(
+            // Server filters by clientId when deployed; client-side filter as fallback
+            let allEntries: [IncomeEntry] = try await api.request(
                 endpoint: "/api/v1/income",
                 queryItems: [URLQueryItem(name: "clientId", value: clientId)]
             )
+            clientEntries = allEntries.filter { $0.clientId == clientId }
         } catch {
             print("[CLIENTS] Failed to load entries for \(clientId): \(error)")
             clientEntries = []
