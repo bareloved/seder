@@ -185,7 +185,7 @@ struct CalendarImportView: View {
                 .foregroundStyle(SederTheme.textSecondary)
 
             Menu {
-                ForEach(Array(options.enumerated()), id: \.offset) { idx, option in
+                ForEach(Array(options.enumerated()).reversed(), id: \.offset) { idx, option in
                     Button {
                         onSelect(idx)
                     } label: {
