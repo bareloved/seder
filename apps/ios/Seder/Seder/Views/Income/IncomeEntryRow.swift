@@ -17,44 +17,62 @@ struct IncomeEntryRow: View {
             // Date box — first = physical RIGHT in RTL
             VStack(spacing: 1) {
                 Text("\(dayNumber)")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(SederTheme.textPrimary)
                 Text(weekdayName)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(SederTheme.textTertiary)
             }
-            .frame(width: 48, height: 48)
-            .background(SederTheme.subtleBg)
+            .frame(width: 28, height: 44)
+            .background(Color(.systemGray6).opacity(0.6))
             .clipShape(RoundedRectangle(cornerRadius: 6))
 
             // Main content
-            VStack(alignment: .leading, spacing: 0) {
-                // Row 1: Description (right) + Amount (left)
-                HStack(alignment: .top) {
-                    // Description — first = physical RIGHT in RTL
-                    Text(entry.description)
-                        .font(SederTheme.ploni(15, weight: .semibold))
-                        .foregroundStyle(SederTheme.textPrimary)
-                        .lineLimit(1)
+            VStack(alignment: .leading, spacing: 4) {
+                // Row 1: Description+Client (right) + Amount+Status (left)
+                HStack(alignment: .top, spacing: 4) {
+                    // Description + Client — physical RIGHT in RTL
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.description)
+                            .font(SederTheme.ploni(18, weight: .semibold))
+                            .foregroundStyle(SederTheme.textPrimary)
+                            .lineLimit(2)
+                        if !entry.clientName.isEmpty {
+                            Text(entry.clientName)
+                                .font(SederTheme.ploni(15))
+                                .foregroundStyle(SederTheme.textSecondary)
+                        }
+                    }
                     Spacer()
-                    // Amount — last = physical LEFT in RTL
-                    CurrencyText(
-                        amount: entry.grossAmount,
-                        size: 18,
-                        weight: .medium,
-                        color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
-                    )
+                    // Amount + Status — physical LEFT in RTL
+                    VStack(alignment: .trailing) {
+                        CurrencyText(
+                            amount: entry.grossAmount,
+                            size: 20,
+                            weight: .medium,
+                            color: entry.paymentStatus == .paid ? SederTheme.paidColor : SederTheme.textPrimary
+                        )
+                        Spacer()
+                        HStack(spacing: 4) {
+                            StatusBadge(
+                                text: displayStatusLabel,
+                                color: displayStatusColor,
+                                icon: displayStatusIcon
+                            )
+                            if isOverdue {
+                                Text("מאחר")
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(Color(red: 0.70, green: 0.15, blue: 0.15))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color(red: 0.99, green: 0.88, blue: 0.88))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
                 }
 
-                // Row 2: Client name (right-aligned via .leading in RTL)
-                if !entry.clientName.isEmpty {
-                    Text(entry.clientName)
-                        .font(SederTheme.ploni(13))
-                        .foregroundStyle(SederTheme.textSecondary)
-                        .padding(.top, 2)
-                }
-
-                // Row 3: Category + Status (right) ... menu (left)
+                // Row 2: Category ... menu
                 HStack(spacing: 8) {
                     // Category chip — first = physical RIGHT
                     if let cat = entry.categoryData {
@@ -63,24 +81,6 @@ struct IncomeEntryRow: View {
                         Text("-")
                             .font(.caption)
                             .foregroundStyle(SederTheme.textTertiary)
-                    }
-
-                    // Status badge
-                    StatusBadge(
-                        text: displayStatusLabel,
-                        color: displayStatusColor,
-                        icon: displayStatusIcon
-                    )
-
-                    // Overdue indicator
-                    if isOverdue {
-                        Text("מאחר")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(Color(red: 0.70, green: 0.15, blue: 0.15))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(red: 0.99, green: 0.88, blue: 0.88))
-                            .clipShape(Capsule())
                     }
 
                     Spacer()
@@ -103,12 +103,11 @@ struct IncomeEntryRow: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.caption)
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(SederTheme.textTertiary)
-                            .frame(width: 24, height: 24)
+                            .frame(width: 32, height: 32)
                     }
                 }
-                .padding(.top, 8)
             }
         }
         .padding(.horizontal, 12)

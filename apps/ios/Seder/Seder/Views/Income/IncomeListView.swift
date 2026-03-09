@@ -14,6 +14,7 @@ struct IncomeListView: View {
     @State private var showSettings = false
     @State private var showCalendarImport = false
     @State private var showFilterSheet = false
+    @State private var editingEntry: IncomeEntry?
     @State private var activeFilter: KPIFilter = .all
     @State private var searchQuery = ""
     @State private var selectedCategoryId: String?
@@ -210,6 +211,7 @@ struct IncomeListView: View {
                                         Task { await viewModel.deleteEntry(entry.id) }
                                     }
                                 )
+                                .onTapGesture { editingEntry = entry }
                             }
                         }
                     }
@@ -238,6 +240,15 @@ struct IncomeListView: View {
         }
         .sheet(isPresented: $showAddSheet) {
             IncomeFormSheet(viewModel: viewModel)
+        }
+        .sheet(item: $editingEntry) { entry in
+            IncomeDetailSheet(
+                viewModel: viewModel,
+                entry: entry,
+                categories: categoriesVM.categories,
+                clientNames: uniqueClientNames
+            )
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showFilterSheet) {
             FilterSheet(
