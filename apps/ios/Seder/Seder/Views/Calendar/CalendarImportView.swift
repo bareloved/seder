@@ -165,13 +165,13 @@ struct CalendarPickerSheet: View {
                     Button { viewModel.toggleCalendar(cal.id) } label: {
                         HStack {
                             Text(cal.summary)
-                                .font(SederTheme.ploni(16))
+                                .font(SederTheme.ploni(18))
                                 .foregroundStyle(SederTheme.textPrimary)
 
                             Spacer()
 
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 22))
+                                .font(.system(size: 24))
                                 .foregroundStyle(calColor)
                         }
                     }
