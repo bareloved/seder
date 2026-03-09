@@ -12,13 +12,13 @@ struct EventPreviewView: View {
                 HStack(spacing: 12) {
                     Button { viewModel.selectAllWork() } label: {
                         Text("בחר הכל עבודה (\(viewModel.workCount))")
-                            .font(SederTheme.ploni(13, weight: .medium))
+                            .font(SederTheme.ploni(15, weight: .medium))
                             .foregroundStyle(SederTheme.brandGreen)
                     }
 
                     Button { viewModel.clearSelection() } label: {
                         Text("נקה בחירה")
-                            .font(SederTheme.ploni(13, weight: .medium))
+                            .font(SederTheme.ploni(15, weight: .medium))
                             .foregroundStyle(SederTheme.textSecondary)
                     }
 
@@ -27,7 +27,7 @@ struct EventPreviewView: View {
                             Image(systemName: viewModel.hidePersonal ? "eye.slash" : "eye")
                                 .font(.system(size: 12))
                             Text(viewModel.hidePersonal ? "הצג הכל" : "הסתר אישי")
-                                .font(SederTheme.ploni(13, weight: .medium))
+                                .font(SederTheme.ploni(15, weight: .medium))
                         }
                         .foregroundStyle(SederTheme.textSecondary)
                     }
@@ -87,7 +87,7 @@ struct EventPreviewView: View {
                     viewModel.step = .selectCalendar
                 } label: {
                     Text("חזרה")
-                        .font(SederTheme.ploni(16))
+                        .font(SederTheme.ploni(18))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -135,7 +135,7 @@ struct EventRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(badgeText)
-                            .font(SederTheme.ploni(11, weight: .medium))
+                            .font(SederTheme.ploni(13, weight: .medium))
                             .foregroundStyle(badgeColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
@@ -143,13 +143,13 @@ struct EventRow: View {
                             .clipShape(Capsule())
 
                         Text(item.event.summary)
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(18))
                             .foregroundStyle(SederTheme.textPrimary)
                             .lineLimit(1)
                     }
 
                     Text(dateString)
-                        .font(SederTheme.ploni(13))
+                        .font(SederTheme.ploni(15))
                         .foregroundStyle(SederTheme.textSecondary)
                 }
 
@@ -157,7 +157,7 @@ struct EventRow: View {
 
                 // Checkbox — last = left in RTL
                 Image(systemName: item.event.alreadyImported ? "checkmark.square.fill" : item.selected ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                     .foregroundStyle(
                         item.event.alreadyImported ? .blue.opacity(0.5) :
                         item.selected ? SederTheme.brandGreen : SederTheme.textTertiary

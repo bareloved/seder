@@ -69,12 +69,12 @@ struct CalendarImportView: View {
                 .padding(.bottom, 12)
 
             Text("ייבוא אירועים מהיומן")
-                .font(SederTheme.ploni(22, weight: .semibold))
+                .font(SederTheme.ploni(24, weight: .semibold))
                 .foregroundStyle(SederTheme.textPrimary)
                 .padding(.bottom, 4)
 
             Text("בחר חודש ויומנים לייבוא")
-                .font(SederTheme.ploni(15))
+                .font(SederTheme.ploni(16))
                 .foregroundStyle(SederTheme.textSecondary)
                 .padding(.bottom, 28)
 
@@ -84,13 +84,13 @@ struct CalendarImportView: View {
                 Button { showCalendarPicker = true } label: {
                     HStack {
                         Text("יומנים")
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(18))
                             .foregroundStyle(SederTheme.textPrimary)
 
                         Spacer()
 
                         Text(calendarSummary)
-                            .font(SederTheme.ploni(15))
+                            .font(SederTheme.ploni(16))
                             .foregroundStyle(SederTheme.textSecondary)
                             .lineLimit(1)
 
@@ -181,7 +181,7 @@ struct CalendarImportView: View {
     private func dateDropdown(label: String, value: String, options: [String], onSelect: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(SederTheme.ploni(14, weight: .medium))
+                .font(SederTheme.ploni(15, weight: .medium))
                 .foregroundStyle(SederTheme.textSecondary)
 
             Menu {
@@ -199,7 +199,7 @@ struct CalendarImportView: View {
             } label: {
                 HStack {
                     Text(value)
-                        .font(SederTheme.ploni(16))
+                        .font(SederTheme.ploni(18))
                         .foregroundStyle(SederTheme.textPrimary)
 
                     Spacer()
