@@ -46,6 +46,16 @@ struct CalendarImportView: View {
         return "\(selected[0].summary) +\(selected.count - 1)"
     }
 
+    private let hebrewMonths = [
+        "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+        "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
+    ]
+
+    private var yearOptions: [String] {
+        let thisYear = Calendar.current.component(.year, from: Date())
+        return (thisYear - 3 ... thisYear + 1).map { String($0) }
+    }
+
     // MARK: - Step 1
 
     private var calendarSelectionStep: some View {
@@ -93,15 +103,32 @@ struct CalendarImportView: View {
 
                 Divider().padding(.horizontal, 14)
 
-                // Month row
-                HStack {
-                    Text("חודש")
-                        .font(SederTheme.ploni(16))
-                        .foregroundStyle(SederTheme.textPrimary)
+                // Month + Year pickers
+                HStack(spacing: 12) {
+                    // Year picker — first = right in RTL, but we want month on right
+                    // so year goes second (left in RTL)
+                    dateDropdown(
+                        label: "חודש",
+                        value: hebrewMonths[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1],
+                        options: hebrewMonths,
+                        onSelect: { idx in
+                            var comps = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedMonth)
+                            comps.month = idx + 1
+                            if let d = Calendar.current.date(from: comps) { viewModel.selectedMonth = d }
+                        }
+                    )
 
-                    Spacer()
-
-                    MonthPicker(selectedDate: $viewModel.selectedMonth)
+                    dateDropdown(
+                        label: "שנה",
+                        value: String(Calendar.current.component(.year, from: viewModel.selectedMonth)),
+                        options: yearOptions,
+                        onSelect: { idx in
+                            let year = Calendar.current.component(.year, from: Date()) - 3 + idx
+                            var comps = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedMonth)
+                            comps.year = year
+                            if let d = Calendar.current.date(from: comps) { viewModel.selectedMonth = d }
+                        }
+                    )
                 }
                 .padding(14)
             }
@@ -146,6 +173,50 @@ struct CalendarImportView: View {
         .padding(16)
         .sheet(isPresented: $showCalendarPicker) {
             CalendarPickerSheet(viewModel: viewModel)
+        }
+    }
+
+    // MARK: - Date Dropdown
+
+    private func dateDropdown(label: String, value: String, options: [String], onSelect: @escaping (Int) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(SederTheme.ploni(14, weight: .medium))
+                .foregroundStyle(SederTheme.textSecondary)
+
+            Menu {
+                ForEach(Array(options.enumerated()), id: \.offset) { idx, option in
+                    Button {
+                        onSelect(idx)
+                    } label: {
+                        if option == value {
+                            Label(option, systemImage: "checkmark")
+                        } else {
+                            Text(option)
+                        }
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(value)
+                        .font(SederTheme.ploni(16))
+                        .foregroundStyle(SederTheme.textPrimary)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(SederTheme.textTertiary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(SederTheme.cardBg)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                )
+            }
         }
     }
 }
