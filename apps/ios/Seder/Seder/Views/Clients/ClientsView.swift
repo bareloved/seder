@@ -23,57 +23,6 @@ struct ClientsView: View {
                     .first?.windows.first?.safeAreaInsets.top ?? 0)
                 .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
 
-                // Search + Sort bar
-                if !viewModel.clients.isEmpty {
-                    HStack(spacing: 8) {
-                        // Search field (first = right in RTL)
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 14))
-                                .foregroundStyle(SederTheme.textTertiary)
-                            TextField("חיפוש לקוח...", text: $viewModel.searchQuery)
-                                .font(SederTheme.ploni(16))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(SederTheme.subtleBg)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                        // Sort button (last = left in RTL)
-                        Menu {
-                            ForEach(ClientSortOption.allCases, id: \.self) { option in
-                                Button {
-                                    if viewModel.sortOption == option {
-                                        viewModel.sortAscending.toggle()
-                                    } else {
-                                        viewModel.sortOption = option
-                                        viewModel.sortAscending = true
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(option.label)
-                                        if viewModel.sortOption == option {
-                                            Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
-                                        }
-                                    }
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "arrow.up.arrow.down")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(
-                                    viewModel.sortOption == .name ? SederTheme.textSecondary : SederTheme.brandGreen
-                                )
-                                .frame(width: 36, height: 36)
-                                .background(SederTheme.subtleBg)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 4)
-                }
-
                 Group {
                     if viewModel.isLoading {
                         Spacer()
@@ -130,30 +79,81 @@ struct ClientsView: View {
     // MARK: - Client List
 
     private var clientList: some View {
-        ScrollView {
-            LazyVStack(spacing: 6) {
-                ForEach(viewModel.filteredClients) { client in
-                    clientRow(client)
-                        .onTapGesture { selectedClient = client }
-                        .contextMenu {
-                            Button {
-                                editingClient = client
-                                showFormSheet = true
-                            } label: {
-                                Label("עריכה", systemImage: "pencil")
+        VStack(spacing: 0) {
+            // Search + Sort bar
+            HStack(spacing: 8) {
+                // Search field (first = right in RTL)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundStyle(SederTheme.textTertiary)
+                    TextField("חיפוש לקוח...", text: $viewModel.searchQuery)
+                        .font(SederTheme.ploni(16))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(SederTheme.subtleBg)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                // Sort button (last = left in RTL)
+                Menu {
+                    ForEach(ClientSortOption.allCases, id: \.self) { option in
+                        Button {
+                            if viewModel.sortOption == option {
+                                viewModel.sortAscending.toggle()
+                            } else {
+                                viewModel.sortOption = option
+                                viewModel.sortAscending = true
                             }
-                            Button(role: .destructive) {
-                                Task { _ = await viewModel.archiveClient(client.id) }
-                            } label: {
-                                Label("מחיקה", systemImage: "trash")
+                        } label: {
+                            HStack {
+                                Text(option.label)
+                                if viewModel.sortOption == option {
+                                    Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
+                                }
                             }
                         }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(
+                            viewModel.sortOption == .name ? SederTheme.textSecondary : SederTheme.brandGreen
+                        )
+                        .frame(width: 36, height: 36)
+                        .background(SederTheme.subtleBg)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
-            .padding(.top, 8)
             .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+
+            ScrollView {
+                LazyVStack(spacing: 6) {
+                    ForEach(viewModel.filteredClients) { client in
+                        clientRow(client)
+                            .onTapGesture { selectedClient = client }
+                            .contextMenu {
+                                Button {
+                                    editingClient = client
+                                    showFormSheet = true
+                                } label: {
+                                    Label("עריכה", systemImage: "pencil")
+                                }
+                                Button(role: .destructive) {
+                                    Task { _ = await viewModel.archiveClient(client.id) }
+                                } label: {
+                                    Label("מחיקה", systemImage: "trash")
+                                }
+                            }
+                    }
+                }
+                .padding(.top, 8)
+                .padding(.horizontal, 12)
+            }
+            .refreshable { await viewModel.loadClients() }
         }
-        .refreshable { await viewModel.loadClients() }
     }
 
     // MARK: - Client Row
