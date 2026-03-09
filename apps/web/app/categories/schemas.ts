@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { type LucideIcon } from "lucide-react";
 import {
   Sparkles,
   SlidersHorizontal,
@@ -22,57 +22,27 @@ import {
   Heart,
   Zap,
   Trophy,
-  type LucideIcon,
 } from "lucide-react";
 
-// Available colors for categories
-export const categoryColors = [
-  "emerald",
-  "indigo",
-  "sky",
-  "amber",
-  "purple",
-  "slate",
-  "blue",
-  "rose",
-  "teal",
-  "orange",
-  "pink",
-  "cyan",
-] as const;
+// Re-export shared category data
+export {
+  categoryColors,
+  categoryIcons,
+  DEFAULT_CATEGORIES,
+  createCategorySchema,
+  updateCategorySchema,
+  reorderCategoriesSchema,
+} from "@seder/shared";
+export type {
+  CategoryColor,
+  CategoryIcon,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+  ReorderCategoriesInput,
+} from "@seder/shared";
 
-export type CategoryColor = (typeof categoryColors)[number];
-
-// Available icons for categories (Lucide icon names)
-export const categoryIcons = [
-  "Sparkles",
-  "SlidersHorizontal",
-  "Mic2",
-  "BookOpen",
-  "Layers",
-  "Circle",
-  "Music",
-  "Headphones",
-  "Guitar",
-  "Piano",
-  "Drum",
-  "Radio",
-  "Video",
-  "Camera",
-  "Briefcase",
-  "GraduationCap",
-  "Users",
-  "Calendar",
-  "Star",
-  "Heart",
-  "Zap",
-  "Trophy",
-] as const;
-
-export type CategoryIcon = (typeof categoryIcons)[number];
-
-// Icon component map - explicit imports prevent tree-shaking
-export const categoryIconMap: Record<CategoryIcon, LucideIcon> = {
+// Web-specific: Icon component map (Lucide imports)
+export const categoryIconMap: Record<string, LucideIcon> = {
   Sparkles,
   SlidersHorizontal,
   Mic2,
@@ -101,14 +71,14 @@ export const categoryIconMap: Record<CategoryIcon, LucideIcon> = {
 export function getIconByName(iconName?: string | null): LucideIcon {
   if (!iconName) return Circle;
   if (iconName in categoryIconMap) {
-    return categoryIconMap[iconName as CategoryIcon];
+    return categoryIconMap[iconName];
   }
   return Circle;
 }
 
-// Color schemes for UI rendering
+// Color schemes for UI rendering (Tailwind classes — web-specific)
 export const colorSchemes: Record<
-  CategoryColor,
+  string,
   { bg: string; text: string; border: string }
 > = {
   emerald: {
@@ -183,42 +153,7 @@ export const defaultColorScheme = {
 // Helper to get color scheme
 export function getCategoryColorScheme(color?: string | null) {
   if (color && color in colorSchemes) {
-    return colorSchemes[color as CategoryColor];
+    return colorSchemes[color];
   }
   return defaultColorScheme;
 }
-
-// Default categories for new users
-export const DEFAULT_CATEGORIES = [
-  { name: "הופעות", color: "emerald", icon: "Sparkles", displayOrder: 1 },
-  { name: "הפקה", color: "indigo", icon: "SlidersHorizontal", displayOrder: 2 },
-  { name: "הקלטות", color: "sky", icon: "Mic2", displayOrder: 3 },
-  { name: "הוראה", color: "amber", icon: "BookOpen", displayOrder: 4 },
-  { name: "עיבודים", color: "purple", icon: "Layers", displayOrder: 5 },
-  { name: "אחר", color: "slate", icon: "Circle", displayOrder: 6 },
-] as const;
-
-// Zod schemas for validation
-export const createCategorySchema = z.object({
-  name: z.string().min(1, "שם הקטגוריה נדרש").max(50, "שם הקטגוריה ארוך מדי"),
-  color: z.enum(categoryColors, { message: "צבע לא תקין" }),
-  icon: z.enum(categoryIcons, { message: "אייקון לא תקין" }),
-});
-
-export const updateCategorySchema = z.object({
-  id: z.string().uuid("מזהה קטגוריה לא תקין"),
-  name: z.string().min(1, "שם הקטגוריה נדרש").max(50, "שם הקטגוריה ארוך מדי").optional(),
-  color: z.enum(categoryColors, { message: "צבע לא תקין" }).optional(),
-  icon: z.enum(categoryIcons, { message: "אייקון לא תקין" }).optional(),
-});
-
-export const reorderCategoriesSchema = z.array(
-  z.object({
-    id: z.string().uuid("מזהה קטגוריה לא תקין"),
-    displayOrder: z.number().int().min(0),
-  })
-);
-
-export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
-export type ReorderCategoriesInput = z.infer<typeof reorderCategoriesSchema>;

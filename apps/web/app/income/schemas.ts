@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { invoiceStatusValues, paymentStatusValues } from "@/db/schema";
+import { invoiceStatusValues, paymentStatusValues } from "@seder/shared";
 
 // Basic field schemas
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)");
