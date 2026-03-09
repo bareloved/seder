@@ -45,7 +45,7 @@ struct CalendarImportView: View {
                 .foregroundStyle(SederTheme.textSecondary)
                 .padding(.top, 8)
 
-            // Calendars
+            // Calendars — compact chip selector
             VStack(alignment: .leading, spacing: 8) {
                 Text("יומנים")
                     .font(SederTheme.ploni(16, weight: .semibold))
@@ -56,24 +56,22 @@ struct CalendarImportView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                 } else {
-                    ForEach(viewModel.calendars) { cal in
-                        Button { viewModel.toggleCalendar(cal.id) } label: {
-                            HStack {
+                    FlowLayout(spacing: 8) {
+                        ForEach(viewModel.calendars) { cal in
+                            let isSelected = viewModel.selectedCalendarIds.contains(cal.id)
+                            Button { viewModel.toggleCalendar(cal.id) } label: {
                                 Text(cal.summary)
-                                    .font(SederTheme.ploni(18))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                Spacer()
-                                Image(systemName: viewModel.selectedCalendarIds.contains(cal.id) ? "checkmark.square.fill" : "square")
-                                    .foregroundStyle(viewModel.selectedCalendarIds.contains(cal.id) ? SederTheme.brandGreen : SederTheme.textTertiary)
-                                    .font(.system(size: 20))
+                                    .font(SederTheme.ploni(14, weight: isSelected ? .semibold : .regular))
+                                    .foregroundStyle(isSelected ? .white : SederTheme.textPrimary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(isSelected ? SederTheme.brandGreen : SederTheme.cardBg)
+                                    .clipShape(Capsule())
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(isSelected ? SederTheme.brandGreen : SederTheme.cardBorder, lineWidth: 1)
+                                    )
                             }
-                            .padding(12)
-                            .background(SederTheme.cardBg)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
-                            )
                         }
                     }
                 }
