@@ -71,6 +71,7 @@ nonisolated struct CreateIncomeRequest: Encodable, Sendable {
     var invoiceStatus: String = "draft"
     var paymentStatus: String = "unpaid"
     var categoryId: String?
+    var calendarEventId: String?
     var notes: String?
 }
 
