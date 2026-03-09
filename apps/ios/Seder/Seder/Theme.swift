@@ -15,6 +15,15 @@ enum SederTheme {
     static let unpaidColor = Color(red: 0.86, green: 0.15, blue: 0.15) // red-600
     static let partialColor = Color(red: 0.92, green: 0.34, blue: 0.05) // orange-600
 
+    // Header (darkens in dark mode like web app)
+    static var headerBg: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0.06, green: 0.28, blue: 0.15, alpha: 1)
+                : UIColor(red: 0.18, green: 0.80, blue: 0.44, alpha: 1)
+        })
+    }
+
     // Adaptive colors (light/dark)
     static var pageBg: Color { Color(.systemGroupedBackground) }
     static var cardBg: Color { Color(.secondarySystemGroupedBackground) }
@@ -58,6 +67,47 @@ enum SederTheme {
         case "pink": return Color(red: 0.85, green: 0.21, blue: 0.58)
         case "cyan": return Color(red: 0.05, green: 0.65, blue: 0.68)
         default: return .gray
+        }
+    }
+
+    // Hex color string → Color
+    static func color(hex: String) -> Color {
+        let h = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        guard h.count == 6, let int = UInt64(h, radix: 16) else { return .gray }
+        return Color(
+            red: Double((int >> 16) & 0xFF) / 255,
+            green: Double((int >> 8) & 0xFF) / 255,
+            blue: Double(int & 0xFF) / 255
+        )
+    }
+
+    // Lucide icon name → SF Symbol mapping
+    static func sfSymbol(for lucideIcon: String?) -> String {
+        guard let icon = lucideIcon?.lowercased() else { return "circle" }
+        switch icon {
+        case "sparkles": return "sparkles"
+        case "slidershorizontal": return "slider.horizontal.3"
+        case "mic2": return "mic.fill"
+        case "bookopen": return "book.fill"
+        case "layers": return "square.3.layers.3d"
+        case "circle": return "circle"
+        case "music": return "music.note"
+        case "headphones": return "headphones"
+        case "guitar": return "guitars.fill"
+        case "piano": return "pianokeys"
+        case "drum": return "drum.fill"
+        case "radio": return "radio.fill"
+        case "video": return "video.fill"
+        case "camera": return "camera.fill"
+        case "briefcase": return "briefcase.fill"
+        case "graduationcap": return "graduationcap.fill"
+        case "users": return "person.2.fill"
+        case "calendar": return "calendar"
+        case "star": return "star.fill"
+        case "heart": return "heart.fill"
+        case "zap": return "bolt.fill"
+        case "trophy": return "trophy.fill"
+        default: return "circle"
         }
     }
 }

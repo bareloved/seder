@@ -161,6 +161,7 @@ struct CalendarPickerSheet: View {
             List {
                 ForEach(viewModel.calendars) { cal in
                     let isSelected = viewModel.selectedCalendarIds.contains(cal.id)
+                    let calColor = SederTheme.color(hex: cal.backgroundColor ?? "#4285f4")
                     Button { viewModel.toggleCalendar(cal.id) } label: {
                         HStack {
                             Text(cal.summary)
@@ -171,7 +172,7 @@ struct CalendarPickerSheet: View {
 
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 22))
-                                .foregroundStyle(isSelected ? SederTheme.brandGreen : SederTheme.textTertiary)
+                                .foregroundStyle(calColor)
                         }
                     }
                 }

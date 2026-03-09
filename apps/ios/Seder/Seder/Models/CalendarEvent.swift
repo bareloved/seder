@@ -4,6 +4,7 @@ nonisolated struct GoogleCalendar: Codable, Identifiable, Sendable {
     let id: String
     let summary: String
     let primary: Bool?
+    let backgroundColor: String?
 }
 
 nonisolated struct CalendarEvent: Codable, Identifiable, Sendable {
