@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "system"
-    @StateObject private var clientsVM = ClientsViewModel()
+    @State private var clientsVM = ClientsViewModel()
 
     var body: some View {
         TabView {

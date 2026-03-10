@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ClientFormSheet: View {
-    @ObservedObject var viewModel: ClientsViewModel
+    @Bindable var viewModel: ClientsViewModel
     @Environment(\.dismiss) var dismiss
 
     var editingClient: Client?

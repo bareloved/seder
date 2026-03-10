@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 enum ClientSortOption: String, CaseIterable {
@@ -15,22 +14,26 @@ enum ClientSortOption: String, CaseIterable {
 }
 
 @MainActor
-class ClientsViewModel: ObservableObject {
-    @Published var clients: [Client] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var searchQuery = ""
-    @Published var sortOption: ClientSortOption = .name
-    @Published var sortAscending = true
-    @Published var clientEntries: [IncomeEntry] = []
-    @Published var isLoadingEntries = false
+@Observable
+class ClientsViewModel {
+    var clients: [Client] = []
+    var isLoading = false
+    var errorMessage: String?
+    var searchQuery = ""
+    var sortOption: ClientSortOption = ClientSortOption(rawValue: UserDefaults.standard.string(forKey: "clientsSortOption") ?? "") ?? .name {
+        didSet { UserDefaults.standard.set(sortOption.rawValue, forKey: "clientsSortOption") }
+    }
+    var sortAscending: Bool = UserDefaults.standard.object(forKey: "clientsSortAscending") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(sortAscending, forKey: "clientsSortAscending") }
+    }
+    var clientEntries: [IncomeEntry] = []
+    var isLoadingEntries = false
 
     private let api = APIClient.shared
 
     var filteredClients: [Client] {
         var result = clients
 
-        // Search
         if !searchQuery.isEmpty {
             let q = searchQuery.lowercased()
             result = result.filter {
@@ -40,7 +43,6 @@ class ClientsViewModel: ObservableObject {
             }
         }
 
-        // Sort
         result.sort { a, b in
             let cmp: Bool
             switch sortOption {
@@ -79,7 +81,6 @@ class ClientsViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            // Try with analytics first
             let all: [Client] = try await api.request(
                 endpoint: "/api/v1/clients",
                 queryItems: [URLQueryItem(name: "analytics", value: "true")]
@@ -87,7 +88,6 @@ class ClientsViewModel: ObservableObject {
             clients = all.filter { !$0.isArchived }
         } catch {
             print("[CLIENTS] Analytics failed: \(error)")
-            // Fallback: load without analytics
             do {
                 let all: [Client] = try await api.request(endpoint: "/api/v1/clients")
                 clients = all.filter { !$0.isArchived }
