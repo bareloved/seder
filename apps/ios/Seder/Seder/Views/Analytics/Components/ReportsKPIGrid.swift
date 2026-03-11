@@ -48,7 +48,7 @@ private struct KPICell: View {
     var color: Color = .primary
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 3) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(SederTheme.ploni(14))
                 .foregroundStyle(SederTheme.textSecondary)
@@ -59,7 +59,7 @@ private struct KPICell: View {
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))

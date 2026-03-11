@@ -49,7 +49,7 @@ private struct CategoryBar: View {
             }
 
             GeometryReader { geo in
-                ZStack(alignment: .trailing) {
+                ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(SederTheme.subtleBg)
                         .frame(height: 8)
@@ -57,7 +57,7 @@ private struct CategoryBar: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(SederTheme.color(hex: category.categoryColor))
                         .frame(width: geo.size.width * (category.percentage / 100), height: 8)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(height: 8)

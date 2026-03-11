@@ -106,7 +106,7 @@ private struct AttentionItemRow: View {
     var body: some View {
         HStack {
             // Right side: client + description
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("\(item.clientName) — \(item.description)")
                     .font(SederTheme.ploni(14, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
