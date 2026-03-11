@@ -26,8 +26,14 @@ struct AnalyticsView: View {
 
             if viewModel.isLoading {
                 Spacer()
-                ProgressView()
-                    .tint(SederTheme.brandGreen)
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(SederTheme.brandGreen)
+                    Text("טוען נתונים...")
+                        .font(SederTheme.ploni(14))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
                 Spacer()
             } else {
                 ScrollView {
