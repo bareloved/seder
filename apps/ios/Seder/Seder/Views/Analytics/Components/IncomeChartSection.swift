@@ -19,7 +19,7 @@ struct IncomeChartSection: View {
             VStack(spacing: 8) {
                 if trends.isEmpty {
                     Text("אין נתונים")
-                        .font(SederTheme.ploni(13))
+                        .font(SederTheme.ploni(14))
                         .foregroundStyle(SederTheme.textTertiary)
                         .padding(.vertical, 20)
                 } else {
@@ -35,7 +35,7 @@ struct IncomeChartSection: View {
                     .chartXAxis {
                         AxisMarks { _ in
                             AxisValueLabel()
-                                .font(SederTheme.ploni(10))
+                                .font(SederTheme.ploni(11))
                                 .foregroundStyle(SederTheme.textSecondary)
                         }
                     }
@@ -45,7 +45,7 @@ struct IncomeChartSection: View {
                     HStack(spacing: 0) {
                         ForEach(trends) { trend in
                             Text(AmountFormatter.abbreviated(trend.totalGross))
-                                .font(SederTheme.ploni(10, weight: .semibold))
+                                .font(SederTheme.ploni(11, weight: .semibold))
                                 .foregroundStyle(SederTheme.textSecondary)
                                 .frame(maxWidth: .infinity)
                         }
@@ -82,7 +82,7 @@ private struct LegendDot: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(label)
-                .font(SederTheme.ploni(10))
+                .font(SederTheme.ploni(11))
                 .foregroundStyle(SederTheme.textSecondary)
         }
     }

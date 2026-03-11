@@ -17,7 +17,7 @@ struct VATSummarySection: View {
             badge: {
                 if let agg = aggregates, agg.vatTotal > 0 {
                     Text(AmountFormatter.full(agg.vatTotal))
-                        .font(SederTheme.ploni(11, weight: .medium))
+                        .font(SederTheme.ploni(12, weight: .medium))
                         .foregroundStyle(.purple)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
@@ -49,11 +49,11 @@ private struct VATRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(SederTheme.ploni(13, weight: isBold ? .semibold : .regular))
+                .font(SederTheme.ploni(14, weight: isBold ? .semibold : .regular))
                 .foregroundStyle(isBold ? SederTheme.textPrimary : SederTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(SederTheme.ploni(13, weight: isBold ? .bold : .semibold))
+                .font(SederTheme.ploni(14, weight: isBold ? .bold : .semibold))
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 12)

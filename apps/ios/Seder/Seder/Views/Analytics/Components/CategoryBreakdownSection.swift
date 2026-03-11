@@ -17,7 +17,7 @@ struct CategoryBreakdownSection: View {
         ) {
             if categories.isEmpty {
                 Text("אין נתונים")
-                    .font(SederTheme.ploni(13))
+                    .font(SederTheme.ploni(14))
                     .foregroundStyle(SederTheme.textTertiary)
                     .padding(.vertical, 20)
                     .frame(maxWidth: .infinity)
@@ -40,11 +40,11 @@ private struct CategoryBar: View {
         VStack(spacing: 3) {
             HStack {
                 Text(category.categoryName)
-                    .font(SederTheme.ploni(12, weight: .medium))
+                    .font(SederTheme.ploni(14, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
                 Spacer()
                 Text("\(AmountFormatter.full(category.amount)) (\(Int(category.percentage))%)")
-                    .font(SederTheme.ploni(12))
+                    .font(SederTheme.ploni(13))
                     .foregroundStyle(SederTheme.textSecondary)
             }
 
