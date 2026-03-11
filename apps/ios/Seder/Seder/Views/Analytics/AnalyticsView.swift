@@ -107,51 +107,66 @@ struct AnalyticsView: View {
 
     // MARK: - Month Selector
 
+    private var borderColor: Color { Color(.separator).opacity(0.3) }
+
     private var monthSelector: some View {
         HStack(spacing: 8) {
-            Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
-                .font(SederTheme.ploni(16))
-                .foregroundStyle(SederTheme.textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                )
+            Spacer()
 
-            HStack(spacing: 8) {
-                Button {
-                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(SederTheme.textSecondary)
-                }
-
-                Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
-                    .font(SederTheme.ploni(16, weight: .medium))
-                    .foregroundStyle(SederTheme.textPrimary)
-
+            // Center: Month picker with arrows
+            HStack(spacing: 0) {
                 Button {
                     viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(SederTheme.textSecondary)
+                        .frame(width: 30, height: 36)
+                        .environment(\.layoutDirection, .leftToRight)
+                }
+
+                Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
+                    .font(SederTheme.ploni(15))
+                    .foregroundStyle(SederTheme.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(minWidth: 80)
+
+                Button {
+                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                        .frame(width: 30, height: 36)
+                        .environment(\.layoutDirection, .leftToRight)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 2)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             )
 
             Spacer()
+
+            // Physical right: Year
+            Text(String(Calendar.current.component(.year, from: viewModel.selectedMonth)))
+                .font(SederTheme.ploni(15))
+                .foregroundStyle(SederTheme.textPrimary)
+                .lineLimit(1)
+                .fixedSize()
+                .frame(height: 36)
+                .padding(.horizontal, 12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(borderColor, lineWidth: 1)
+                )
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
     }
 }
