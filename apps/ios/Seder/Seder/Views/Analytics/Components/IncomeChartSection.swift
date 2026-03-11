@@ -7,6 +7,9 @@ struct IncomeChartSection: View {
     let hasError: Bool
     let onToggle: () -> Void
     let onRetry: () -> Void
+    let onMonthTap: (Int, Int) -> Void // (month, year)
+
+    @State private var selectedTrend: EnhancedMonthTrend?
 
     var body: some View {
         ExpandableSection(
@@ -19,7 +22,7 @@ struct IncomeChartSection: View {
             VStack(spacing: 8) {
                 if trends.isEmpty {
                     Text("אין נתונים")
-                        .font(SederTheme.ploni(13))
+                        .font(SederTheme.ploni(14))
                         .foregroundStyle(SederTheme.textTertiary)
                         .padding(.vertical, 20)
                 } else {
@@ -30,13 +33,35 @@ struct IncomeChartSection: View {
                         )
                         .foregroundStyle(barColor(trend.status))
                         .cornerRadius(4)
+                        .opacity(selectedTrend == nil || selectedTrend?.id == trend.id ? 1 : 0.4)
                     }
                     .chartYAxis(.hidden)
                     .chartXAxis {
                         AxisMarks { _ in
                             AxisValueLabel()
-                                .font(SederTheme.ploni(10))
+                                .font(SederTheme.ploni(13))
                                 .foregroundStyle(SederTheme.textSecondary)
+                        }
+                    }
+                    .chartOverlay { proxy in
+                        GeometryReader { geo in
+                            Rectangle()
+                                .fill(Color.clear)
+                                .contentShape(Rectangle())
+                                .onTapGesture { location in
+                                    guard let monthName: String = proxy.value(atX: location.x) else { return }
+                                    if let trend = trends.first(where: { AmountFormatter.monthName($0.month) == monthName }) {
+                                        withAnimation(.easeInOut(duration: 0.15)) {
+                                            selectedTrend = trend
+                                        }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                            onMonthTap(trend.month, trend.year)
+                                            withAnimation(.easeInOut(duration: 0.15)) {
+                                                selectedTrend = nil
+                                            }
+                                        }
+                                    }
+                                }
                         }
                     }
                     .frame(height: 120)
@@ -44,10 +69,15 @@ struct IncomeChartSection: View {
                     // Amount labels below chart
                     HStack(spacing: 0) {
                         ForEach(trends) { trend in
-                            Text(AmountFormatter.abbreviated(trend.totalGross))
-                                .font(SederTheme.ploni(10, weight: .semibold))
-                                .foregroundStyle(SederTheme.textSecondary)
-                                .frame(maxWidth: .infinity)
+                            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                                Text("₪")
+                                    .font(.system(size: 6, weight: .semibold, design: .rounded))
+                                Text(AmountFormatter.abbreviatedNumber(trend.totalGross))
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(SederTheme.textSecondary)
+                            .environment(\.layoutDirection, .leftToRight)
+                            .frame(maxWidth: .infinity)
                         }
                     }
 
@@ -82,7 +112,7 @@ private struct LegendDot: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(label)
-                .font(SederTheme.ploni(10))
+                .font(SederTheme.ploni(13))
                 .foregroundStyle(SederTheme.textSecondary)
         }
     }

@@ -109,10 +109,20 @@ struct IncomeListView: View {
         VStack(spacing: 0) {
             // Green navbar
             GreenNavBar(
+                title: "הכנסות",
                 onSettingsTap: { showSettings = true },
-                onAddTap: { showAddSheet = true },
                 avatarURL: auth.user?.image
-            )
+            ) {
+                Button(action: { showAddSheet = true }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("עבודה חדשה")
+                            .font(SederTheme.ploni(14, weight: .medium))
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
 
             // Filter bar (pinned below navbar)
             FilterBar(
@@ -289,6 +299,11 @@ struct IncomeListView: View {
             }
             appState.clearDeepLink()
         }
+        .onChange(of: appState.navigateToMonth) { _ in
+            guard let date = appState.navigateToMonth else { return }
+            viewModel.selectedMonth = date
+            appState.clearMonthNavigation()
+        }
     }
 
     private var currentMonthName: String {
@@ -300,65 +315,6 @@ struct IncomeListView: View {
 }
 
 // MARK: - Green Nav Bar (LTR internal layout - physical positioning)
-
-struct GreenNavBar: View {
-    var onSettingsTap: () -> Void
-    var onAddTap: (() -> Void)?
-    var avatarURL: String?
-
-    var body: some View {
-        ZStack {
-            // Center: title
-            Text("הכנסות")
-                .font(SederTheme.ploni(18, weight: .semibold))
-                .foregroundStyle(.white)
-
-            HStack {
-                // Physical right: add button
-                if let onAddTap {
-                    Button(action: onAddTap) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 13, weight: .semibold))
-                            Text("עבודה חדשה")
-                                .font(SederTheme.ploni(14, weight: .medium))
-                        }
-                        .foregroundStyle(.white)
-                    }
-                }
-
-                Spacer()
-
-                // Physical left: avatar
-                Button(action: onSettingsTap) {
-                    if let urlString = avatarURL, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
-                            Image(systemName: "person.crop.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }
-                        .frame(width: 34, height: 34)
-                        .clipShape(Circle())
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .padding(.top, UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.top ?? 0)
-        .background(SederTheme.headerBg.ignoresSafeArea(edges: .top))
-    }
-}
 
 // MARK: - Filter Bar
 

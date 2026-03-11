@@ -23,7 +23,7 @@ struct InvoiceTrackingSection: View {
             badge: {
                 if totalCount > 0 {
                     Text("\(totalCount) דורשות טיפול")
-                        .font(SederTheme.ploni(11, weight: .medium))
+                        .font(SederTheme.ploni(13, weight: .medium))
                         .foregroundStyle(SederTheme.sentColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
@@ -41,7 +41,7 @@ struct InvoiceTrackingSection: View {
                                 .font(.title2)
                                 .foregroundStyle(SederTheme.paidColor)
                             Text("הכל מטופל!")
-                                .font(SederTheme.ploni(13, weight: .medium))
+                                .font(SederTheme.ploni(14, weight: .medium))
                                 .foregroundStyle(SederTheme.textSecondary)
                         }
                         .padding(.vertical, 20)
@@ -49,9 +49,9 @@ struct InvoiceTrackingSection: View {
                         // Summary counters
                         HStack(spacing: 0) {
                             SummaryCounter(label: "טיוטות", count: attention.summary.drafts.count, amount: attention.summary.drafts.amount, color: SederTheme.textSecondary)
-                            Divider().frame(height: 40)
+                            Divider().frame(height: 44)
                             SummaryCounter(label: "נשלחו", count: attention.summary.sent.count, amount: attention.summary.sent.amount, color: SederTheme.sentColor)
-                            Divider().frame(height: 40)
+                            Divider().frame(height: 44)
                             SummaryCounter(label: "באיחור", count: attention.summary.overdue.count, amount: attention.summary.overdue.amount, color: SederTheme.unpaidColor)
                         }
                         .padding(.vertical, 8)
@@ -87,14 +87,12 @@ private struct SummaryCounter: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(label)
-                .font(SederTheme.ploni(10))
+                .font(SederTheme.ploni(14))
                 .foregroundStyle(SederTheme.textSecondary)
             Text("\(count)")
-                .font(SederTheme.ploni(16, weight: .bold))
+                .font(.system(size: 24, weight: .regular, design: .rounded))
                 .foregroundStyle(color)
-            Text(AmountFormatter.full(amount))
-                .font(SederTheme.ploni(10))
-                .foregroundStyle(SederTheme.textTertiary)
+            CurrencyText(amount: amount, size: 13, color: SederTheme.textTertiary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -106,13 +104,13 @@ private struct AttentionItemRow: View {
     var body: some View {
         HStack {
             // Right side: client + description
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("\(item.clientName) — \(item.description)")
-                    .font(SederTheme.ploni(13, weight: .medium))
+                    .font(SederTheme.ploni(15, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
                     .lineLimit(1)
                 Text(item.date)
-                    .font(SederTheme.ploni(11))
+                    .font(SederTheme.ploni(13))
                     .foregroundStyle(SederTheme.textTertiary)
             }
 
@@ -120,9 +118,7 @@ private struct AttentionItemRow: View {
 
             // Left side: amount + badge + chevron
             HStack(spacing: 6) {
-                Text(AmountFormatter.full(item.amountGross))
-                    .font(SederTheme.ploni(13, weight: .semibold))
-                    .foregroundStyle(SederTheme.textPrimary)
+                CurrencyText(amount: item.amountGross, size: 15, weight: .medium, color: SederTheme.textPrimary)
 
                 StatusPill(status: item.status)
 
@@ -159,7 +155,7 @@ private struct StatusPill: View {
 
     var body: some View {
         Text(label)
-            .font(SederTheme.ploni(10, weight: .medium))
+            .font(SederTheme.ploni(12, weight: .medium))
             .foregroundStyle(color)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)

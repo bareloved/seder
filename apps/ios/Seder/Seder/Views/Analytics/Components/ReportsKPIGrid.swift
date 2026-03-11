@@ -20,13 +20,25 @@ struct ReportsKPIGrid: View {
 
         LazyVGrid(columns: columns, spacing: 6) {
             // Row 1
-            KPICell(title: "הכנסה ברוטו", value: AmountFormatter.full(aggregates.totalGross), color: SederTheme.paidColor)
-            KPICell(title: "נטו (אחרי מע\"מ)", value: AmountFormatter.full(netIncome), color: SederTheme.brandGreen)
-            KPICell(title: "לא שולם", value: AmountFormatter.full(aggregates.totalUnpaid), color: SederTheme.sentColor)
+            KPICell(title: "הכנסה ברוטו", color: SederTheme.paidColor) {
+                CurrencyText(amount: aggregates.totalGross, size: 22, color: SederTheme.paidColor)
+            }
+            KPICell(title: "נטו (אחרי מע\"מ)", color: SederTheme.brandGreen) {
+                CurrencyText(amount: netIncome, size: 22, color: SederTheme.brandGreen)
+            }
+            KPICell(title: "לא שולם", color: SederTheme.sentColor) {
+                CurrencyText(amount: aggregates.totalUnpaid, size: 22, color: SederTheme.sentColor)
+            }
 
             // Row 2
-            KPICell(title: "עבודות", value: "\(aggregates.jobsCount)", color: SederTheme.draftColor)
-            KPICell(title: "ממוצע לעבודה", value: AmountFormatter.full(averagePerJob), color: SederTheme.textPrimary)
+            KPICell(title: "עבודות", color: SederTheme.draftColor) {
+                Text("\(aggregates.jobsCount)")
+                    .font(.system(size: 22, weight: .regular, design: .rounded))
+                    .foregroundStyle(SederTheme.draftColor)
+            }
+            KPICell(title: "ממוצע לעבודה", color: SederTheme.textPrimary) {
+                CurrencyText(amount: averagePerJob, size: 22, color: SederTheme.textPrimary)
+            }
             trendCell
         }
     }
@@ -38,28 +50,30 @@ struct ReportsKPIGrid: View {
         let color = isPositive ? SederTheme.paidColor : SederTheme.unpaidColor
         let value = "\(arrow) \(Int(abs(trend)))%"
 
-        return KPICell(title: "מגמה חודשית", value: value, color: color)
+        return KPICell(title: "מגמה חודשית", color: color) {
+            Text(value)
+                .font(.system(size: 22, weight: .regular, design: .rounded))
+                .foregroundStyle(color)
+        }
     }
 }
 
-private struct KPICell: View {
+private struct KPICell<Content: View>: View {
     let title: String
-    let value: String
     var color: Color = .primary
+    @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 3) {
+        VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(SederTheme.ploni(10))
+                .font(SederTheme.ploni(14))
                 .foregroundStyle(SederTheme.textSecondary)
 
-            Text(value)
-                .font(SederTheme.ploni(16, weight: .bold))
-                .foregroundStyle(color)
+            content()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 8))

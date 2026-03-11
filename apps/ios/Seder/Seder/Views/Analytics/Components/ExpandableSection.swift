@@ -33,7 +33,7 @@ struct ExpandableSection<Content: View, Badge: View>: View {
             Button(action: onToggle) {
                 HStack {
                     Text(title)
-                        .font(SederTheme.ploni(15, weight: .semibold))
+                        .font(SederTheme.ploni(16, weight: .semibold))
                         .foregroundStyle(SederTheme.textPrimary)
 
                     Spacer()
@@ -59,13 +59,13 @@ struct ExpandableSection<Content: View, Badge: View>: View {
                     // Error state
                     VStack(spacing: 8) {
                         Text("שגיאה בטעינה")
-                            .font(SederTheme.ploni(13))
+                            .font(SederTheme.ploni(14))
                             .foregroundStyle(SederTheme.textSecondary)
                         if let onRetry {
                             Button("נסה שוב") {
                                 onRetry()
                             }
-                            .font(SederTheme.ploni(13, weight: .medium))
+                            .font(SederTheme.ploni(14, weight: .medium))
                             .foregroundStyle(SederTheme.brandGreen)
                         }
                     }

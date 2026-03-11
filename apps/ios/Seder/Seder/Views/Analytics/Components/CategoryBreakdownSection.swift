@@ -17,7 +17,7 @@ struct CategoryBreakdownSection: View {
         ) {
             if categories.isEmpty {
                 Text("אין נתונים")
-                    .font(SederTheme.ploni(13))
+                    .font(SederTheme.ploni(14))
                     .foregroundStyle(SederTheme.textTertiary)
                     .padding(.vertical, 20)
                     .frame(maxWidth: .infinity)
@@ -36,28 +36,38 @@ struct CategoryBreakdownSection: View {
 private struct CategoryBar: View {
     let category: CategoryBreakdown
 
+    private func resolveColor(_ value: String) -> Color {
+        // Try name mapping first (e.g. "emerald"), then hex fallback (e.g. "#9ca3af")
+        let named = SederTheme.categoryColor(for: value)
+        if named != .gray { return named }
+        return SederTheme.color(hex: value)
+    }
+
     var body: some View {
         VStack(spacing: 3) {
             HStack {
                 Text(category.categoryName)
-                    .font(SederTheme.ploni(12, weight: .medium))
+                    .font(SederTheme.ploni(14, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
                 Spacer()
-                Text("\(AmountFormatter.full(category.amount)) (\(Int(category.percentage))%)")
-                    .font(SederTheme.ploni(12))
-                    .foregroundStyle(SederTheme.textSecondary)
+                HStack(spacing: 4) {
+                    CurrencyText(amount: category.amount, size: 13, color: SederTheme.textSecondary)
+                    Text("(\(Int(category.percentage))%)")
+                        .font(SederTheme.ploni(13))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
             }
 
             GeometryReader { geo in
-                ZStack(alignment: .trailing) {
+                ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(SederTheme.subtleBg)
                         .frame(height: 8)
 
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(SederTheme.color(hex: category.categoryColor))
+                        .fill(resolveColor(category.categoryColor))
                         .frame(width: geo.size.width * (category.percentage / 100), height: 8)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(height: 8)
