@@ -1,66 +1,68 @@
 import SwiftUI
 
 struct ClientsView: View {
-    @ObservedObject var viewModel: ClientsViewModel
+    @Bindable var viewModel: ClientsViewModel
     @State private var showFormSheet = false
     @State private var editingClient: Client?
     @State private var selectedClient: Client?
 
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                // Green navbar
-                HStack {
-                    Spacer()
-                    Text("לקוחות")
-                        .font(SederTheme.ploni(18, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-                .padding(.top, UIApplication.shared.connectedScenes
-                    .compactMap { $0 as? UIWindowScene }
-                    .first?.windows.first?.safeAreaInsets.top ?? 0)
-                .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
-
-                Group {
-                    if viewModel.isLoading {
-                        Spacer()
-                        ProgressView()
-                            .tint(SederTheme.brandGreen)
-                        Spacer()
-                    } else if viewModel.clients.isEmpty {
-                        emptyState
-                    } else {
-                        clientList
-                    }
-                }
-                .background(SederTheme.pageBg)
-            }
-            .ignoresSafeArea(edges: .top)
-
-            // FAB
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Button {
-                        editingClient = nil
-                        showFormSheet = true
-                    } label: {
+        VStack(spacing: 0) {
+            // Green navbar
+            HStack {
+                // Add button (right in RTL)
+                Button {
+                    editingClient = nil
+                    showFormSheet = true
+                } label: {
+                    HStack(spacing: 4) {
                         Image(systemName: "plus")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(SederTheme.brandGreen)
-                            .clipShape(Circle())
-                            .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 8, y: 4)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("לקוח חדש")
+                            .font(SederTheme.ploni(14, weight: .medium))
                     }
+                    .foregroundStyle(.white)
                 }
-                .padding(.trailing, 16)
-                .padding(.bottom, 16)
+
+                Spacer()
+
+                Text("לקוחות")
+                    .font(SederTheme.ploni(18, weight: .semibold))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                // Invisible spacer to balance
+                HStack(spacing: 4) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("לקוח חדש")
+                        .font(SederTheme.ploni(14, weight: .medium))
+                }
+                .foregroundStyle(.clear)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .padding(.top, UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?.windows.first?.safeAreaInsets.top ?? 0)
+            .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
+
+            Group {
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .tint(SederTheme.brandGreen)
+                    Spacer()
+                } else if viewModel.clients.isEmpty {
+                    emptyState
+                } else {
+                    clientList
+                }
+            }
+            .background(SederTheme.pageBg)
         }
+        .ignoresSafeArea(edges: .top)
         .environment(\.layoutDirection, .rightToLeft)
         .sheet(isPresented: $showFormSheet) {
             ClientFormSheet(
@@ -95,37 +97,40 @@ struct ClientsView: View {
                 .background(SederTheme.subtleBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                // Sort picker (last = left in RTL)
+                // Sort button
                 Menu {
-                    Picker("מיון", selection: $viewModel.sortOption) {
-                        ForEach(ClientSortOption.allCases, id: \.self) { option in
-                            Text(option.label).tag(option)
+                    ForEach(ClientSortOption.allCases, id: \.self) { option in
+                        Button {
+                            viewModel.sortOption = option
+                        } label: {
+                            if option == viewModel.sortOption {
+                                Label(option.label, systemImage: "checkmark")
+                            } else {
+                                Text(option.label)
+                            }
                         }
+                    }
+                    Divider()
+                    Button {
+                        viewModel.sortAscending.toggle()
+                    } label: {
+                        Label(
+                            viewModel.sortAscending ? "סדר יורד" : "סדר עולה",
+                            systemImage: viewModel.sortAscending ? "arrow.down" : "arrow.up"
+                        )
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: viewModel.sortAscending ? "chevron.up" : "chevron.down")
+                        Image(systemName: viewModel.sortAscending ? "arrow.up" : "arrow.down")
                             .font(.system(size: 10, weight: .bold))
                         Text(viewModel.sortOption.label)
-                            .font(SederTheme.ploni(13, weight: .medium))
+                            .font(SederTheme.ploni(14, weight: .medium))
                     }
                     .foregroundStyle(SederTheme.brandGreen)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(SederTheme.subtleBg)
+                    .background(SederTheme.brandGreen.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-
-                // Direction toggle
-                Button {
-                    viewModel.sortAscending.toggle()
-                } label: {
-                    Image(systemName: viewModel.sortAscending ? "arrow.up" : "arrow.down")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(SederTheme.textSecondary)
-                        .frame(width: 32, height: 32)
-                        .background(SederTheme.subtleBg)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
             .padding(.horizontal, 12)
@@ -137,19 +142,6 @@ struct ClientsView: View {
                     ForEach(viewModel.filteredClients, id: \.id) { client in
                         clientRow(client)
                             .onTapGesture { selectedClient = client }
-                            .contextMenu {
-                                Button {
-                                    editingClient = client
-                                    showFormSheet = true
-                                } label: {
-                                    Label("עריכה", systemImage: "pencil")
-                                }
-                                Button(role: .destructive) {
-                                    Task { _ = await viewModel.archiveClient(client.id) }
-                                } label: {
-                                    Label("מחיקה", systemImage: "trash")
-                                }
-                            }
                     }
                 }
                 .padding(.top, 8)
@@ -174,11 +166,17 @@ struct ClientsView: View {
             // Name + email
             VStack(alignment: .leading, spacing: 2) {
                 Text(client.name)
-                    .font(SederTheme.ploni(17, weight: .semibold))
+                    .font(SederTheme.ploni(18, weight: .semibold))
                     .foregroundStyle(SederTheme.textPrimary)
                 if let email = client.email, !email.isEmpty {
                     Text(email)
-                        .font(SederTheme.ploni(13))
+                        .font(SederTheme.ploni(14))
+                        .foregroundStyle(SederTheme.textTertiary)
+                        .lineLimit(1)
+                }
+                if let phone = client.phone, !phone.isEmpty {
+                    Text(phone)
+                        .font(SederTheme.ploni(14))
                         .foregroundStyle(SederTheme.textTertiary)
                         .lineLimit(1)
                 }
@@ -269,9 +267,10 @@ struct ClientsView: View {
 
 struct ClientDetailSheet: View {
     let client: Client
-    @ObservedObject var viewModel: ClientsViewModel
+    @Bindable var viewModel: ClientsViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedEntry: IncomeEntry?
+    @State private var showEditSheet = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -294,14 +293,24 @@ struct ClientDetailSheet: View {
 
                     Spacer()
 
-                    // Dismiss (left in RTL)
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(SederTheme.textSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(SederTheme.subtleBg)
-                            .clipShape(Circle())
+                    // Edit + Dismiss (left in RTL)
+                    HStack(spacing: 8) {
+                        Button { showEditSheet = true } label: {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(SederTheme.textSecondary)
+                                .frame(width: 28, height: 28)
+                                .background(SederTheme.subtleBg)
+                                .clipShape(Circle())
+                        }
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(SederTheme.textSecondary)
+                                .frame(width: 28, height: 28)
+                                .background(SederTheme.subtleBg)
+                                .clipShape(Circle())
+                        }
                     }
                 }
 
@@ -414,7 +423,14 @@ struct ClientDetailSheet: View {
             )
             .presentationDetents([.medium, .large])
         }
-    }
+        .sheet(isPresented: $showEditSheet) {
+            ClientFormSheet(
+                viewModel: viewModel,
+                editingClient: client
+            )
+            .presentationDetents([.large])
+        }
+    } // end body
 
     // MARK: - Helper Views
 

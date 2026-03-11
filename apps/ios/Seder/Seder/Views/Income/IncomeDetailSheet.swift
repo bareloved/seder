@@ -2,10 +2,13 @@ import SwiftUI
 
 struct IncomeDetailSheet: View {
     @ObservedObject var viewModel: IncomeViewModel
-    let entry: IncomeEntry
+    var entry: IncomeEntry?
     var categories: [Category]
     var clientNames: [String]
+    var clientsVM: ClientsViewModel?
     @Environment(\.dismiss) var dismiss
+
+    private var isEditing: Bool { entry != nil }
 
     @State private var date = Date()
     @State private var description = ""
@@ -17,7 +20,10 @@ struct IncomeDetailSheet: View {
     @State private var showDatePicker = false
     @State private var showCategoryPicker = false
     @State private var previousAmount = ""
+    @State private var showClientSuggestions = false
+    @State private var isCreatingClient = false
     @FocusState private var amountFocused: Bool
+    @FocusState private var clientFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,25 +33,42 @@ struct IncomeDetailSheet: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Row 1: Client (RIGHT) + Date (LEFT)
-                    HStack(spacing: 12) {
-                        // Client — first = physical RIGHT in RTL
-                        fieldColumn(label: "לקוח", icon: "person") {
-                            Menu {
-                                Button("ללא לקוח") { clientName = "" }
-                                ForEach(clientNames, id: \.self) { name in
-                                    Button(name) { clientName = name }
+                    // Row 1: Client (full width with suggestions)
+                    fieldColumn(label: "לקוח", icon: "person") {
+                        VStack(spacing: 0) {
+                            TextField("הקלידו את שם הלקוח", text: $clientName)
+                                .font(SederTheme.ploni(18))
+                                .multilineTextAlignment(.leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 12)
+                                .background(SederTheme.subtleBg)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(showClientSuggestions ? SederTheme.brandGreen : SederTheme.cardBorder, lineWidth: 1)
+                                )
+                                .focused($clientFocused)
+                                .onChange(of: clientFocused) {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        showClientSuggestions = clientFocused
+                                    }
                                 }
-                            } label: {
-                                HStack {
-                                    Text(clientName.isEmpty ? "בחר לקוח" : clientName)
-                                        .font(SederTheme.ploni(18))
-                                        .foregroundStyle(clientName.isEmpty ? SederTheme.textTertiary : SederTheme.textPrimary)
-                                    Spacer()
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 14))
-                                        .foregroundStyle(SederTheme.textTertiary)
-                                }
+
+                            if showClientSuggestions {
+                                clientSuggestionsView
+                            }
+                        }
+                    }
+
+                    // Row 2: Date (full width)
+                    fieldColumn(label: "תאריך", icon: "calendar") {
+                        Button {
+                            showDatePicker.toggle()
+                        } label: {
+                            Text(date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "he_IL"))))
+                                .font(SederTheme.ploni(18))
+                                .foregroundStyle(SederTheme.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
                                 .background(SederTheme.subtleBg)
@@ -54,31 +77,10 @@ struct IncomeDetailSheet: View {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(SederTheme.cardBorder, lineWidth: 1)
                                 )
-                            }
-                        }
-
-                        // Date — last = physical LEFT in RTL
-                        fieldColumn(label: "תאריך", icon: "calendar") {
-                            Button {
-                                showDatePicker.toggle()
-                            } label: {
-                                Text(date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "he_IL"))))
-                                    .font(SederTheme.ploni(18))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 12)
-                                    .background(SederTheme.subtleBg)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
-                            }
                         }
                     }
 
-                    // Row 2: Description
+                    // Row 3: Description
                     fieldColumn(label: "תיאור עבודה", icon: "doc.text") {
                         TextField("תיאור", text: $description)
                             .font(SederTheme.ploni(18))
@@ -93,7 +95,7 @@ struct IncomeDetailSheet: View {
                             )
                     }
 
-                    // Row 3: Amount (RIGHT) + Category (LEFT)
+                    // Row 4: Amount (RIGHT) + Category (LEFT)
                     HStack(spacing: 12) {
                         // Amount — first = physical RIGHT in RTL
                         fieldColumn(label: "סכום", icon: "wallet.bifold") {
@@ -117,12 +119,17 @@ struct IncomeDetailSheet: View {
                                         }
                                     }
                                     .onChange(of: amountGross) {
-                                        // Strip decimal point and anything after
-                                        if let dotIndex = amountGross.firstIndex(of: ".") {
-                                            amountGross = String(amountGross[..<dotIndex])
-                                        }
-                                        if let dotIndex = amountGross.firstIndex(of: ",") {
-                                            amountGross = String(amountGross[..<dotIndex])
+                                        let digits = amountGross.filter(\.isWholeNumber)
+                                        if let num = Int(digits), digits == String(num) {
+                                            let formatter = NumberFormatter()
+                                            formatter.numberStyle = .decimal
+                                            formatter.groupingSeparator = ","
+                                            let formatted = formatter.string(from: NSNumber(value: num)) ?? digits
+                                            if amountGross != formatted {
+                                                amountGross = formatted
+                                            }
+                                        } else if digits.isEmpty {
+                                            if amountGross != "" { amountGross = "" }
                                         }
                                     }
                             }
@@ -171,7 +178,7 @@ struct IncomeDetailSheet: View {
                         }
                     }
 
-                    // Row 4: Notes
+                    // Row 5: Notes
                     fieldColumn(label: "הערות", icon: "text.quote") {
                         TextField("הערות", text: $notes, axis: .vertical)
                             .font(SederTheme.ploni(18))
@@ -193,16 +200,20 @@ struct IncomeDetailSheet: View {
 
             Spacer()
 
-            // Close button
+            // Save/Close button
             Button {
                 Task { await save() }
             } label: {
-                Text("סגור")
+                Text(isEditing ? "סגור" : "שמירה")
                     .font(SederTheme.ploni(17, weight: .medium))
-                    .foregroundStyle(SederTheme.textPrimary)
+                    .foregroundStyle(isEditing ? SederTheme.textPrimary : .white)
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
+                    .background(isEditing ? Color.clear : SederTheme.brandGreen)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, isEditing ? 0 : 20)
             }
-            .disabled(isSaving)
+            .disabled(isSaving || (!isEditing && (description.isEmpty || amountGross.isEmpty)))
         }
         .background(SederTheme.pageBg)
         .environment(\.layoutDirection, .rightToLeft)
@@ -219,6 +230,92 @@ struct IncomeDetailSheet: View {
                     showDatePicker = false
                 }
         }
+    }
+
+    // MARK: - Client Suggestions
+
+    private var filteredClientNames: [String] {
+        if clientName.isEmpty {
+            return Array(clientNames.prefix(5))
+        }
+        let q = clientName.lowercased()
+        return clientNames.filter { $0.lowercased().contains(q) }
+    }
+
+    private var isNewClient: Bool {
+        !clientName.isEmpty && !clientNames.contains(where: { $0.lowercased() == clientName.lowercased() })
+    }
+
+    private var clientSuggestionsView: some View {
+        VStack(spacing: 0) {
+            let matches = filteredClientNames
+
+            if !matches.isEmpty {
+                ForEach(matches, id: \.self) { name in
+                    Button {
+                        clientName = name
+                        clientFocused = false
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(name)
+                                .font(SederTheme.ploni(16))
+                                .foregroundStyle(SederTheme.textPrimary)
+                                .lineLimit(1)
+                            Spacer()
+                            if name == clientName {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(SederTheme.brandGreen)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                    }
+                    Divider().padding(.horizontal, 14)
+                }
+            } else if !clientName.isEmpty {
+                HStack {
+                    Text("לא נמצאו לקוחות")
+                        .font(SederTheme.ploni(15))
+                        .foregroundStyle(SederTheme.textTertiary)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                Divider().padding(.horizontal, 14)
+            }
+
+            // "New client" button
+            if isNewClient {
+                Button {
+                    Task { await createNewClient() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isCreatingClient {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(SederTheme.brandGreen)
+                        } else {
+                            Image(systemName: "plus")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text("+ לקוח חדש: \(clientName)")
+                            .font(SederTheme.ploni(16, weight: .medium))
+                    }
+                    .foregroundStyle(SederTheme.brandGreen)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                }
+                .disabled(isCreatingClient)
+            }
+        }
+        .background(SederTheme.cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(SederTheme.cardBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }
 
     // MARK: - Category Picker
@@ -286,7 +383,7 @@ struct IncomeDetailSheet: View {
     private var header: some View {
         HStack {
             // Physical RIGHT in RTL: title
-            Text("פרטי עבודה")
+            Text(isEditing ? "פרטי עבודה" : "עבודה חדשה")
                 .font(SederTheme.ploni(22, weight: .semibold))
                 .foregroundStyle(SederTheme.textPrimary)
 
@@ -294,11 +391,13 @@ struct IncomeDetailSheet: View {
 
             // Physical LEFT in RTL: status icons + close
             HStack(spacing: 8) {
-                StatusBadge(
-                    text: entry.invoiceStatus.label,
-                    color: statusColor,
-                    icon: statusIcon
-                )
+                if let entry {
+                    StatusBadge(
+                        text: entry.invoiceStatus.label,
+                        color: statusColor,
+                        icon: statusIcon
+                    )
+                }
 
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
@@ -349,24 +448,45 @@ struct IncomeDetailSheet: View {
     }
 
     private var statusColor: Color {
+        guard let entry else { return SederTheme.draftColor }
         if entry.paymentStatus == .paid { return SederTheme.paidColor }
         if entry.invoiceStatus == .sent { return SederTheme.sentColor }
         return SederTheme.draftColor
     }
 
     private var statusIcon: String {
+        guard let entry else { return "" }
         if entry.paymentStatus == .paid { return "checkmark" }
         if entry.invoiceStatus == .sent { return "paperplane.fill" }
         return ""
     }
 
+    private func createNewClient() async {
+        let name = clientName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let clientsVM else { return }
+        isCreatingClient = true
+        defer { isCreatingClient = false }
+        let request = CreateClientRequest(name: name)
+        if await clientsVM.createClient(request) {
+            clientFocused = false
+        }
+    }
+
     private func populateFromEntry() {
+        guard let entry else { return }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         if let d = formatter.date(from: entry.date) { date = d }
         description = entry.description
         clientName = entry.clientName
-        amountGross = entry.amountGross
+        if let num = Int(entry.amountGross.filter(\.isWholeNumber)) {
+            let fmt = NumberFormatter()
+            fmt.numberStyle = .decimal
+            fmt.groupingSeparator = ","
+            amountGross = fmt.string(from: NSNumber(value: num)) ?? entry.amountGross
+        } else {
+            amountGross = entry.amountGross
+        }
         selectedCategoryId = entry.categoryId
         notes = entry.notes ?? ""
     }
@@ -378,18 +498,32 @@ struct IncomeDetailSheet: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let dateStr = formatter.string(from: date)
+        let rawAmount = amountGross.filter(\.isWholeNumber)
 
-        let request = UpdateIncomeRequest(
-            date: dateStr,
-            description: description,
-            clientName: clientName,
-            amountGross: Double(amountGross),
-            categoryId: selectedCategoryId,
-            notes: notes.isEmpty ? nil : notes
-        )
-
-        if await viewModel.updateEntry(entry.id, request) {
-            dismiss()
+        if let entry {
+            let request = UpdateIncomeRequest(
+                date: dateStr,
+                description: description,
+                clientName: clientName,
+                amountGross: Double(rawAmount),
+                categoryId: selectedCategoryId,
+                notes: notes.isEmpty ? nil : notes
+            )
+            if await viewModel.updateEntry(entry.id, request) {
+                dismiss()
+            }
+        } else {
+            let request = CreateIncomeRequest(
+                date: dateStr,
+                description: description,
+                clientName: clientName,
+                amountGross: Double(rawAmount) ?? 0,
+                categoryId: selectedCategoryId,
+                notes: notes.isEmpty ? nil : notes
+            )
+            if await viewModel.createEntry(request) {
+                dismiss()
+            }
         }
     }
 }

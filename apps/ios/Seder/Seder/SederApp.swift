@@ -31,6 +31,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct SederApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var appState = AppState()
 
     var body: some Scene {
         WindowGroup {
@@ -38,6 +39,7 @@ struct SederApp: App {
                 if authViewModel.isAuthenticated {
                     MainTabView()
                         .environmentObject(authViewModel)
+                        .environmentObject(appState)
                         .environment(\.layoutDirection, .rightToLeft)
                         .onAppear {
                             NotificationService.shared.requestPermission()
@@ -47,6 +49,7 @@ struct SederApp: App {
                 } else {
                     SignInView()
                         .environmentObject(authViewModel)
+                        .environmentObject(appState)
                         .environment(\.layoutDirection, .rightToLeft)
                 }
             }

@@ -210,7 +210,11 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("סגירה") { dismiss() }
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(SederTheme.textSecondary)
+                    }
                 }
             }
             .sheet(isPresented: $showChangePassword) {

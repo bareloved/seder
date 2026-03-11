@@ -22,16 +22,20 @@ class AuthViewModel: ObservableObject {
     }
 
     private struct SessionResponse: Codable {
+        let session: AuthSession?
         let user: User?
     }
 
     func fetchUser() async {
         defer { isLoading = false }
         do {
-            let response: SessionResponse = try await api.request(endpoint: "/api/auth/get-session")
+            let response: SessionResponse = try await api.directRequest(endpoint: "/api/auth/get-session")
             user = response.user
+            isAuthenticated = response.user != nil
         } catch {
-            // Token might be expired
+            // Token might be expired — clear auth state
+            api.token = nil
+            isAuthenticated = false
         }
     }
 
