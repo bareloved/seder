@@ -30,7 +30,7 @@ struct VATSummarySection: View {
                 VStack(spacing: 0) {
                     VATRow(label: "הכנסה ברוטו", value: AmountFormatter.full(agg.totalGross), color: SederTheme.textPrimary)
                     Divider().padding(.horizontal, 12)
-                    VATRow(label: "מע\"מ (17%)", value: "- \(AmountFormatter.full(agg.vatTotal))", color: SederTheme.unpaidColor)
+                    VATRow(label: "מע\"מ (18%)", value: "- \(AmountFormatter.full(agg.vatTotal))", color: SederTheme.unpaidColor)
                     Divider().padding(.horizontal, 12)
                     VATRow(label: "נטו לאחר מע\"מ", value: AmountFormatter.full(agg.totalGross - agg.vatTotal), color: SederTheme.paidColor, isBold: true)
                 }
