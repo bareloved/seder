@@ -1,8 +1,8 @@
 import SwiftUI
-import Charts
 
 struct AnalyticsView: View {
     @StateObject private var viewModel = AnalyticsViewModel()
+    @EnvironmentObject private var appState: AppState
 
     private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
                           "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
@@ -24,129 +24,80 @@ struct AnalyticsView: View {
             .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
             .environment(\.layoutDirection, .leftToRight)
 
-            ScrollView {
-                VStack(spacing: 12) {
-                    // Month filter bar
-                    HStack(spacing: 8) {
-                        Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
-                            .font(.subheadline)
-                            .foregroundStyle(SederTheme.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView()
+                    .tint(SederTheme.brandGreen)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // Month selector
+                        monthSelector
+
+                        if !viewModel.hasData && !viewModel.kpiError {
+                            // Empty month state
+                            VStack(spacing: 8) {
+                                Image(systemName: "chart.bar.xaxis")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(SederTheme.textTertiary)
+                                Text("אין נתונים לתקופה זו")
+                                    .font(.subheadline)
+                                    .foregroundStyle(SederTheme.textSecondary)
+                            }
+                            .padding(.top, 60)
+                        } else {
+                            // KPI Grid
+                            if let agg = viewModel.aggregates {
+                                ReportsKPIGrid(aggregates: agg)
+                            }
+
+                            // Expandable sections
+                            IncomeChartSection(
+                                trends: viewModel.trends,
+                                isExpanded: viewModel.isSectionExpanded(.incomeChart),
+                                hasError: viewModel.trendsError,
+                                onToggle: { viewModel.toggleSection(.incomeChart) },
+                                onRetry: { Task { await viewModel.retrySection(.incomeChart) } }
                             )
 
-                        HStack(spacing: 8) {
-                            Button {
-                                viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
-                            } label: {
-                                Image(systemName: "chevron.left")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(SederTheme.textSecondary)
-                            }
-
-                            Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.textPrimary)
-
-                            Button {
-                                viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
-                            } label: {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(SederTheme.textSecondary)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(SederTheme.cardBorder, lineWidth: 1)
-                        )
-
-                        Spacer()
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(SederTheme.cardBg)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.top, 8)
-
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .tint(SederTheme.brandGreen)
-                            .padding(.top, 40)
-                    } else if let agg = viewModel.aggregates {
-                        // KPI Cards
-                        LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 8),
-                            GridItem(.flexible(), spacing: 8)
-                        ], spacing: 8) {
-                            AnalyticsKPICard(title: "הכנסה ברוטו", amount: agg.totalGross, icon: "banknote")
-                            AnalyticsKPICard(title: "עבודות", count: agg.jobsCount, icon: "briefcase", amountColor: SederTheme.draftColor)
-                            AnalyticsKPICard(title: "לא שולם", amount: agg.totalUnpaid, icon: "clock", amountColor: SederTheme.sentColor)
-                        }
-
-                        // Trend
-                        if agg.trend != 0 {
-                            HStack(spacing: 4) {
-                                Text("\(Int(abs(agg.trend)))% לעומת חודש קודם")
-                                    .font(.caption)
-                                    .foregroundStyle(SederTheme.textSecondary)
-                                Image(systemName: agg.trend > 0 ? "arrow.up.right" : "arrow.down.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(agg.trend > 0 ? SederTheme.paidColor : SederTheme.unpaidColor)
-                            }
-                            .padding(.horizontal, 12)
-                        }
-
-                        // Chart
-                        if !viewModel.trends.isEmpty {
-                            VStack(alignment: .trailing, spacing: 8) {
-                                Text("הכנסות לאורך זמן")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 12)
-
-                                Chart(viewModel.trends, id: \.month) { trend in
-                                    BarMark(
-                                        x: .value("חודש", trend.month),
-                                        y: .value("סכום", 1)
-                                    )
-                                    .foregroundStyle(trendColor(trend.status))
-                                    .cornerRadius(4)
+                            InvoiceTrackingSection(
+                                attention: viewModel.attention,
+                                isExpanded: viewModel.isSectionExpanded(.invoiceTracking),
+                                hasError: viewModel.attentionError,
+                                onToggle: { viewModel.toggleSection(.invoiceTracking) },
+                                onRetry: { Task { await viewModel.retrySection(.invoiceTracking) } },
+                                onItemTap: { entryId in
+                                    appState.navigateToEntry(id: entryId)
                                 }
-                                .chartYAxis(.hidden)
-                                .chartXAxis {
-                                    AxisMarks { _ in
-                                        AxisValueLabel()
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(SederTheme.textSecondary)
-                                    }
-                                }
-                                .frame(height: 120)
-                                .padding(.horizontal, 16)
-                                .padding(.bottom, 12)
-                            }
-                            .background(SederTheme.cardBg)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
-                            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
-                        }
-                    }
 
-                    Spacer().frame(height: 40)
+                            CategoryBreakdownSection(
+                                categories: viewModel.categories,
+                                isExpanded: viewModel.isSectionExpanded(.categoryBreakdown),
+                                hasError: viewModel.categoriesError,
+                                onToggle: { viewModel.toggleSection(.categoryBreakdown) },
+                                onRetry: { Task { await viewModel.retrySection(.categoryBreakdown) } }
+                            )
+
+                            VATSummarySection(
+                                aggregates: viewModel.aggregates,
+                                isExpanded: viewModel.isSectionExpanded(.vatSummary),
+                                hasError: viewModel.kpiError,
+                                onToggle: { viewModel.toggleSection(.vatSummary) },
+                                onRetry: { Task { await viewModel.retrySection(.vatSummary) } }
+                            )
+                        }
+
+                        Spacer().frame(height: 40)
+                    }
                 }
+                .safeAreaPadding(.horizontal, 12)
+                .opacity(viewModel.isReloading ? 0.6 : 1)
+                .animation(.easeInOut(duration: 0.15), value: viewModel.isReloading)
             }
-            .safeAreaPadding(.horizontal, 16)
-            .background(SederTheme.pageBg)
         }
+        .background(SederTheme.pageBg)
         .ignoresSafeArea(edges: .top)
         .task { await viewModel.loadAll() }
         .onChange(of: viewModel.selectedMonth) { _ in
@@ -154,60 +105,53 @@ struct AnalyticsView: View {
         }
     }
 
-    private func trendColor(_ status: String) -> Color {
-        switch status {
-        case "all-paid": return SederTheme.paidColor
-        case "has-unpaid": return SederTheme.sentColor
-        default: return SederTheme.subtleBg
-        }
-    }
-}
+    // MARK: - Month Selector
 
-struct AnalyticsKPICard: View {
-    let title: String
-    var amount: Double? = nil
-    var count: Int? = nil
-    var icon: String = "banknote"
-    var amountColor: Color? = nil
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(SederTheme.textSecondary)
-                .padding(.bottom, 6)
-
-            if let amount {
-                CurrencyText(
-                    amount: amount,
-                    size: 22,
-                    weight: .regular,
-                    color: amountColor ?? SederTheme.textPrimary
+    private var monthSelector: some View {
+        HStack(spacing: 8) {
+            Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
+                .font(.subheadline)
+                .foregroundStyle(SederTheme.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(SederTheme.cardBorder, lineWidth: 1)
                 )
-            } else if let count {
-                Text("\(count)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(amountColor ?? SederTheme.textPrimary)
+
+            HStack(spacing: 8) {
+                Button {
+                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
+
+                Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(SederTheme.textPrimary)
+
+                Button {
+                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+            )
 
             Spacer()
-
-            HStack {
-                Image(systemName: icon)
-                    .font(.caption)
-                    .foregroundStyle(SederTheme.textTertiary)
-                Spacer()
-            }
         }
-        .padding(12)
-        .frame(height: 100)
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
         .background(SederTheme.cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(SederTheme.cardBorder, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
