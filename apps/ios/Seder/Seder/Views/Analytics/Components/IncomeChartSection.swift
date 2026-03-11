@@ -7,6 +7,9 @@ struct IncomeChartSection: View {
     let hasError: Bool
     let onToggle: () -> Void
     let onRetry: () -> Void
+    let onMonthTap: (Int, Int) -> Void // (month, year)
+
+    @State private var selectedTrend: EnhancedMonthTrend?
 
     var body: some View {
         ExpandableSection(
@@ -30,6 +33,7 @@ struct IncomeChartSection: View {
                         )
                         .foregroundStyle(barColor(trend.status))
                         .cornerRadius(4)
+                        .opacity(selectedTrend == nil || selectedTrend?.id == trend.id ? 1 : 0.4)
                     }
                     .chartYAxis(.hidden)
                     .chartXAxis {
@@ -37,6 +41,27 @@ struct IncomeChartSection: View {
                             AxisValueLabel()
                                 .font(SederTheme.ploni(13))
                                 .foregroundStyle(SederTheme.textSecondary)
+                        }
+                    }
+                    .chartOverlay { proxy in
+                        GeometryReader { geo in
+                            Rectangle()
+                                .fill(Color.clear)
+                                .contentShape(Rectangle())
+                                .onTapGesture { location in
+                                    guard let monthName: String = proxy.value(atX: location.x) else { return }
+                                    if let trend = trends.first(where: { AmountFormatter.monthName($0.month) == monthName }) {
+                                        withAnimation(.easeInOut(duration: 0.15)) {
+                                            selectedTrend = trend
+                                        }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                            onMonthTap(trend.month, trend.year)
+                                            withAnimation(.easeInOut(duration: 0.15)) {
+                                                selectedTrend = nil
+                                            }
+                                        }
+                                    }
+                                }
                         }
                     }
                     .frame(height: 120)

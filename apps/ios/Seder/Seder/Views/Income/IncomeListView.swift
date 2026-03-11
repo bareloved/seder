@@ -289,6 +289,11 @@ struct IncomeListView: View {
             }
             appState.clearDeepLink()
         }
+        .onChange(of: appState.navigateToMonth) { _ in
+            guard let date = appState.navigateToMonth else { return }
+            viewModel.selectedMonth = date
+            appState.clearMonthNavigation()
+        }
     }
 
     private var currentMonthName: String {

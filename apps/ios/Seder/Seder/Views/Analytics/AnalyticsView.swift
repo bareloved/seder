@@ -67,7 +67,10 @@ struct AnalyticsView: View {
                                 isExpanded: viewModel.isSectionExpanded(.incomeChart),
                                 hasError: viewModel.trendsError,
                                 onToggle: { viewModel.toggleSection(.incomeChart) },
-                                onRetry: { Task { await viewModel.retrySection(.incomeChart) } }
+                                onRetry: { Task { await viewModel.retrySection(.incomeChart) } },
+                                onMonthTap: { month, year in
+                                    appState.navigateToIncomeMonth(month: month, year: year)
+                                }
                             )
 
                             InvoiceTrackingSection(
