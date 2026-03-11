@@ -69,7 +69,13 @@ struct AnalyticsView: View {
                                 onToggle: { viewModel.toggleSection(.incomeChart) },
                                 onRetry: { Task { await viewModel.retrySection(.incomeChart) } },
                                 onMonthTap: { month, year in
-                                    appState.navigateToIncomeMonth(month: month, year: year)
+                                    var components = DateComponents()
+                                    components.year = year
+                                    components.month = month
+                                    components.day = 1
+                                    if let date = Calendar.current.date(from: components) {
+                                        viewModel.selectedMonth = date
+                                    }
                                 }
                             )
 
