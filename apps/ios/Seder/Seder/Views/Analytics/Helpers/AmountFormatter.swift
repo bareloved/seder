@@ -19,6 +19,18 @@ enum AmountFormatter {
         return "₪\(Int(amount))"
     }
 
+    /// Number part only for abbreviated amounts (no ₪)
+    static func abbreviatedNumber(_ amount: Double) -> String {
+        if amount >= 1000 {
+            let k = amount / 1000
+            if k == k.rounded() {
+                return "\(Int(k))k"
+            }
+            return "\(String(format: "%.1f", k))k"
+        }
+        return "\(Int(amount))"
+    }
+
     /// Full formatted amount with thousands separator
     static func full(_ amount: Double) -> String {
         let formatter = NumberFormatter()

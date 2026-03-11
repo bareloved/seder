@@ -69,10 +69,15 @@ struct IncomeChartSection: View {
                     // Amount labels below chart
                     HStack(spacing: 0) {
                         ForEach(trends) { trend in
-                            Text(AmountFormatter.abbreviated(trend.totalGross))
-                                .font(SederTheme.ploni(13, weight: .semibold))
-                                .foregroundStyle(SederTheme.textSecondary)
-                                .frame(maxWidth: .infinity)
+                            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                                Text("₪")
+                                    .font(.system(size: 6, weight: .semibold, design: .rounded))
+                                Text(AmountFormatter.abbreviatedNumber(trend.totalGross))
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(SederTheme.textSecondary)
+                            .environment(\.layoutDirection, .leftToRight)
+                            .frame(maxWidth: .infinity)
                         }
                     }
 

@@ -50,9 +50,12 @@ private struct CategoryBar: View {
                     .font(SederTheme.ploni(14, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
                 Spacer()
-                Text("\(AmountFormatter.full(category.amount)) (\(Int(category.percentage))%)")
-                    .font(SederTheme.ploni(13))
-                    .foregroundStyle(SederTheme.textSecondary)
+                HStack(spacing: 4) {
+                    CurrencyText(amount: category.amount, size: 13, color: SederTheme.textSecondary)
+                    Text("(\(Int(category.percentage))%)")
+                        .font(SederTheme.ploni(13))
+                        .foregroundStyle(SederTheme.textSecondary)
+                }
             }
 
             GeometryReader { geo in

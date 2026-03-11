@@ -92,9 +92,7 @@ private struct SummaryCounter: View {
             Text("\(count)")
                 .font(.system(size: 24, weight: .regular, design: .rounded))
                 .foregroundStyle(color)
-            Text(AmountFormatter.full(amount))
-                .font(SederTheme.ploni(13))
-                .foregroundStyle(SederTheme.textTertiary)
+            CurrencyText(amount: amount, size: 13, color: SederTheme.textTertiary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -120,9 +118,7 @@ private struct AttentionItemRow: View {
 
             // Left side: amount + badge + chevron
             HStack(spacing: 6) {
-                Text(AmountFormatter.full(item.amountGross))
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(SederTheme.textPrimary)
+                CurrencyText(amount: item.amountGross, size: 15, weight: .medium, color: SederTheme.textPrimary)
 
                 StatusPill(status: item.status)
 
