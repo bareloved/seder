@@ -54,7 +54,7 @@ private struct KPICell: View {
                 .foregroundStyle(SederTheme.textSecondary)
 
             Text(value)
-                .font(SederTheme.ploni(22, weight: .bold))
+                .font(.system(size: 22, weight: .regular, design: .rounded))
                 .foregroundStyle(color)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
