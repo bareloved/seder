@@ -49,11 +49,11 @@ private struct VATRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(SederTheme.ploni(14, weight: isBold ? .semibold : .regular))
+                .font(SederTheme.ploni(16, weight: isBold ? .semibold : .regular))
                 .foregroundStyle(isBold ? SederTheme.textPrimary : SederTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(SederTheme.ploni(14, weight: isBold ? .bold : .semibold))
+                .font(SederTheme.ploni(16, weight: isBold ? .bold : .semibold))
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 12)
