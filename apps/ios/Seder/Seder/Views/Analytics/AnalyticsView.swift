@@ -13,7 +13,7 @@ struct AnalyticsView: View {
             HStack {
                 Spacer()
                 Text("דוחות")
-                    .font(.headline)
+                    .font(SederTheme.ploni(17, weight: .semibold))
                     .foregroundStyle(.white)
                 Spacer()
             }
@@ -42,7 +42,7 @@ struct AnalyticsView: View {
                                     .font(.largeTitle)
                                     .foregroundStyle(SederTheme.textTertiary)
                                 Text("אין נתונים לתקופה זו")
-                                    .font(.subheadline)
+                                    .font(SederTheme.ploni(15))
                                     .foregroundStyle(SederTheme.textSecondary)
                             }
                             .padding(.top, 60)
@@ -110,7 +110,7 @@ struct AnalyticsView: View {
     private var monthSelector: some View {
         HStack(spacing: 8) {
             Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
-                .font(.subheadline)
+                .font(SederTheme.ploni(15))
                 .foregroundStyle(SederTheme.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -129,7 +129,7 @@ struct AnalyticsView: View {
                 }
 
                 Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
-                    .font(.subheadline.weight(.medium))
+                    .font(SederTheme.ploni(15, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
 
                 Button {

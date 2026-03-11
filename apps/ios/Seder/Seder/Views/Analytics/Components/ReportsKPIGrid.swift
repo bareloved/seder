@@ -50,11 +50,11 @@ private struct KPICell: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 3) {
             Text(title)
-                .font(.system(size: 9))
+                .font(SederTheme.ploni(10))
                 .foregroundStyle(SederTheme.textSecondary)
 
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(SederTheme.ploni(16, weight: .bold))
                 .foregroundStyle(color)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
