@@ -53,7 +53,7 @@ private struct VATRow: View {
                 .foregroundStyle(isBold ? SederTheme.textPrimary : SederTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(SederTheme.ploni(16, weight: isBold ? .bold : .semibold))
+                .font(.system(size: 18, weight: isBold ? .medium : .regular, design: .rounded))
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 12)
