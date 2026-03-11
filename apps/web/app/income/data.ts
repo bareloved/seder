@@ -215,6 +215,215 @@ export async function getMonthPaymentStatuses(year: number, userId: string): Pro
   return cachedFn(year, userId);
 }
 
+export async function getEnhancedTrends({
+  endMonth,
+  endYear,
+  count = 6,
+  userId,
+}: {
+  endMonth: number;
+  endYear: number;
+  count?: number;
+  userId: string;
+}) {
+  // Build list of (year, month) pairs going backwards from endMonth/endYear
+  const months: { year: number; month: number }[] = [];
+  let y = endYear;
+  let m = endMonth;
+  for (let i = 0; i < count; i++) {
+    months.unshift({ year: y, month: m });
+    m--;
+    if (m === 0) {
+      m = 12;
+      y--;
+    }
+  }
+
+  const results = await Promise.all(
+    months.map(async ({ year, month }) => {
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endDate =
+        month === 12
+          ? `${year + 1}-01-01`
+          : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+      const [row] = await db
+        .select({
+          totalGross: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+          totalPaid: sql<string>`COALESCE(SUM(${incomeEntries.amountPaid}), 0)`,
+          jobsCount: sql<number>`COUNT(*)::int`,
+          unpaidCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.paymentStatus} != 'paid' AND ${incomeEntries.date} < CURRENT_DATE)::int`,
+        })
+        .from(incomeEntries)
+        .where(
+          and(
+            eq(incomeEntries.userId, userId),
+            gte(incomeEntries.date, startDate),
+            lt(incomeEntries.date, endDate)
+          )
+        );
+
+      const totalGross = Number(row?.totalGross ?? 0);
+      const totalPaid = Number(row?.totalPaid ?? 0);
+      const jobsCount = row?.jobsCount ?? 0;
+      const unpaidCount = row?.unpaidCount ?? 0;
+
+      let status: "all-paid" | "has-unpaid" | "empty" = "empty";
+      if (jobsCount > 0) {
+        status = unpaidCount > 0 ? "has-unpaid" : "all-paid";
+      }
+
+      return { month, year, status, totalGross, totalPaid, jobsCount };
+    })
+  );
+
+  return results;
+}
+
+export async function getCategoryBreakdown({
+  year,
+  month,
+  userId,
+}: MonthFilter) {
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate =
+    month === 12
+      ? `${year + 1}-01-01`
+      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+  const rows = await db
+    .select({
+      categoryId: incomeEntries.categoryId,
+      categoryName: categories.name,
+      categoryColor: categories.color,
+      amount: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(incomeEntries)
+    .leftJoin(categories, eq(incomeEntries.categoryId, categories.id))
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        gte(incomeEntries.date, startDate),
+        lt(incomeEntries.date, endDate)
+      )
+    )
+    .groupBy(incomeEntries.categoryId, categories.name, categories.color)
+    .orderBy(sql`SUM(${incomeEntries.amountGross}) DESC`);
+
+  const totalAmount = rows.reduce((sum, r) => sum + Number(r.amount), 0);
+
+  // Top 5 + "other" grouping
+  const top5 = rows.slice(0, 5).map((r) => ({
+    categoryId: r.categoryId,
+    categoryName: r.categoryName ?? "ללא קטגוריה",
+    categoryColor: r.categoryColor ?? "#9ca3af",
+    amount: Number(r.amount),
+    count: r.count,
+    percentage: totalAmount > 0 ? Math.round((Number(r.amount) / totalAmount) * 100 * 10) / 10 : 0,
+  }));
+
+  if (rows.length > 5) {
+    const otherRows = rows.slice(5);
+    const otherAmount = otherRows.reduce((sum, r) => sum + Number(r.amount), 0);
+    const otherCount = otherRows.reduce((sum, r) => sum + r.count, 0);
+    top5.push({
+      categoryId: null,
+      categoryName: "אחר",
+      categoryColor: "#9ca3af",
+      amount: otherAmount,
+      count: otherCount,
+      percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100 * 10) / 10 : 0,
+    });
+  }
+
+  return top5;
+}
+
+export async function getAttentionItems({
+  year,
+  month,
+  userId,
+}: MonthFilter) {
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate =
+    month === 12
+      ? `${year + 1}-01-01`
+      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
+  const baseWhere = and(
+    eq(incomeEntries.userId, userId),
+    gte(incomeEntries.date, startDate),
+    lt(incomeEntries.date, endDate),
+    sql`${incomeEntries.paymentStatus} != 'paid'`,
+    sql`${incomeEntries.invoiceStatus} != 'cancelled'`
+  );
+
+  // Fetch ALL matching rows for accurate summary counts (no LIMIT)
+  const allRows = await db
+    .select({
+      id: incomeEntries.id,
+      clientName: incomeEntries.clientName,
+      description: incomeEntries.description,
+      date: incomeEntries.date,
+      amountGross: incomeEntries.amountGross,
+      invoiceStatus: incomeEntries.invoiceStatus,
+      paymentStatus: incomeEntries.paymentStatus,
+      invoiceSentDate: incomeEntries.invoiceSentDate,
+    })
+    .from(incomeEntries)
+    .where(baseWhere)
+    .orderBy(sql`${incomeEntries.amountGross} DESC`);
+
+  // Classify each item into buckets
+  const summary = {
+    drafts: { count: 0, amount: 0 },
+    sent: { count: 0, amount: 0 },
+    overdue: { count: 0, amount: 0 },
+  };
+
+  const classifiedItems = allRows.map((row) => {
+    const amount = Number(row.amountGross);
+    let status: "draft" | "sent" | "overdue";
+
+    if (row.invoiceStatus === "draft") {
+      status = "draft";
+      summary.drafts.count++;
+      summary.drafts.amount += amount;
+    } else if (
+      row.invoiceStatus === "sent" &&
+      row.invoiceSentDate &&
+      String(row.invoiceSentDate) < thirtyDaysAgoStr
+    ) {
+      status = "overdue";
+      summary.overdue.count++;
+      summary.overdue.amount += amount;
+    } else {
+      status = "sent";
+      summary.sent.count++;
+      summary.sent.amount += amount;
+    }
+
+    return {
+      id: row.id,
+      clientName: row.clientName,
+      description: row.description,
+      date: String(row.date),
+      amountGross: amount,
+      status,
+      invoiceStatus: row.invoiceStatus,
+      paymentStatus: row.paymentStatus,
+    };
+  });
+
+  // Return full summary but limit items list to 20
+  return { summary, items: classifiedItems.slice(0, 20) };
+}
+
 /**
  * Calculate aggregates for a given month and user
  * Cached with scoped key per year/month/user for performance
