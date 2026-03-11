@@ -70,9 +70,3 @@ nonisolated struct AttentionItem: Codable, Sendable, Identifiable {
     let paymentStatus: String
 }
 
-// MARK: - Legacy (keep for backward compat during migration)
-
-nonisolated struct MonthTrend: Codable, Sendable {
-    let month: Int
-    let status: String
-}
