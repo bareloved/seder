@@ -3,29 +3,22 @@ import SwiftUI
 struct AnalyticsView: View {
     @StateObject private var viewModel = AnalyticsViewModel()
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject var auth: AuthViewModel
 
     @State private var showMonthPicker = false
     @State private var showYearPicker = false
+    @State private var showSettings = false
 
     private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
                           "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
 
     var body: some View {
         VStack(spacing: 0) {
-            // Green navbar
-            HStack {
-                Spacer()
-                Text("דוחות")
-                    .font(SederTheme.ploni(17, weight: .semibold))
-                    .foregroundStyle(.white)
-                Spacer()
-            }
-            .padding(.vertical, 12)
-            .padding(.top, UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .first?.windows.first?.safeAreaInsets.top ?? 0)
-            .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
-            .environment(\.layoutDirection, .leftToRight)
+            GreenNavBar(
+                title: "דוחות",
+                onSettingsTap: { showSettings = true },
+                avatarURL: auth.user?.image
+            )
 
             if viewModel.isLoading {
                 Spacer()
@@ -117,6 +110,9 @@ struct AnalyticsView: View {
         }
         .background(SederTheme.pageBg)
         .ignoresSafeArea(edges: .top)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
         .task { await viewModel.loadAll() }
         .onChange(of: viewModel.selectedMonth) { _ in
             Task { await viewModel.loadAll() }

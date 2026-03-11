@@ -20,188 +20,16 @@ struct SettingsView: View {
                 VStack(spacing: 16) {
                     // MARK: - Profile card
                     if let user = auth.user {
-                        VStack(spacing: 12) {
-                            Text(String(user.displayName.prefix(1)))
-                                .font(SederTheme.ploni(24, weight: .semibold))
-                                .foregroundStyle(SederTheme.brandGreen)
-                                .frame(width: 56, height: 56)
-                                .background(SederTheme.brandGreen.opacity(0.1))
-                                .clipShape(Circle())
-
-                            Text(user.displayName)
-                                .font(SederTheme.ploni(18, weight: .semibold))
-                                .foregroundStyle(SederTheme.textPrimary)
-                            Text(user.email)
-                                .font(SederTheme.ploni(14))
-                                .foregroundStyle(SederTheme.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                        .background(SederTheme.cardBg)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(SederTheme.cardBorder, lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+                        profileCard(user: user)
                     }
 
-                    // MARK: - Account
-                    SettingsSection(title: "חשבון") {
-                        SettingsRow(icon: "lock.rotation", label: "שינוי סיסמה") {
-                            showChangePassword = true
-                        }
-                        Divider().padding(.horizontal, 16)
-                        SettingsRow(icon: "envelope", label: "שינוי אימייל") {
-                            showChangeEmail = true
-                        }
-                    }
-
-                    // MARK: - Preferences
-                    SettingsSection(title: "העדפות") {
-                        VStack(spacing: 0) {
-                            // Appearance — first = RIGHT in RTL
-                            HStack {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "paintbrush")
-                                        .font(.body)
-                                        .foregroundStyle(SederTheme.textSecondary)
-                                    Text("מראה")
-                                        .font(SederTheme.ploni(16))
-                                        .foregroundStyle(SederTheme.textPrimary)
-                                }
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 12)
-                            .padding(.bottom, 8)
-
-                            Picker("", selection: $appearanceMode) {
-                                Text("כהה").tag("dark")
-                                Text("בהיר").tag("light")
-                                Text("מערכת").tag("system")
-                            }
-                            .pickerStyle(.segmented)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
-
-                            Divider().padding(.horizontal, 16)
-
-                            // Currency
-                            preferencePicker(
-                                icon: "sheqelsign.circle",
-                                label: "מטבע",
-                                selection: $viewModel.currency,
-                                options: [("ILS", "₪ שקל"), ("USD", "$ דולר"), ("EUR", "€ אירו")]
-                            )
-
-                            Divider().padding(.horizontal, 16)
-
-                            // Timezone
-                            preferencePicker(
-                                icon: "clock",
-                                label: "אזור זמן",
-                                selection: $viewModel.timezone,
-                                options: [("Asia/Jerusalem", "ירושלים")]
-                            )
-
-                            Divider().padding(.horizontal, 16)
-
-                            // Language
-                            languageRow
-                        }
-                    }
-
-                    // MARK: - Calendar
-                    SettingsSection(title: "יומן") {
-                        HStack {
-                            // First = RIGHT in RTL: icon, dot, text
-                            HStack(spacing: 8) {
-                                Image(systemName: "calendar")
-                                    .font(.body)
-                                    .foregroundStyle(SederTheme.textSecondary)
-                                Circle()
-                                    .fill(viewModel.calendarConnected ? Color.green : Color.red)
-                                    .frame(width: 8, height: 8)
-                                Text(viewModel.calendarConnected ? "מחובר" : "לא מחובר")
-                                    .font(SederTheme.ploni(16))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                            }
-
-                            Spacer()
-
-                            // Last = LEFT in RTL: action button
-                            Button {
-                                if let url = URL(string: "https://sedder.app/settings") {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                Text(viewModel.calendarConnected ? "ניהול חיבור" : "חבר דרך האתר")
-                                    .font(SederTheme.ploni(14, weight: .medium))
-                                    .foregroundStyle(SederTheme.brandGreen)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    }
-
-                    // MARK: - Data
-                    SettingsSection(title: "נתונים") {
-                        SettingsRow(icon: "square.and.arrow.up", label: "ייצוא CSV") {
-                            showExport = true
-                        }
-                    }
-
-                    // MARK: - Management
-                    SettingsSection(title: "ניהול") {
-                        SettingsRow(icon: "tag", label: "קטגוריות") {
-                            showCategories = true
-                        }
-                    }
-
-                    // MARK: - Danger zone
-                    SettingsSection(title: "אזור מסוכן") {
-                        Button {
-                            showDeleteConfirm = true
-                        } label: {
-                            HStack {
-                                // First = RIGHT in RTL: icon + label
-                                HStack(spacing: 8) {
-                                    Image(systemName: "trash")
-                                    Text("מחיקת חשבון")
-                                        .font(SederTheme.ploni(16))
-                                }
-                                .foregroundStyle(.red)
-
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                        }
-                    }
-
-                    // MARK: - Sign out
-                    Button(role: .destructive) {
-                        showSignOutConfirm = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Label {
-                                Text("התנתקות")
-                                    .font(SederTheme.ploni(16, weight: .medium))
-                            } icon: {
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                            }
-                            Spacer()
-                        }
-                        .padding(.vertical, 14)
-                        .background(SederTheme.cardBg)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.red.opacity(0.2), lineWidth: 1)
-                        )
-                    }
+                    accountSection
+                    preferencesSection
+                    calendarSection
+                    dataSection
+                    managementSection
+                    dangerSection
+                    signOutButton
                 }
                 .padding(12)
             }
@@ -270,6 +98,208 @@ struct SettingsView: View {
             .onChange(of: viewModel.language) { _ in Task { await viewModel.savePreferences() } }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    // MARK: - Sections
+
+    private var accountSection: some View {
+        SettingsSection(title: "חשבון") {
+            SettingsRow(icon: "lock.rotation", label: "שינוי סיסמה") {
+                showChangePassword = true
+            }
+            Divider().padding(.horizontal, 16)
+            SettingsRow(icon: "envelope", label: "שינוי אימייל") {
+                showChangeEmail = true
+            }
+        }
+    }
+
+    private var preferencesSection: some View {
+        SettingsSection(title: "העדפות") {
+            VStack(spacing: 0) {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paintbrush")
+                            .font(.body)
+                            .foregroundStyle(SederTheme.textSecondary)
+                        Text("מראה")
+                            .font(SederTheme.ploni(16))
+                            .foregroundStyle(SederTheme.textPrimary)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+                Picker("", selection: $appearanceMode) {
+                    Text("כהה").tag("dark")
+                    Text("בהיר").tag("light")
+                    Text("מערכת").tag("system")
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+
+                Divider().padding(.horizontal, 16)
+
+                preferencePicker(
+                    icon: "sheqelsign.circle",
+                    label: "מטבע",
+                    selection: $viewModel.currency,
+                    options: [("ILS", "₪ שקל"), ("USD", "$ דולר"), ("EUR", "€ אירו")]
+                )
+
+                Divider().padding(.horizontal, 16)
+
+                preferencePicker(
+                    icon: "clock",
+                    label: "אזור זמן",
+                    selection: $viewModel.timezone,
+                    options: [("Asia/Jerusalem", "ירושלים")]
+                )
+
+                Divider().padding(.horizontal, 16)
+
+                languageRow
+            }
+        }
+    }
+
+    private var calendarSection: some View {
+        SettingsSection(title: "יומן") {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .font(.body)
+                        .foregroundStyle(SederTheme.textSecondary)
+                    Circle()
+                        .fill(viewModel.calendarConnected ? Color.green : Color.red)
+                        .frame(width: 8, height: 8)
+                    Text(viewModel.calendarConnected ? "מחובר" : "לא מחובר")
+                        .font(SederTheme.ploni(16))
+                        .foregroundStyle(SederTheme.textPrimary)
+                }
+
+                Spacer()
+
+                Button {
+                    if let url = URL(string: "https://sedder.app/settings") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text(viewModel.calendarConnected ? "ניהול חיבור" : "חבר דרך האתר")
+                        .font(SederTheme.ploni(14, weight: .medium))
+                        .foregroundStyle(SederTheme.brandGreen)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+    }
+
+    private var dataSection: some View {
+        SettingsSection(title: "נתונים") {
+            SettingsRow(icon: "square.and.arrow.up", label: "ייצוא CSV") {
+                showExport = true
+            }
+        }
+    }
+
+    private var managementSection: some View {
+        SettingsSection(title: "ניהול") {
+            SettingsRow(icon: "tag", label: "קטגוריות") {
+                showCategories = true
+            }
+        }
+    }
+
+    private var dangerSection: some View {
+        SettingsSection(title: "אזור מסוכן") {
+            Button {
+                showDeleteConfirm = true
+            } label: {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trash")
+                        Text("מחיקת חשבון")
+                            .font(SederTheme.ploni(16))
+                    }
+                    .foregroundStyle(.red)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+        }
+    }
+
+    private var signOutButton: some View {
+        Button(role: .destructive) {
+            showSignOutConfirm = true
+        } label: {
+            HStack {
+                Spacer()
+                Label {
+                    Text("התנתקות")
+                        .font(SederTheme.ploni(16, weight: .medium))
+                } icon: {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                }
+                Spacer()
+            }
+            .padding(.vertical, 14)
+            .background(SederTheme.cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Profile Card
+
+    private func profileCard(user: User) -> some View {
+        VStack(spacing: 12) {
+            if let imageURL = user.image, let url = URL(string: imageURL) {
+                AsyncImage(url: url) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Text(String(user.displayName.prefix(1)))
+                        .font(SederTheme.ploni(24, weight: .semibold))
+                        .foregroundStyle(SederTheme.brandGreen)
+                }
+                .frame(width: 56, height: 56)
+                .clipShape(Circle())
+            } else {
+                Text(String(user.displayName.prefix(1)))
+                    .font(SederTheme.ploni(24, weight: .semibold))
+                    .foregroundStyle(SederTheme.brandGreen)
+                    .frame(width: 56, height: 56)
+                    .background(SederTheme.brandGreen.opacity(0.1))
+                    .clipShape(Circle())
+            }
+
+            Text(user.displayName)
+                .font(SederTheme.ploni(18, weight: .semibold))
+                .foregroundStyle(SederTheme.textPrimary)
+            Text(user.email)
+                .font(SederTheme.ploni(14))
+                .foregroundStyle(SederTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .background(SederTheme.cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(SederTheme.cardBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
 
     // MARK: - Preference Picker

@@ -2,15 +2,19 @@ import SwiftUI
 
 struct ClientsView: View {
     @Bindable var viewModel: ClientsViewModel
+    @EnvironmentObject var auth: AuthViewModel
     @State private var showFormSheet = false
+    @State private var showSettings = false
     @State private var editingClient: Client?
     @State private var selectedClient: Client?
 
     var body: some View {
         VStack(spacing: 0) {
-            // Green navbar
-            HStack {
-                // Add button (right in RTL)
+            GreenNavBar(
+                title: "לקוחות",
+                onSettingsTap: { showSettings = true },
+                avatarURL: auth.user?.image
+            ) {
                 Button {
                     editingClient = nil
                     showFormSheet = true
@@ -23,30 +27,7 @@ struct ClientsView: View {
                     }
                     .foregroundStyle(.white)
                 }
-
-                Spacer()
-
-                Text("לקוחות")
-                    .font(SederTheme.ploni(18, weight: .semibold))
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                // Invisible spacer to balance
-                HStack(spacing: 4) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text("לקוח חדש")
-                        .font(SederTheme.ploni(14, weight: .medium))
-                }
-                .foregroundStyle(.clear)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .padding(.top, UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .first?.windows.first?.safeAreaInsets.top ?? 0)
-            .background(SederTheme.brandGreen.ignoresSafeArea(edges: .top))
 
             Group {
                 if viewModel.isLoading {
@@ -74,6 +55,9 @@ struct ClientsView: View {
         .sheet(item: $selectedClient) { client in
             ClientDetailSheet(client: client, viewModel: viewModel)
                 .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
         }
         .refreshable { await viewModel.loadClients() }
     }
