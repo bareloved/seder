@@ -110,7 +110,7 @@ struct AnalyticsView: View {
     private var monthSelector: some View {
         HStack(spacing: 8) {
             Text("\(Calendar.current.component(.year, from: viewModel.selectedMonth))")
-                .font(SederTheme.ploni(15))
+                .font(SederTheme.ploni(16))
                 .foregroundStyle(SederTheme.textPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -129,7 +129,7 @@ struct AnalyticsView: View {
                 }
 
                 Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
-                    .font(SederTheme.ploni(15, weight: .medium))
+                    .font(SederTheme.ploni(16, weight: .medium))
                     .foregroundStyle(SederTheme.textPrimary)
 
                 Button {
