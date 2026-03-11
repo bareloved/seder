@@ -4,6 +4,9 @@ struct AnalyticsView: View {
     @StateObject private var viewModel = AnalyticsViewModel()
     @EnvironmentObject private var appState: AppState
 
+    @State private var showMonthPicker = false
+    @State private var showYearPicker = false
+
     private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
                           "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
 
@@ -115,10 +118,16 @@ struct AnalyticsView: View {
 
     private var borderColor: Color { Color(.separator).opacity(0.3) }
 
-    private var monthSelector: some View {
-        HStack(spacing: 8) {
-            Spacer()
+    private var currentMonthIndex: Int {
+        Calendar.current.component(.month, from: viewModel.selectedMonth)
+    }
 
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: viewModel.selectedMonth)
+    }
+
+    private var monthSelector: some View {
+        HStack(spacing: 0) {
             // Center: Month picker with arrows
             HStack(spacing: 0) {
                 Button {
@@ -131,12 +140,18 @@ struct AnalyticsView: View {
                         .environment(\.layoutDirection, .leftToRight)
                 }
 
-                Text(months[Calendar.current.component(.month, from: viewModel.selectedMonth) - 1])
-                    .font(SederTheme.ploni(15))
-                    .foregroundStyle(SederTheme.textPrimary)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .frame(minWidth: 80)
+                Button { showMonthPicker.toggle() } label: {
+                    Text(months[currentMonthIndex - 1])
+                        .font(SederTheme.ploni(15))
+                        .foregroundStyle(SederTheme.textPrimary)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .frame(minWidth: 100)
+                }
+                .popover(isPresented: $showMonthPicker, arrowEdge: .top) {
+                    monthPickerList
+                        .presentationCompactAdaptation(.popover)
+                }
 
                 Button {
                     viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
@@ -157,22 +172,97 @@ struct AnalyticsView: View {
             Spacer()
 
             // Physical right: Year
-            Text(String(Calendar.current.component(.year, from: viewModel.selectedMonth)))
-                .font(SederTheme.ploni(15))
-                .foregroundStyle(SederTheme.textPrimary)
-                .lineLimit(1)
-                .fixedSize()
-                .frame(height: 36)
-                .padding(.horizontal, 12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(borderColor, lineWidth: 1)
-                )
+            Button { showYearPicker.toggle() } label: {
+                Text(String(currentYear))
+                    .font(SederTheme.ploni(15))
+                    .foregroundStyle(SederTheme.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(height: 36)
+                    .padding(.horizontal, 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
+            }
+            .popover(isPresented: $showYearPicker, arrowEdge: .top) {
+                yearPickerList
+                    .presentationCompactAdaptation(.popover)
+            }
         }
-        .padding(.horizontal, 16)
+        .padding(.leading, 10)
+        .padding(.trailing, 16)
         .padding(.vertical, 8)
         .background(SederTheme.cardBg)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.03), radius: 2, y: 1)
+    }
+
+    private var monthPickerList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(0..<12, id: \.self) { i in
+                    let monthNum = i + 1
+                    let isCurrent = currentMonthIndex == monthNum
+
+                    Button {
+                        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedMonth)
+                        components.month = monthNum
+                        if let newDate = Calendar.current.date(from: components) {
+                            viewModel.selectedMonth = newDate
+                        }
+                        showMonthPicker = false
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text(months[i])
+                                .font(SederTheme.ploni(16, weight: isCurrent ? .semibold : .regular))
+                                .foregroundStyle(SederTheme.textPrimary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)
+                        .background(isCurrent ? SederTheme.subtleBg : Color.clear)
+                    }
+
+                    if i < 11 {
+                        Divider().padding(.horizontal, 12)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
+        .frame(width: 180, height: 400)
+        .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    private var yearPickerList: some View {
+        let thisYear = Calendar.current.component(.year, from: Date())
+        let years = Array((thisYear - 3)...(thisYear + 1))
+
+        return VStack(spacing: 0) {
+            ForEach(years, id: \.self) { year in
+                Button {
+                    var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedMonth)
+                    components.year = year
+                    if let newDate = Calendar.current.date(from: components) {
+                        viewModel.selectedMonth = newDate
+                    }
+                    showYearPicker = false
+                } label: {
+                    Text(String(year))
+                        .font(.system(size: 16, weight: currentYear == year ? .semibold : .regular, design: .rounded).monospacedDigit())
+                        .foregroundStyle(SederTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(currentYear == year ? SederTheme.subtleBg : Color.clear)
+                }
+
+                if year != years.last {
+                    Divider().padding(.horizontal, 12)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(width: 120)
     }
 }
