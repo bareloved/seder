@@ -36,6 +36,13 @@ struct CategoryBreakdownSection: View {
 private struct CategoryBar: View {
     let category: CategoryBreakdown
 
+    private func resolveColor(_ value: String) -> Color {
+        // Try name mapping first (e.g. "emerald"), then hex fallback (e.g. "#9ca3af")
+        let named = SederTheme.categoryColor(for: value)
+        if named != .gray { return named }
+        return SederTheme.color(hex: value)
+    }
+
     var body: some View {
         VStack(spacing: 3) {
             HStack {
@@ -55,7 +62,7 @@ private struct CategoryBar: View {
                         .frame(height: 8)
 
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(SederTheme.color(hex: category.categoryColor))
+                        .fill(resolveColor(category.categoryColor))
                         .frame(width: geo.size.width * (category.percentage / 100), height: 8)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
