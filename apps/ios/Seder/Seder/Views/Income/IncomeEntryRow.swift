@@ -152,7 +152,8 @@ struct IncomeEntryRow: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         guard let date = formatter.date(from: entry.date) else { return false }
-        return date < Calendar.current.startOfDay(for: Date())
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        return date < Calendar.current.startOfDay(for: thirtyDaysAgo)
     }
 
     private var dayNumber: Int {
