@@ -22,6 +22,7 @@ struct IncomeListView: View {
     @State private var sortColumn: SortColumn = .date
     @State private var sortDirection: SortDirection = .asc
     @StateObject private var categoriesVM = CategoriesViewModel()
+    @State private var clientsVM = ClientsViewModel()
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -94,7 +95,9 @@ struct IncomeListView: View {
     }
 
     private var uniqueClientNames: [String] {
-        Array(Set(viewModel.entries.map(\.clientName))).sorted()
+        let apiNames = clientsVM.clients.map(\.name)
+        let entryNames = viewModel.entries.map(\.clientName)
+        return Array(Set(apiNames + entryNames)).filter { !$0.isEmpty }.sorted()
     }
 
     private var hasActiveFilter: Bool {
@@ -106,6 +109,7 @@ struct IncomeListView: View {
             // Green navbar
             GreenNavBar(
                 onSettingsTap: { showSettings = true },
+                onAddTap: { showAddSheet = true },
                 avatarURL: auth.user?.image
             )
 
@@ -225,28 +229,22 @@ struct IncomeListView: View {
             .background(SederTheme.pageBg)
         }
         .ignoresSafeArea(edges: .top)
-        .overlay(alignment: .bottomLeading) {
-            Button { showAddSheet = true } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(SederTheme.brandGreen)
-                    .clipShape(Circle())
-                    .shadow(color: SederTheme.brandGreen.opacity(0.3), radius: 6, y: 3)
-            }
-            .padding(.leading, 24)
-            .padding(.bottom, 24)
-        }
         .sheet(isPresented: $showAddSheet) {
-            IncomeFormSheet(viewModel: viewModel)
+            IncomeDetailSheet(
+                viewModel: viewModel,
+                categories: categoriesVM.categories,
+                clientNames: uniqueClientNames,
+                clientsVM: clientsVM
+            )
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: $editingEntry) { entry in
             IncomeDetailSheet(
                 viewModel: viewModel,
                 entry: entry,
                 categories: categoriesVM.categories,
-                clientNames: uniqueClientNames
+                clientNames: uniqueClientNames,
+                clientsVM: clientsVM
             )
             .presentationDetents([.medium, .large])
         }
@@ -275,6 +273,7 @@ struct IncomeListView: View {
             await viewModel.loadEntries()
             await viewModel.loadAllMonthStatuses()
             await categoriesVM.loadCategories()
+            await clientsVM.loadClients()
         }
         .onChange(of: viewModel.selectedMonth) { _ in
             Task {
@@ -296,14 +295,33 @@ struct IncomeListView: View {
 
 struct GreenNavBar: View {
     var onSettingsTap: () -> Void
+    var onAddTap: (() -> Void)?
     var avatarURL: String?
 
     var body: some View {
-        HStack {
-            Spacer()
+        ZStack {
+            // Center: title
+            Text("הכנסות")
+                .font(SederTheme.ploni(18, weight: .semibold))
+                .foregroundStyle(.white)
 
-            // Physical left: dark mode + avatar
-            HStack(spacing: 10) {
+            HStack {
+                // Physical right: add button
+                if let onAddTap {
+                    Button(action: onAddTap) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("עבודה חדשה")
+                                .font(SederTheme.ploni(14, weight: .medium))
+                        }
+                        .foregroundStyle(.white)
+                    }
+                }
+
+                Spacer()
+
+                // Physical left: avatar
                 Button(action: onSettingsTap) {
                     if let urlString = avatarURL, let url = URL(string: urlString) {
                         AsyncImage(url: url) { image in
