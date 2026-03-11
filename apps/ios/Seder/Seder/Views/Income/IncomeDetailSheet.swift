@@ -479,7 +479,8 @@ struct IncomeDetailSheet: View {
         if let d = formatter.date(from: entry.date) { date = d }
         description = entry.description
         clientName = entry.clientName
-        if let num = Int(entry.amountGross.filter(\.isWholeNumber)) {
+        if let dbl = Double(entry.amountGross) {
+            let num = Int(dbl)
             let fmt = NumberFormatter()
             fmt.numberStyle = .decimal
             fmt.groupingSeparator = ","
