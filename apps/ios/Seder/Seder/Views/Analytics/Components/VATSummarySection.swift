@@ -56,7 +56,7 @@ private struct VATRow: View {
                 .font(.system(size: 18, weight: isBold ? .medium : .regular, design: .rounded))
                 .foregroundStyle(color)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         .padding(.vertical, 6)
     }
 }
