@@ -10,6 +10,7 @@ enum KPIFilter: String, CaseIterable {
 struct IncomeListView: View {
     @StateObject private var viewModel = IncomeViewModel()
     @EnvironmentObject var auth: AuthViewModel
+    @EnvironmentObject private var appState: AppState
     @State private var showAddSheet = false
     @State private var showSettings = false
     @State private var showCalendarImport = false
@@ -280,6 +281,13 @@ struct IncomeListView: View {
                 await viewModel.loadEntries()
                 await viewModel.loadAllMonthStatuses()
             }
+        }
+        .onChange(of: appState.deepLinkEntryId) { _ in
+            guard let entryId = appState.deepLinkEntryId else { return }
+            if let entry = viewModel.entries.first(where: { $0.id == entryId }) {
+                editingEntry = entry
+            }
+            appState.clearDeepLink()
         }
     }
 
