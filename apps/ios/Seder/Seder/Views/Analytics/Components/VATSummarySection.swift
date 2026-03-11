@@ -17,7 +17,7 @@ struct VATSummarySection: View {
             badge: {
                 if let agg = aggregates, agg.vatTotal > 0 {
                     Text(AmountFormatter.full(agg.vatTotal))
-                        .font(SederTheme.ploni(12, weight: .medium))
+                        .font(SederTheme.ploni(13, weight: .medium))
                         .foregroundStyle(.purple)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
