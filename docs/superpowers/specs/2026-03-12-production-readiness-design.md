@@ -20,6 +20,14 @@ Seder is a Hebrew-first income tracking app for freelancers and musicians. The w
 | Database (RLS, migrations, manual backups) | Solid (backups are manual via scripts, not automated) |
 | iOS App Store / TestFlight readiness | Low |
 
+### RTL Requirement
+
+**Critical:** This is a Hebrew-first RTL app. Every UI component built in this spec MUST be RTL-correct from the start:
+- Web: use `dir="rtl"` on all new containers/modals, use `ms-`/`me-`/`ps-`/`pe-` (not `ml-`/`mr-`/`pl-`/`pr-`), use `text-start`/`text-end` (not `text-left`/`text-right`)
+- iOS: remember HStack first item = RIGHT side in RTL, use `.leading`/`.trailing` alignment (not `.left`/`.right`)
+- All user-facing text in Hebrew
+- Verify RTL alignment on every component before considering it done
+
 ## Design
 
 ### 1. Error Tracking & Monitoring
@@ -78,19 +86,20 @@ Seder is a Hebrew-first income tracking app for freelancers and musicians. The w
 
 - Web: step-by-step highlight tour (Shepherd.js or Driver.js)
 - iOS: custom overlay highlighting UI elements sequentially
-- 4-5 steps max:
+- 4-6 steps max:
   1. Income list
-  2. Add entry button
-  3. Filters/search
-  4. Analytics tab
+  2. KPIs which doubles as filters
+  3. Add entry button
+  4. Filters/search
   5. Calendar import
+  6. Other tabs
 - Runs once on first login, dismissable at any point
 - "Show tour again" option in settings
 
 #### Empty States
 
-- Income list empty → helpful message + "Add your first income entry" CTA
-- Categories page empty → guidance message
+- Income list empty → helpful message + "Add your first income entry or import from calendar" CTA
+- Categories: seed 3 default categories ("קטגוריה 1", "קטגוריה 2", "קטגוריה 3") on new user creation so users can start using categories immediately. This also serves as a CTA to edit/customize their categories.
 - Analytics empty → "Add income entries to see your analytics"
 - iOS: mirror the same empty states in corresponding views
 
@@ -144,6 +153,22 @@ Seder is a Hebrew-first income tracking app for freelancers and musicians. The w
 - Ensure APIClient network errors surface user-friendly Hebrew messages (not raw error strings)
 - Add a generic reusable error view component: "Something went wrong, try again"
 
+### 6. Automated DB Backups
+
+- Set up automated daily backups via Neon's branching/snapshot feature (or pg_dump cron if self-hosted)
+- Retain at least 7 days of daily snapshots
+- Document restore procedure in `docs/RUNBOOK.md`
+- Test restore once before launch to verify backups are usable
+
+### 7. In-App Feedback Mechanism
+
+- Add a lightweight feedback button/link accessible from settings (both web and iOS)
+- Web: small "Send feedback" link in settings page, opens a simple modal with a text area + submit
+- iOS: "Send feedback" row in settings, opens a sheet with text area + submit
+- Submissions sent via email (Resend) to the developer's inbox — no need for a feedback dashboard at this scale
+- Include user ID and platform (web/iOS) automatically in the submission for context
+- All UI in Hebrew, RTL-correct
+
 ## Out of Scope
 
 These items are deferred for post-launch:
@@ -152,8 +177,6 @@ These items are deferred for post-launch:
 - Cookie consent banner
 - Load testing
 - Full monitoring dashboard (Datadog/Grafana)
-- Automated DB backup scheduling
-- In-app feedback mechanism
 - MFA / two-factor authentication
 - CCPA compliance beyond existing GDPR language
 
@@ -170,6 +193,10 @@ Launch is ready when:
 7. TestFlight build is approved by Apple and at least one tester can install
 8. Error boundaries show Hebrew error pages (test by throwing in dev)
 9. Vercel Analytics shows page view data
+10. Automated DB backup runs and a test restore succeeds
+11. Feedback submission from both web and iOS arrives in developer inbox
+12. New user account has 3 default categories seeded
+13. All new UI components pass RTL visual check (text right-aligned, padding/margins correct)
 
 ## Dependencies
 
