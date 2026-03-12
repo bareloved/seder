@@ -48,9 +48,9 @@ A proactive layer on top of existing data that surfaces what needs attention, bo
 
 ### Long-Term Roadmap
 
-- **Phase 1 (this spec):** Smart Nudges — invoice & payment reminders, in-app + push
-- **Phase 2 (future):** Client Intelligence — per-client stats, payment patterns, seasonal insights
-- **Phase 3 (future):** Integrations — WhatsApp payment reminders, bank transfer detection
+- **Phase 1:** Smart Nudges — invoice & payment reminders, in-app + push
+- **Phase 2:** Client Intelligence — per-client stats, payment health, activity trends
+- **Phase 3:** Integrations — WhatsApp, bank, payment apps (not yet designed — needs research)
 
 ### Nudge Types & Triggers
 
@@ -190,3 +190,190 @@ The Smart Nudges feature directly strengthens the top two marketing messages:
 - **"תמונת מצב ב-2 שניות"** → Not just a dashboard, but a dashboard that tells you what to do next
 
 The marketing pitch becomes: "Seder reminded me to invoice a gig I forgot about — that's ₪3,000 I would have lost."
+
+---
+
+## Part C: Client Intelligence (Phase 2)
+
+### Overview
+
+Enrich the existing Clients page with per-client analytics computed from income entry data. Turns the client list from a contact directory into a business intelligence tool. No new pages — everything enhances the existing Clients page.
+
+This phase is passive (no nudges). Users look at client intelligence when they choose to, unlike Phase 1 which is proactive.
+
+### Per-Client Computed Stats
+
+All computed from existing data — no new tables needed. Every income entry already has `clientId`, `invoiceSentDate`, `paidDate`, `amountGross`, `date`.
+
+#### Existing vs New Fields
+
+The existing `ClientWithAnalytics` type already has: `totalEarned`, `thisMonthRevenue`, `thisYearRevenue`, `averagePerJob`, `jobCount`, `outstandingAmount`, `avgDaysToPayment`, `overdueInvoices`.
+
+Strategy: **extend** the existing type with new fields. Do not rename existing fields — this would break the iOS app. New fields are added alongside existing ones.
+
+#### Financial Stats
+
+| Stat | Field | Computation | Notes |
+|------|-------|-------------|-------|
+| Total earned | `totalEarned` (existing) | `SUM(amountPaid)` | Actual money received — keeps consistency with existing analytics |
+| Total invoiced | `totalInvoiced` (new) | `SUM(amountGross)` | Full invoiced amount including unpaid |
+| Gig count | `jobCount` (existing) | `COUNT(*)` of entries | |
+| Average per job | `averagePerJob` (existing) | `totalEarned / jobCount` | |
+| % of total income | `incomePercentage` (new) | Client's `totalEarned` / all user's `totalEarned` for selected period | Always computed for the selected time period, not all-time — avoids misleading averages |
+| Amount unpaid (debt) | `outstandingAmount` (existing) | `SUM(amountGross - amountPaid)` where `paymentStatus != 'paid'` | |
+| This month revenue | `thisMonthRevenue` (existing) | Kept as-is | |
+| This year revenue | `thisYearRevenue` (existing) | Kept as-is | |
+
+**Entries without `clientId`:** Only client-linked entries are included in per-client stats. `incomePercentage` denominator uses ALL user entries (including unlinked). This means percentages may sum to less than 100% — this is correct and expected. No "Unassigned" bucket needed.
+
+#### Payment Reliability Stats
+
+| Stat | Field | Computation | Notes |
+|------|-------|-------------|-------|
+| Average days to pay | `avgDaysToPayment` (existing) | `AVG(paidDate - invoiceSentDate)` where both fields exist | |
+| Late payment rate | `latePaymentRate` (new) | % of entries where days-to-pay exceeded 30 days | Uses fixed 30-day threshold, NOT the user's `nudge_payment_days` — avoids retroactive changes when user adjusts settings |
+| Currently overdue count | `overdueInvoices` (existing) | Entries with `invoiceStatus = 'sent'` + `paymentStatus != 'paid'` past 14 days | |
+
+#### Activity Stats
+
+| Stat | Field | Computation | Notes |
+|------|-------|-------------|-------|
+| Last gig date | `lastGigDate` (new) | `MAX(date)` | |
+| Last active label | `lastActiveMonths` (new) | Months since last gig date | Shown as "פעיל לפני X חודשים" — more intuitive than raw frequency |
+| Activity trend | `activityTrend` (new) | Compare last 3 months gig count vs prior 3 months | **up:** last 3mo count >20% higher. **down:** >20% lower. **stable:** within 20%. If fewer than 2 gigs total, returns `null`. |
+
+#### Payment Health Indicator
+
+Derived field: `paymentHealth: 'good' | 'warning' | 'bad'`
+
+Evaluated in order (first match wins):
+
+| Level | Color | Rule |
+|-------|-------|------|
+| Bad | Red | `overdueInvoices >= 3 OR latePaymentRate >= 50%` |
+| Warning | Orange | `overdueInvoices > 0 OR latePaymentRate >= 20%` |
+| Good | Green | Everything else |
+
+#### Time Scoping
+
+Stats computed for all-time by default. Option to filter to current year or custom period via the same period selector used elsewhere in the app. Exception: `incomePercentage` is always computed for the selected period (never all-time) to avoid misleading averages.
+
+### UI: Enhanced Clients Page
+
+#### Client Card Enhancements
+
+Each client card gets a stats row below the existing client info:
+
+**Always visible (summary):**
+- Total revenue
+- Gig count
+- Last gig date
+
+**Payment health indicator** — colored dot/badge on each card:
+- **Green:** average days-to-pay under threshold, nothing overdue
+- **Orange:** has overdue invoices or sometimes pays late
+- **Red:** consistently late payer or multiple overdue items
+
+**Expandable detail** (tap/click to reveal):
+- Average gig value
+- % of total income
+- Amount unpaid (debt)
+- Average days to pay
+- Gig frequency
+- Activity trend (arrow: ↑ ↓ →)
+
+#### Sorting Options
+
+Combined existing + new sort options:
+
+| Sort | Direction |
+|------|-----------|
+| Name | A-Z (existing) |
+| Revenue | Highest first |
+| Last activity | Most recent first |
+| Jobs done | Most first |
+| Amount unpaid (debt) | Highest first |
+
+Default remains existing display order.
+
+### API & Performance
+
+#### Computation Approach
+
+Extend existing `getClientsWithAnalytics` function to compute the full stats set in a single query using SQL aggregations.
+
+**Query strategy:**
+- Single query with CTEs joining `clients` and `incomeEntries` on `clientId`
+- GROUP BY client for: revenue, count, avg gig value, last date, overdue count, unpaid amount
+- Days-to-pay average: separate CTE filtering entries where both `invoiceSentDate` and `paidDate` exist
+- Activity trend: CTE comparing `COUNT(*)` for last 3 months vs prior 3 months
+- % of total income: window function or separate subquery for user's total revenue
+
+**Performance:**
+- All computation server-side via SQL — no client-side aggregation
+- No caching layer for now — data freshness matters more than speed at this user scale
+- If performance becomes an issue later, add materialized views or periodic computation
+
+#### API Endpoint
+
+Extend existing `GET /api/v1/clients` to accept `?analytics=true` query param:
+- Without param: returns existing `Client[]` (backwards compatible)
+- With `?analytics=true`: returns `ClientWithAnalytics[]` with the full stats object
+- iOS app uses the same endpoint
+
+#### Extended Type
+
+Extends existing `ClientWithAnalytics` — all existing fields preserved, new fields added:
+
+```typescript
+interface ClientWithAnalytics extends DBClient {
+  // Existing fields (do NOT rename — iOS depends on these)
+  totalEarned: number;
+  thisMonthRevenue: number;
+  thisYearRevenue: number;
+  averagePerJob: number;
+  jobCount: number;
+  outstandingAmount: number;
+  avgDaysToPayment: number | null;
+  overdueInvoices: number;
+
+  // New fields (Phase 2)
+  totalInvoiced: number;
+  incomePercentage: number;              // 0-100, for selected period
+  latePaymentRate: number;               // 0-100, uses fixed 30-day threshold
+  lastGigDate: string | null;            // ISO date
+  lastActiveMonths: number | null;       // months since last gig, null if no gigs
+  activityTrend: 'up' | 'down' | 'stable' | null; // null if < 2 gigs
+  paymentHealth: 'good' | 'warning' | 'bad';
+}
+```
+
+### What This Enables for Marketing
+
+Strengthens the "מי חייב לי כסף?" message with depth:
+- "Not just who owes you — but who *always* pays late, and who's your most valuable client"
+- "Know which clients are worth chasing and which ones aren't worth the trouble"
+
+---
+
+## Part D: Integrations (Phase 3) — Placeholder
+
+### Status: Not Yet Designed
+
+Phase 3 requires research into available APIs and feasibility before designing. Shelved until Phases 1 and 2 are validated with real users.
+
+### Candidate Integrations to Research
+
+| Integration | What it would do | Research needed |
+|-------------|-----------------|-----------------|
+| WhatsApp Business API | Send payment reminders to clients directly from Seder | API access, pricing, Israeli phone number requirements |
+| Bank sync (Open Banking) | Auto-detect incoming transfers, match to entries, auto-mark as paid | Israeli Open Banking regulation status, bank API availability |
+| Bit / PayBox / Paypal | Detect payments from Israeli payment apps | API availability, authentication flow |
+| Accountant export | Generate monthly summary in accountant-friendly format (CSV/Excel) | Common formats used by Israeli accountants (Hashavshevet, etc.) |
+
+### When to Design Phase 3
+
+After Phase 1 and 2 are shipped and validated:
+1. Survey users: which integration would save them the most time?
+2. Research API feasibility for the top-voted option
+3. Design and spec through the normal brainstorming flow
