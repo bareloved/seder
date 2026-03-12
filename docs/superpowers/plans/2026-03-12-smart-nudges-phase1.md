@@ -1830,7 +1830,7 @@ git commit -m "feat(ios): add NudgeSection to income list with swipe actions"
 
 ## Implementation Notes
 
-**`unlogged_calendar` nudge:** The type is defined but computation is NOT implemented in `computeNudges`. This nudge requires a calendar fetch (Google Calendar API call) which is side-effectful and shouldn't live in the pure computation engine. Implementation: extend `getNudgesForUser` in `data.ts` to check for unlogged calendar events by calling the existing auto-sync endpoint and comparing fetched events against imported entries (via `calendarEventId`). If the user's OAuth token is expired, skip silently. This can be added as a follow-up task after the core nudge system is working.
+**`unlogged_calendar` nudge:** Removed from Phase 1 scope. Google Calendar OAuth tokens expire after 1 week in testing mode (app not yet verified/published by Google). Calendar auto-sync is effectively broken until the app goes through Google's verification process. The nudge type is kept in the enum for future use but has no computation or UI.
 
 **Cron performance:** The refactored cron queries each user individually (3 queries per user). This is fine for the current small user base. If user count grows significantly, batch the queries: fetch all nudgeable entries across all users in one query grouped by userId, and process in memory.
 
