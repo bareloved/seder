@@ -97,14 +97,6 @@ struct SettingsView: View {
             .onChange(of: viewModel.currency) { _ in Task { await viewModel.savePreferences() } }
             .onChange(of: viewModel.timezone) { _ in Task { await viewModel.savePreferences() } }
             .onChange(of: viewModel.language) { _ in Task { await viewModel.savePreferences() } }
-            .onChange(of: viewModel.nudgeInvoiceDays) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePaymentDays) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.uninvoiced) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.batch_invoice) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.overdue_payment) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.way_overdue) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.partial_stale) { _ in Task { await viewModel.saveNudgeSettings() } }
-            .onChange(of: viewModel.nudgePushPrefs.month_end) { _ in Task { await viewModel.saveNudgeSettings() } }
         }
         .environment(\.layoutDirection, .rightToLeft)
     }
@@ -176,89 +168,7 @@ struct SettingsView: View {
     }
 
     private var notificationsSection: some View {
-        SettingsSection(title: "תזכורות") {
-            VStack(spacing: 0) {
-                // Invoice days threshold
-                HStack {
-                    HStack(spacing: 8) {
-                        Image(systemName: "doc.text")
-                            .font(.body)
-                            .foregroundStyle(SederTheme.textSecondary)
-                        Text("ימים עד תזכורת חשבונית")
-                            .font(SederTheme.ploni(16))
-                            .foregroundStyle(SederTheme.textPrimary)
-                    }
-                    Spacer()
-                    Stepper("\(viewModel.nudgeInvoiceDays)", value: $viewModel.nudgeInvoiceDays, in: 1...30)
-                        .labelsHidden()
-                    Text("\(viewModel.nudgeInvoiceDays)")
-                        .font(SederTheme.ploni(16))
-                        .foregroundStyle(SederTheme.textSecondary)
-                        .frame(width: 24)
-                        .environment(\.layoutDirection, .leftToRight)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
-                Divider().padding(.horizontal, 16)
-
-                // Payment days threshold
-                HStack {
-                    HStack(spacing: 8) {
-                        Image(systemName: "creditcard")
-                            .font(.body)
-                            .foregroundStyle(SederTheme.textSecondary)
-                        Text("ימים עד תזכורת תשלום")
-                            .font(SederTheme.ploni(16))
-                            .foregroundStyle(SederTheme.textPrimary)
-                    }
-                    Spacer()
-                    Stepper("\(viewModel.nudgePaymentDays)", value: $viewModel.nudgePaymentDays, in: 1...60)
-                        .labelsHidden()
-                    Text("\(viewModel.nudgePaymentDays)")
-                        .font(SederTheme.ploni(16))
-                        .foregroundStyle(SederTheme.textSecondary)
-                        .frame(width: 24)
-                        .environment(\.layoutDirection, .leftToRight)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-
-                Divider().padding(.horizontal, 16)
-
-                // Push notification toggles
-                pushToggle(label: "עבודות ללא חשבונית", icon: "doc.text", isOn: $viewModel.nudgePushPrefs.uninvoiced)
-                Divider().padding(.horizontal, 16)
-                pushToggle(label: "תזכורת שבועית לחשבוניות", icon: "doc.on.doc", isOn: $viewModel.nudgePushPrefs.batch_invoice)
-                Divider().padding(.horizontal, 16)
-                pushToggle(label: "תשלומים באיחור", icon: "exclamationmark.circle", isOn: $viewModel.nudgePushPrefs.overdue_payment)
-                Divider().padding(.horizontal, 16)
-                pushToggle(label: "תשלומים באיחור חמור", icon: "exclamationmark.triangle", isOn: $viewModel.nudgePushPrefs.way_overdue)
-                Divider().padding(.horizontal, 16)
-                pushToggle(label: "תשלום חלקי תקוע", icon: "creditcard", isOn: $viewModel.nudgePushPrefs.partial_stale)
-                Divider().padding(.horizontal, 16)
-                pushToggle(label: "תזכורת סוף חודש", icon: "clock", isOn: $viewModel.nudgePushPrefs.month_end)
-            }
-        }
-    }
-
-    private func pushToggle(label: String, icon: String, isOn: Binding<Bool>) -> some View {
-        HStack {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.body)
-                    .foregroundStyle(SederTheme.textSecondary)
-                Text(label)
-                    .font(SederTheme.ploni(16))
-                    .foregroundStyle(SederTheme.textPrimary)
-            }
-            Spacer()
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .tint(SederTheme.brandGreen)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        NotificationsSettingsSection(viewModel: viewModel)
     }
 
     private var calendarSection: some View {
@@ -527,6 +437,104 @@ struct SettingsSection<Content: View>: View {
                     .stroke(SederTheme.cardBorder, lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+        }
+    }
+}
+
+// MARK: - Notifications Settings (extracted to reduce body complexity)
+
+struct NotificationsSettingsSection: View {
+    @ObservedObject var viewModel: SettingsViewModel
+
+    var body: some View {
+        SettingsSection(title: "תזכורות") {
+            VStack(spacing: 0) {
+                thresholdRows
+                Divider().padding(.horizontal, 16)
+                pushToggleRows
+            }
+        }
+    }
+
+    private var thresholdRows: some View {
+        VStack(spacing: 0) {
+            thresholdRow(
+                icon: "doc.text",
+                label: "ימים עד תזכורת חשבונית",
+                value: $viewModel.nudgeInvoiceDays,
+                range: 1...30
+            )
+            Divider().padding(.horizontal, 16)
+            thresholdRow(
+                icon: "creditcard",
+                label: "ימים עד תזכורת תשלום",
+                value: $viewModel.nudgePaymentDays,
+                range: 1...60
+            )
+        }
+    }
+
+    private func thresholdRow(icon: String, label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        HStack {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(SederTheme.textSecondary)
+                Text(label)
+                    .font(SederTheme.ploni(16))
+                    .foregroundStyle(SederTheme.textPrimary)
+            }
+            Spacer()
+            Stepper("\(value.wrappedValue)", value: value, in: range)
+                .labelsHidden()
+            Text("\(value.wrappedValue)")
+                .font(SederTheme.ploni(16))
+                .foregroundStyle(SederTheme.textSecondary)
+                .frame(width: 24)
+                .environment(\.layoutDirection, .leftToRight)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .onChange(of: value.wrappedValue) { _ in
+            Task { await viewModel.saveNudgeSettings() }
+        }
+    }
+
+    private var pushToggleRows: some View {
+        VStack(spacing: 0) {
+            pushToggle(label: "עבודות ללא חשבונית", icon: "doc.text", isOn: $viewModel.nudgePushPrefs.uninvoiced)
+            Divider().padding(.horizontal, 16)
+            pushToggle(label: "תזכורת שבועית לחשבוניות", icon: "doc.on.doc", isOn: $viewModel.nudgePushPrefs.batch_invoice)
+            Divider().padding(.horizontal, 16)
+            pushToggle(label: "תשלומים באיחור", icon: "exclamationmark.circle", isOn: $viewModel.nudgePushPrefs.overdue_payment)
+            Divider().padding(.horizontal, 16)
+            pushToggle(label: "תשלומים באיחור חמור", icon: "exclamationmark.triangle", isOn: $viewModel.nudgePushPrefs.way_overdue)
+            Divider().padding(.horizontal, 16)
+            pushToggle(label: "תשלום חלקי תקוע", icon: "creditcard", isOn: $viewModel.nudgePushPrefs.partial_stale)
+            Divider().padding(.horizontal, 16)
+            pushToggle(label: "תזכורת סוף חודש", icon: "clock", isOn: $viewModel.nudgePushPrefs.month_end)
+        }
+    }
+
+    private func pushToggle(label: String, icon: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(SederTheme.textSecondary)
+                Text(label)
+                    .font(SederTheme.ploni(16))
+                    .foregroundStyle(SederTheme.textPrimary)
+            }
+            Spacer()
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .tint(SederTheme.brandGreen)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .onChange(of: isOn.wrappedValue) { _ in
+            Task { await viewModel.saveNudgeSettings() }
         }
     }
 }
