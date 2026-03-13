@@ -4,6 +4,9 @@ import { eq, and, gte, lte, asc, desc, sql, count, lt, inArray } from "drizzle-o
 import { unstable_cache } from "next/cache";
 import { Currency, DEFAULT_VAT_RATE } from "@seder/shared";
 import { GoogleCalendarAuthError } from "@/lib/googleCalendar";
+import { computeNudges } from "@/lib/nudges/compute";
+import { fetchNudgeableEntries, fetchDismissedNudges, getNudgeSettings } from "@/lib/nudges/queries";
+import type { Nudge } from "@/lib/nudges/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types for data helpers
@@ -1076,4 +1079,17 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 
   // If no settings exist or onboardingCompleted is false, show onboarding
   return settings.length > 0 && settings[0].onboardingCompleted === true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Smart Nudges
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getNudgesForUser(userId: string): Promise<Nudge[]> {
+  const [entries, dismissed, settings] = await Promise.all([
+    fetchNudgeableEntries(userId),
+    fetchDismissedNudges(userId),
+    getNudgeSettings(userId),
+  ]);
+  return computeNudges(entries, dismissed, settings);
 }

@@ -9,6 +9,10 @@ import { PreferencesSection } from "./components/PreferencesSection";
 import { CalendarSection } from "./components/CalendarSection";
 import { DataSection } from "./components/DataSection";
 import { DangerSection } from "./components/DangerSection";
+import { NotificationsSection } from "./components/NotificationsSection";
+import { getNudgeSettingsAction } from "./actions";
+import type { NudgePushPreferences } from "@/lib/nudges/types";
+import { DEFAULT_NUDGE_PUSH_PREFS } from "@/lib/nudges/types";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
@@ -18,15 +22,26 @@ function SettingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = React.useState<SettingsTab>("account");
+    const [nudgeSettings, setNudgeSettings] = React.useState<{
+        nudgeInvoiceDays: number;
+        nudgePaymentDays: number;
+        nudgePushEnabled: NudgePushPreferences;
+    } | null>(null);
 
     const { data: session } = authClient.useSession();
 
     React.useEffect(() => {
         const tab = searchParams.get("tab");
-        if (tab && ["account", "preferences", "calendar", "data", "danger"].includes(tab)) {
+        if (tab && ["account", "preferences", "notifications", "calendar", "data", "danger"].includes(tab)) {
             setActiveTab(tab as SettingsTab);
         }
     }, [searchParams]);
+
+    React.useEffect(() => {
+        if (activeTab === "notifications" && !nudgeSettings) {
+            getNudgeSettingsAction().then(setNudgeSettings);
+        }
+    }, [activeTab, nudgeSettings]);
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab as SettingsTab);
@@ -52,6 +67,9 @@ function SettingsContent() {
                 <SettingsLayout activeTab={activeTab} onTabChange={handleTabChange}>
                     {activeTab === "account" && <AccountSection user={session.user} />}
                     {activeTab === "preferences" && <PreferencesSection />}
+                    {activeTab === "notifications" && nudgeSettings && (
+                        <NotificationsSection initialSettings={nudgeSettings} />
+                    )}
                     {activeTab === "calendar" && <CalendarSection />}
                     {activeTab === "data" && <DataSection />}
                     {activeTab === "danger" && <DangerSection />}

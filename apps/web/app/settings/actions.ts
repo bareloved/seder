@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
+import type { NudgePushPreferences } from "@/lib/nudges/types";
+
 // --- Settings Actions ---
 
 export async function updateUserSettings(data: any) {
@@ -47,6 +49,39 @@ export async function updateUserSettings(data: any) {
         console.error("Failed to update settings:", error);
         return { success: false, error: "Failed to update settings" };
     }
+}
+
+// --- Nudge Settings Actions ---
+
+export async function getNudgeSettingsAction() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const { getNudgeSettings } = await import("@/lib/nudges/queries");
+  const { DEFAULT_NUDGE_PUSH_PREFS } = await import("@/lib/nudges/types");
+  const settings = await getNudgeSettings(session.user.id);
+  return settings;
+}
+
+export async function updateNudgeSettings(data: {
+  nudgeInvoiceDays: number;
+  nudgePaymentDays: number;
+  nudgePushEnabled: NudgePushPreferences;
+}) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db
+    .update(userSettings)
+    .set({
+      nudgeInvoiceDays: String(data.nudgeInvoiceDays),
+      nudgePaymentDays: String(data.nudgePaymentDays),
+      nudgePushEnabled: data.nudgePushEnabled,
+      updatedAt: new Date(),
+    })
+    .where(eq(userSettings.userId, session.user.id));
+
+  revalidatePath("/settings");
 }
 
 // --- Calendar Settings Actions ---

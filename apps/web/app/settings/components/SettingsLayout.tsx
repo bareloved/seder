@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { User, Settings, Calendar, Database, AlertOctagon } from "lucide-react";
+import { User, Settings, Calendar, Database, AlertOctagon, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SettingsLayoutProps {
@@ -11,11 +11,12 @@ interface SettingsLayoutProps {
     onTabChange: (tab: string) => void;
 }
 
-export type SettingsTab = "account" | "preferences" | "calendar" | "data" | "danger";
+export type SettingsTab = "account" | "preferences" | "notifications" | "calendar" | "data" | "danger";
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType; color?: string }[] = [
     { id: "account", label: "חשבון", icon: User },
     { id: "preferences", label: "העדפות", icon: Settings },
+    { id: "notifications", label: "תזכורות", icon: Bell },
     { id: "calendar", label: "לוח שנה", icon: Calendar },
     { id: "data", label: "ניהול נתונים", icon: Database },
     { id: "danger", label: "מחיקת חשבון", icon: AlertOctagon, color: "text-red-500 hover:text-red-600 hover:bg-red-50" },

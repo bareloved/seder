@@ -117,6 +117,22 @@ nonisolated class APIClient: @unchecked Sendable {
         }
     }
 
+    // MARK: - Nudges
+
+    func fetchNudges() async throws -> [Nudge] {
+        return try await request(endpoint: "/api/v1/nudges", method: "GET")
+    }
+
+    func dismissNudge(_ nudgeType: String, entryId: String?, periodKey: String?, snooze: Bool = false) async throws {
+        let body = DismissNudgeRequest(
+            nudgeType: nudgeType,
+            entryId: entryId,
+            periodKey: periodKey,
+            snooze: snooze
+        )
+        let _: EmptyData = try await request(endpoint: "/api/v1/nudges", method: "POST", body: body)
+    }
+
     // MARK: - Raw Request
 
     private func rawRequest(
