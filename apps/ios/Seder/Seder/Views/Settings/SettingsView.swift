@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var showDeleteFinalConfirm = false
     @State private var deleteConfirmText = ""
     @State private var showSignOutConfirm = false
+    @State private var showFeedback = false
 
     var body: some View {
         NavigationStack {
@@ -57,6 +58,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showExport) {
                 ExportDataSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showFeedback) {
+                FeedbackSheet()
             }
             .confirmationDialog("האם להתנתק?", isPresented: $showSignOutConfirm) {
                 Button("התנתקות", role: .destructive) {
@@ -229,6 +233,10 @@ struct SettingsView: View {
         SettingsSection(title: "נתונים") {
             SettingsRow(icon: "square.and.arrow.up", label: "ייצוא CSV") {
                 showExport = true
+            }
+            Divider().padding(.horizontal, 16)
+            SettingsRow(icon: "envelope", label: "שליחת משוב") {
+                showFeedback = true
             }
         }
     }
