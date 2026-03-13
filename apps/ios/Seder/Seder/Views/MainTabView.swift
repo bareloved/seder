@@ -2,10 +2,12 @@ import SwiftUI
 
 struct MainTabView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "system"
+    @AppStorage("hasSeenTour") private var hasSeenTour = false
     @State private var clientsVM = ClientsViewModel()
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject var auth: AuthViewModel
     @State private var showSettings = false
+    @State private var showTour = false
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
@@ -66,6 +68,21 @@ struct MainTabView: View {
         }
         .task {
             await clientsVM.loadClients()
+            // Show tour for first-time users
+            if !hasSeenTour {
+                try? await Task.sleep(for: .seconds(1))
+                showTour = true
+            }
+        }
+        .overlay {
+            if showTour {
+                TourOverlay(isShowing: $showTour)
+                    .onChange(of: showTour) { newValue in
+                        if !newValue {
+                            hasSeenTour = true
+                        }
+                    }
+            }
         }
     }
 }
