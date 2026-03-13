@@ -24,6 +24,7 @@ struct IncomeListView: View {
     @State private var sortDirection: SortDirection = .asc
     @StateObject private var categoriesVM = CategoriesViewModel()
     @State private var clientsVM = ClientsViewModel()
+    @StateObject private var nudgeVM = NudgeViewModel()
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -193,6 +194,9 @@ struct IncomeListView: View {
                         )
                     }
 
+                    // Smart Nudges
+                    NudgeSection(viewModel: nudgeVM)
+
                     // Entries
                     if viewModel.isLoading {
                         ProgressView()
@@ -285,6 +289,7 @@ struct IncomeListView: View {
             await viewModel.loadAllMonthStatuses()
             await categoriesVM.loadCategories()
             await clientsVM.loadClients()
+            await nudgeVM.fetchNudges()
         }
         .onChange(of: viewModel.selectedMonth) { _ in
             Task {
