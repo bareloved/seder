@@ -13,6 +13,11 @@ class SettingsViewModel: ObservableObject {
     @Published var timezone: String = "Asia/Jerusalem"
     @Published var language: String = "he"
 
+    // Nudge settings
+    @Published var nudgeInvoiceDays: Int = 3
+    @Published var nudgePaymentDays: Int = 14
+    @Published var nudgePushPrefs: NudgePushPreferences = .defaults
+
     // Calendar
     @Published var calendarConnected = false
 
@@ -34,6 +39,9 @@ class SettingsViewModel: ObservableObject {
                 currency = s.defaultCurrency ?? "ILS"
                 timezone = s.timezone ?? "Asia/Jerusalem"
                 language = s.language ?? "he"
+                nudgeInvoiceDays = s.nudgeInvoiceDays?.intValue ?? 3
+                nudgePaymentDays = s.nudgePaymentDays?.intValue ?? 14
+                nudgePushPrefs = s.nudgePushEnabled ?? .defaults
             }
         } catch {
             // Use defaults
@@ -56,6 +64,25 @@ class SettingsViewModel: ObservableObject {
             )
         } catch {
             errorMessage = "שגיאה בשמירת הגדרות"
+        }
+    }
+
+    // MARK: - Save Nudge Settings
+
+    func saveNudgeSettings() async {
+        let body = UpdateNudgeSettingsRequest(
+            nudgeInvoiceDays: String(nudgeInvoiceDays),
+            nudgePaymentDays: String(nudgePaymentDays),
+            nudgePushEnabled: nudgePushPrefs
+        )
+        do {
+            let _: UserSettings = try await api.request(
+                endpoint: "/api/v1/settings",
+                method: "PUT",
+                body: body
+            )
+        } catch {
+            errorMessage = "שגיאה בשמירת הגדרות תזכורות"
         }
     }
 
