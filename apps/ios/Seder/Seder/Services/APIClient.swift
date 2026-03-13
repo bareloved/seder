@@ -74,6 +74,9 @@ nonisolated class APIClient: @unchecked Sendable {
         case 404:
             let apiResponse = try? decoder.decode(APIResponse<EmptyData>.self, from: data)
             throw APIError.notFound(apiResponse?.error ?? "Not found")
+        case 429:
+            let apiResponse = try? decoder.decode(APIResponse<EmptyData>.self, from: data)
+            throw APIError.rateLimited(apiResponse?.error ?? "נסה שוב מאוחר יותר")
         default:
             let apiResponse = try? decoder.decode(APIResponse<EmptyData>.self, from: data)
             throw APIError.server(apiResponse?.error ?? "Server error (\(httpResponse.statusCode))")
