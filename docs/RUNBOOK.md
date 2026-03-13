@@ -112,6 +112,31 @@ vercel rollback
 
 **Neon branching** is the safest approach — create a branch before risky migrations, restore from it if needed.
 
+## Database Backups & Restore
+
+### Automated Backups
+- Daily backup branch created at 3:00 UTC via Vercel cron (`/api/cron/backup`)
+- Backup branches named `backup-YYYY-MM-DD`
+- Retention: manually delete branches older than 7 days (or automate cleanup)
+
+### Restore Procedure
+1. Go to Neon console -> Project -> Branches
+2. Find the backup branch for the desired date
+3. Create a new branch from the backup (to avoid modifying the backup)
+4. Update `DATABASE_URL` in Vercel env vars to point to the restore branch
+5. Redeploy
+6. Verify data, then switch DNS back to the main branch
+
+### Manual Backup
+```bash
+./scripts/db-backup.sh
+```
+
+### Manual Restore
+```bash
+./scripts/db-restore.sh backups/<backup-file>
+```
+
 ## Security
 
 - All data scoped by `userId` — Row-Level Security (RLS) enabled
