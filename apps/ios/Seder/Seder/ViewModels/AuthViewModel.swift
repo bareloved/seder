@@ -32,6 +32,9 @@ class AuthViewModel: ObservableObject {
             let response: SessionResponse = try await api.directRequest(endpoint: "/api/auth/get-session")
             user = response.user
             isAuthenticated = response.user != nil
+            if let user = response.user {
+                SentryService.setUser(id: user.id)
+            }
         } catch {
             // Token might be expired — clear auth state
             api.token = nil
@@ -59,6 +62,9 @@ class AuthViewModel: ObservableObject {
             api.token = token
             user = response.user
             isAuthenticated = true
+            if let user = response.user {
+                SentryService.setUser(id: user.id)
+            }
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -96,5 +102,6 @@ class AuthViewModel: ObservableObject {
         api.token = nil
         user = nil
         isAuthenticated = false
+        SentryService.clearUser()
     }
 }
