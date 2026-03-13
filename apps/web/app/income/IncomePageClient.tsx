@@ -33,6 +33,8 @@ import type { IncomeEntryWithCategory } from "./data";
 import { toast } from "sonner";
 import { CategoryManagerDialog } from "@/app/categories/components";
 import { OnboardingTour } from "@/components/onboarding";
+import { NudgeBanner } from "./components/NudgeBanner";
+import type { Nudge } from "@/lib/nudges/types";
 
 const VIEW_MODE_STORAGE_KEY = "seder_income_view_mode";
 
@@ -70,6 +72,7 @@ interface IncomePageClientProps {
   user: { name: string | null; email: string; image: string | null };
   todayDateString: string;
   showOnboarding?: boolean;
+  nudges: Nudge[];
 }
 
 export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
@@ -110,6 +113,7 @@ export default function IncomePageClient({
   user,
   todayDateString,
   showOnboarding = false,
+  nudges,
 }: IncomePageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -858,6 +862,9 @@ export default function IncomePageClient({
             onSort={onSort}
           />
         </section>
+
+        {/* Smart Nudges */}
+        <NudgeBanner nudges={nudges} />
 
         {/* Content Area */}
         <section className="subtle-cards" data-tour="income-table">
