@@ -57,21 +57,21 @@ function EmptyState({
 }) {
   if (type === "no-data") {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
+      <div dir="rtl" className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
         <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
           <CalendarDays className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
         </div>
-        <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
-          אין עבודות לחודש הזה
-        </h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          התחל על ידי הוספת עבודה חדשה
+        <p className="text-base sm:text-lg font-medium text-gray-900 dark:text-slate-200 mb-2">
+          אין הכנסות עדיין
+        </p>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
+          הוסיפו את ההכנסה הראשונה או ייבאו מיומן Google
         </p>
         <Button
           onClick={onAddClick}
           className="bg-emerald-500 hover:bg-emerald-600 text-white h-10 px-4"
         >
-          <Plus className="h-4 w-4 ml-2" />
+          <Plus className="h-4 w-4 me-2" />
           הוסף עבודה ראשונה
         </Button>
       </div>
@@ -79,14 +79,14 @@ function EmptyState({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
+    <div dir="rtl" className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4">
       <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-slate-100 dark:bg-card flex items-center justify-center mb-4">
         <ListX className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
       </div>
-      <h3 className="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">
+      <p className="text-base sm:text-lg font-medium text-gray-900 dark:text-slate-200 mb-2">
         אין עבודות שמתאימות לסינון הזה
-      </h3>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+      </p>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
         נסה לשנות את הסינון או לנקות אותו
       </p>
       <Button
@@ -94,7 +94,7 @@ function EmptyState({
         onClick={onClearFilter}
         className="border-slate-300 text-slate-600 hover:bg-slate-100 h-10 px-4"
       >
-        <X className="h-4 w-4 ml-2" />
+        <X className="h-4 w-4 me-2" />
         נקה סינון
       </Button>
     </div>
