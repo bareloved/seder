@@ -7,6 +7,8 @@ import {
   sendEmail,
   getPasswordResetEmailHtml,
   getPasswordResetEmailText,
+  getVerificationEmailHtml,
+  getVerificationEmailText,
 } from "./email";
 
 export const auth = betterAuth({
@@ -24,6 +26,18 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      void sendEmail({
+        to: user.email,
+        subject: "אימות כתובת אימייל - סדר",
+        html: getVerificationEmailHtml(url),
+        text: getVerificationEmailText(url),
+      });
+    },
   },
   user: {
     changeEmail: {
