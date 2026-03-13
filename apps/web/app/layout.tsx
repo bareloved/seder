@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -51,6 +52,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
