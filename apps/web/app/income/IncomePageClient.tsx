@@ -822,6 +822,9 @@ export default function IncomePageClient({
 
       <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-1 sm:space-y-2">
 
+        {/* Smart Nudges */}
+        <NudgeBanner nudges={nudges} />
+
         {/* KPI Section */}
         <section>
           <KPICards
@@ -862,9 +865,6 @@ export default function IncomePageClient({
             onSort={onSort}
           />
         </section>
-
-        {/* Smart Nudges */}
-        <NudgeBanner nudges={nudges} />
 
         {/* Content Area */}
         <section className="subtle-cards" data-tour="income-table">
