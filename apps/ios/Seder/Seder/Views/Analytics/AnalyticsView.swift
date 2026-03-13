@@ -39,13 +39,17 @@ struct AnalyticsView: View {
 
                         if !viewModel.hasData && !viewModel.kpiError {
                             // Empty month state
-                            VStack(spacing: 8) {
+                            VStack(spacing: 12) {
                                 Image(systemName: "chart.bar.xaxis")
                                     .font(.largeTitle)
                                     .foregroundStyle(SederTheme.textTertiary)
-                                Text("אין נתונים לתקופה זו")
-                                    .font(SederTheme.ploni(15))
+                                Text("אין נתונים להצגה")
+                                    .font(SederTheme.ploni(17, weight: .semibold))
+                                    .foregroundStyle(SederTheme.textPrimary)
+                                Text("הוסיפו הכנסות כדי לראות את הניתוחים")
+                                    .font(SederTheme.ploni(14))
                                     .foregroundStyle(SederTheme.textSecondary)
+                                    .multilineTextAlignment(.center)
                             }
                             .padding(.top, 60)
                         } else {

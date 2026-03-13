@@ -3,6 +3,9 @@ import SwiftUI
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Initialize Sentry crash reporting
+        SentryService.start()
+
         // Force RTL at the UIKit level so ALL views are RTL
         UIView.appearance().semanticContentAttribute = .forceRightToLeft
 

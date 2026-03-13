@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import "./globals.css";
 
 const ploni = localFont({
@@ -47,10 +49,12 @@ export default function RootLayout({
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body className={`${ploni.variable} font-sans antialiased bg-background text-foreground`} suppressHydrationWarning>
         <ThemeProvider>
+          <EmailVerificationBanner />
           <TooltipProvider>
             {children}
           </TooltipProvider>
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

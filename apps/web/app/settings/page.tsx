@@ -17,6 +17,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { FeedbackModal } from "@/components/FeedbackModal";
+import { MessageSquare } from "lucide-react";
 
 function SettingsContent() {
     const router = useRouter();
@@ -59,9 +61,19 @@ function SettingsContent() {
             <Navbar user={session.user} />
 
             <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-8 space-y-6">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">הגדרות</h1>
-                    <p className="text-slate-500">נהל את החשבון, ההעדפות והנתונים שלך במקום אחד.</p>
+                <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">הגדרות</h1>
+                        <p className="text-slate-500">נהל את החשבון, ההעדפות והנתונים שלך במקום אחד.</p>
+                    </div>
+                    <FeedbackModal
+                        trigger={
+                            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
+                                <MessageSquare className="h-4 w-4" />
+                                שליחת משוב
+                            </button>
+                        }
+                    />
                 </div>
 
                 <SettingsLayout activeTab={activeTab} onTabChange={handleTabChange}>

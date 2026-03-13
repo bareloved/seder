@@ -1,92 +1,88 @@
-# Income Tracker
+# Seder
 
-A modern income tracking application built with Next.js, Drizzle ORM, and Tailwind CSS.
+Income tracking platform for freelancers and musicians. Hebrew-first, RTL-friendly, with ILS currency.
 
-## Features
+## Overview
 
-- **Income Management**: Add, edit, and view income records.
-- **Data Visualization**: KPI cards and summaries for income data.
-- **Filtering**: Filter income records by various criteria.
-- **Responsive Design**: Built with Tailwind CSS and Radix UI for a modern, accessible interface.
+Seder helps gig-based earners track income, invoices, and payments across clients. It includes a **web app** and a **native iOS app**, structured as a **Turborepo monorepo** with shared packages.
+
+- Track income per gig/client with status (draft/sent/paid/overdue)
+- See paid vs unpaid at a glance with monthly KPIs
+- Import gigs from Google Calendar
+- Analytics and reporting dashboards
+- Smart nudges for overdue invoices and follow-ups
 
 ## Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Database**: [PostgreSQL](https://www.postgresql.org/)
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: [Radix UI](https://www.radix-ui.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Validation**: [Zod](https://zod.dev/)
+| Layer | Technology |
+|-------|-----------|
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS, Radix UI |
+| iOS | Swift, SwiftUI (native) |
+| Database | PostgreSQL (Neon) with Drizzle ORM |
+| Auth | Better Auth (email/password + Google OAuth) |
+| Email | Resend |
+| Error Tracking | Sentry (web + iOS) |
+| Rate Limiting | Upstash Redis |
+| Analytics | Vercel Analytics |
+| Monorepo | Turborepo + pnpm workspaces |
+
+## Monorepo Structure
+
+```
+apps/
+  web/         - Next.js 16 web app
+  ios/         - Native iOS app (Swift/SwiftUI, Xcode project)
+packages/
+  shared/      - @seder/shared — types, Zod schemas, constants, utils
+  api-client/  - @seder/api-client — typed HTTP client (ky)
+```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or later)
-- PostgreSQL database
+- Node.js >= 20
+- pnpm (via corepack: `corepack enable`)
+- PostgreSQL (Neon recommended)
+- Xcode 16+ (for iOS)
 
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/bareloved/income-tracker.git
-   cd income-tracker
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env` file in the root directory and add your database connection string:
-   ```env
-   DATABASE_URL=postgresql://user:password@host:port/database
-   ```
-
-### Database Setup
-
-This project uses Drizzle Kit for database migrations.
-
-1. Generate migrations:
-   ```bash
-   npm run db:generate
-   ```
-
-2. Push schema changes to the database:
-   ```bash
-   npm run db:push
-   ```
-
-3. (Optional) Open Drizzle Studio to view/manage data:
-   ```bash
-   npm run db:studio
-   ```
-
-### Running the Application
-
-Start the development server:
+### Setup
 
 ```bash
-npm run dev
+git clone <repo-url> && cd seder
+pnpm install
+cp apps/web/.env.example apps/web/.env
+# Edit apps/web/.env with your credentials
+pnpm db:push
+pnpm dev:web        # Web app at http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For iOS, open `apps/ios/Seder/Seder.xcodeproj` in Xcode and run.
 
 ## Scripts
 
-- `npm run dev`: Runs the app in development mode.
-- `npm run build`: Builds the app for production.
-- `npm run start`: Runs the built app in production mode.
-- `npm run lint`: Lints the codebase.
-- `npm run db:generate`: Generates Drizzle migrations.
-- `npm run db:migrate`: Runs Drizzle migrations.
-- `npm run db:push`: Pushes the schema to the database directly.
-- `npm run db:studio`: Opens Drizzle Studio.
+```bash
+pnpm dev             # Start all apps
+pnpm dev:web         # Web only
+pnpm build           # Build all
+pnpm lint            # Lint all
+pnpm test            # Test all
+pnpm db:push         # Push schema to database
+pnpm db:generate     # Generate migrations
+pnpm db:migrate      # Run migrations
+pnpm db:studio       # Open Drizzle Studio
+pnpm sync:contract   # Generate API contract from @seder/shared
+pnpm sync:check-ios  # Check iOS models against contract
+```
+
+## Documentation
+
+- [CLAUDE.md](CLAUDE.md) — AI agent guidance and architecture reference
+- [docs/CONTRIB.md](docs/CONTRIB.md) — Development workflow and environment setup
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — Deployment, monitoring, and operations
+- [docs/CROSS_PLATFORM_GUIDE.md](docs/CROSS_PLATFORM_GUIDE.md) — Web + iOS development guide
+- [docs/PRODUCTION_READINESS_TESTING.md](docs/PRODUCTION_READINESS_TESTING.md) — Beta launch testing checklist
 
 ## License
 
 [MIT](LICENSE)
-

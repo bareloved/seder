@@ -5,8 +5,11 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import {
   sendEmail,
+  sendWelcomeEmail,
   getPasswordResetEmailHtml,
   getPasswordResetEmailText,
+  getVerificationEmailHtml,
+  getVerificationEmailText,
 } from "./email";
 
 export const auth = betterAuth({
@@ -25,6 +28,21 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
   },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      void sendEmail({
+        to: user.email,
+        subject: "אימות כתובת אימייל - סדר",
+        html: getVerificationEmailHtml(url),
+        text: getVerificationEmailText(url),
+      });
+    },
+    async afterEmailVerification(user) {
+      void sendWelcomeEmail(user.email, user.name);
+    },
+  },
   user: {
     changeEmail: {
       enabled: true,
@@ -37,6 +55,31 @@ export const auth = betterAuth({
       scope: ["https://www.googleapis.com/auth/calendar.readonly"],
       accessType: "offline",
       prompt: "consent", // Always request consent to ensure refresh token is provided
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const defaults = [
+            { name: "קטגוריה 1", color: "emerald", icon: "Circle", displayOrder: "1" },
+            { name: "קטגוריה 2", color: "indigo", icon: "Circle", displayOrder: "2" },
+            { name: "קטגוריה 3", color: "slate", icon: "Circle", displayOrder: "3" },
+          ];
+
+          await db.insert(schema.categories).values(
+            defaults.map((cat) => ({
+              userId: user.id,
+              ...cat,
+            }))
+          );
+
+          // Google OAuth users have emailVerified=true at creation — send welcome email immediately
+          if (user.emailVerified) {
+            void sendWelcomeEmail(user.email, user.name);
+          }
+        },
+      },
     },
   },
   plugins: [

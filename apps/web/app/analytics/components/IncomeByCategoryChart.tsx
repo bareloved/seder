@@ -28,8 +28,9 @@ export function IncomeByCategoryChart({ data, metricType }: IncomeByCategoryChar
         <div className="px-5 py-4 border-b border-slate-100 dark:border-border">
           <h3 className="font-semibold text-slate-800 dark:text-slate-100">הכנסות לפי קטגוריה</h3>
         </div>
-        <div className="h-[300px] flex items-center justify-center text-slate-500 dark:text-slate-400">
-          אין נתונים לתקופה זו
+        <div dir="rtl" className="h-[300px] flex flex-col items-center justify-center text-center">
+          <p className="text-lg font-medium text-gray-900 dark:text-slate-200 mb-2">אין נתונים להצגה</p>
+          <p className="text-gray-500 dark:text-slate-400">הוסיפו הכנסות כדי לראות את הניתוחים</p>
         </div>
       </div>
     );

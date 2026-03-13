@@ -210,9 +210,10 @@ struct IncomeListView: View {
                             Text("אין עבודות לחודש הזה")
                                 .font(SederTheme.ploni(17, weight: .semibold))
                                 .foregroundStyle(SederTheme.textPrimary)
-                            Text("התחל על ידי הוספת עבודה חדשה")
+                            Text("הוסיפו את ההכנסה הראשונה או ייבאו מיומן Google")
                                 .font(SederTheme.ploni(14))
                                 .foregroundStyle(SederTheme.textSecondary)
+                                .multilineTextAlignment(.center)
                         }
                         .padding(.top, 60)
                     } else {

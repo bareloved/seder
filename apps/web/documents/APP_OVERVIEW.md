@@ -6,20 +6,21 @@
 1. What Seder Is
 --------------------------------------------------
 
-- Seder is a web app for organizing and tracking incomes from various clients.
+- Seder is a cross-platform income tracking app (web + native iOS) for organizing and tracking incomes from various clients.
 - Built for working musicians and freelancers who want a clear view of what was earned, what is overdue, and what is coming next.
-- Elevator pitch: a focused, RTL-friendly income desk with quick add, inline editing, and import/sync tools so gig-based earners always know their cashflow status.
+- Elevator pitch: a focused, RTL-friendly income desk with quick add, inline editing, smart nudges, and import/sync tools so gig-based earners always know their cashflow status.
 
 --------------------------------------------------
-2. Who It’s For
+2. Who It's For
 --------------------------------------------------
 
 - Primary users: band leaders, solo musicians, and freelancers who invoice clients.
 - Typical use cases:
   - Track income per gig/client with status (draft/sent/paid/overdue).
   - See paid vs unpaid at a glance with monthly KPIs.
-  - Quickly log new incomes and update statuses from desktop or mobile.
+  - Quickly log new incomes and update statuses from desktop, mobile web, or iOS app.
   - Import past gigs from Google Calendar to avoid manual entry.
+  - Get smart nudges for overdue invoices and follow-up reminders.
 
 --------------------------------------------------
 3. Core Concepts & Domain Model
@@ -34,6 +35,7 @@ Client | Client directory entry with contact info | id, name, email, phone, note
 User Settings | User preferences and onboarding state | userId, language, timezone, theme, dateFormat, defaultCurrency, calendarSettings, onboardingCompleted
 Session / Account | Auth/session + OAuth tokens for Google Calendar | session: token, expiresAt, userId; account: providerId, accessToken/refreshToken, userId, scope
 Verification | OTP tokens for password reset | id, identifier, value, expiresAt
+Device | Push notification device tokens | id, token, userId, platform
 Status & VAT Types (UI) | UI enums that map to DB fields | DisplayStatus, VatType in `app/income/types.ts`
 KPI / Aggregates | Derived metrics per month or filtered view | totalGross, totalPaid/unpaid, outstanding, readyToInvoice, previousMonthPaid, trend
 
@@ -41,15 +43,28 @@ KPI / Aggregates | Derived metrics per month or filtered view | totalGross, tota
 4. Main Screens / Flows
 --------------------------------------------------
 
+### Web App
+
 Route / Screen | Purpose | Notes
 -------------- | ------- | -----
 / | Landing page (guests) or redirect to `/income` (authenticated) | Marketing page with hero, features, testimonials
 /sign-in | Auth screen | Split-screen design: email/password, Google OAuth, password reset via OTP
-/income | Primary dashboard | Month selector, KPIs, filters, income table + quick add, detail dialog, calendar import, onboarding tour
+/income | Primary dashboard | Month selector, KPIs, filters, income table + quick add, detail dialog, calendar import, onboarding tour, smart nudges
 /analytics | Charts and reporting | KPIs, income over time, income by category, needs attention table
-/settings | User settings | Tabs: account, preferences, calendar, data, danger zone
 /clients | Client directory | Client management with contact info, defaults, and analytics
-/api/auth/[...all] | Auth handler | Better Auth Next.js route
+/settings | User settings | Tabs: account, preferences, calendar, data, danger zone; feedback button
+/api/auth/[...all] | Auth handler | Better Auth Next.js route with rate limiting
+
+### iOS App
+
+Screen | Purpose | Notes
+------ | ------- | -----
+Login/Register | Auth | Email/password + Google OAuth
+Income List | Primary view | Month selector, entries list, add button, nudge banner
+Income Detail | Entry editing | Full detail with status actions
+Analytics/Reports | Reporting | KPIs, income chart, invoice tracking, category breakdown, VAT summary
+Clients | Client directory | Client list with contact info and analytics
+Settings | User settings | Account, notifications, preferences, feedback, guided tour reset
 
 --------------------------------------------------
 5. Current Feature Set
@@ -61,48 +76,76 @@ Route / Screen | Purpose | Notes
 - Split-pill status component for clear visual status indication.
 - Filtering/search: status chips, client filter, free-text search, month/year selector; KPI cards double as filters.
 - KPI row: totals, ready-to-invoice, outstanding, paid this month, trend vs previous month.
+- Batch operations: multi-select, batch edit, batch delete.
+
+**Smart Nudges**
+- Context-aware suggestions for overdue invoices, unsent invoices, and follow-up reminders.
+- Nudge banner on income page with swipe actions (iOS).
+- Push notification integration for timely reminders.
 
 **Categories & Clients**
 - Categories: dedicated entity with name, color, icon, displayOrder; inline editing in income table.
+- 3 default categories seeded on new user creation.
 - Clients: client directory with contact info (email, phone), notes, default rates, and analytics.
 - Duplicate client name detection and management.
 
 **Analytics**
 - Analytics page with date range filtering (presets and specific month/year).
-- KPI cards: total gross, total paid, outstanding, count of jobs.
+- KPI cards showing total gross, paid, outstanding, and job count.
 - Charts: income over time (line/bar), income by category (pie/donut).
-- Needs attention table for overdue or pending items.
+- Needs attention table for overdue/pending items.
+- iOS: dedicated reports tab with KPI grid, income chart, invoice tracking, category breakdown, VAT summary.
 
 **Calendar Integration**
 - Google Calendar read-only import to create draft entries with unique calendarEventId (per-user scoping).
 - Calendar settings in settings page for managing connection and sync preferences.
+- Auto-sync cron job every 6 hours.
 
 **User Experience**
-- Onboarding tour: spotlight-based guided tour for first-time users with help button to restart.
+- Onboarding tour: spotlight-based guided tour for first-time users with help button to restart (web). Overlay-based guided tour on iOS.
 - Landing page: marketing page for guests with hero, features, how it works, testimonials, and CTA.
 - Split-screen sign-in page with brand panel (desktop).
 - Password reset via OTP email flow.
+- Email verification with amber banner for unverified users.
+- Welcome email sent after verification (email) or sign-up (Google OAuth).
 - Mobile support: responsive design, touch tooltips, floating action button, mobile bottom navigation.
+- In-app feedback: feedback modal (web) and feedback sheet (iOS) that emails the team.
 
 **Settings & Account**
 - Comprehensive settings page with tabs: account, preferences, calendar, data, danger zone.
 - Secure account deletion with "DELETE" text confirmation.
 - Theme, language, and date format preferences.
+- Notification preferences with thresholds (iOS).
 - VAT handling: includes/excludes VAT, vatRate field, calculated totals.
+
+**Production Infrastructure**
+- Sentry error tracking (web + iOS) with userId tagging.
+- Vercel Analytics for page view tracking.
+- Rate limiting on auth endpoints (10 req/60s per IP via Upstash).
+- Automated daily database backups via Neon branch API.
+- iOS privacy manifest for App Store compliance.
+- Hebrew error pages (404, error boundary, global error).
 
 --------------------------------------------------
 6. Tech Stack & Architecture
 --------------------------------------------------
 
-- Frontend: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, shadcn-style components (Radix UI), lucide-react icons.
-- Backend/API: Next.js server components + server actions; auth route at `/api/auth/[...all]`.
-- Auth: Better Auth with Drizzle adapter; email/password and Google OAuth (Calendar scope).
-- Database: PostgreSQL via Drizzle ORM (`db/schema.ts`, `db/client.ts`); core table `income_entries` scoped by `userId`.
+- **Web Frontend**: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, shadcn-style components (Radix UI), lucide-react icons.
+- **iOS Frontend**: Swift, SwiftUI, URLSession (async/await), Keychain auth, SF Symbols.
+- **Backend/API**: Next.js server components + server actions; REST API at `/api/v1/` for iOS; auth route at `/api/auth/[...all]`.
+- **Auth**: Better Auth with Drizzle adapter; email/password and Google OAuth (Calendar scope); email verification; rate limiting.
+- **Database**: PostgreSQL (Neon) via Drizzle ORM; core table `income_entries` scoped by `userId`; RLS enabled.
+- **Email**: Resend for transactional emails (verification, password reset, welcome, feedback).
+- **Error Tracking**: Sentry (`@sentry/nextjs` for web, `sentry-cocoa` for iOS).
+- **Rate Limiting**: Upstash Redis with sliding window on auth endpoints.
+- **Analytics**: Vercel Analytics.
+- **Monorepo**: Turborepo + pnpm workspaces; `@seder/shared` for cross-platform types/logic.
 - Data flow:
   - Server actions in `app/*/actions.ts` handle mutations with validation.
   - Data fetching helpers in `app/*/data.ts` query database with proper user scoping.
   - Pages fetch data on the server, then hydrate client components for optimistic updates and filtering.
   - Calendar import uses stored Google tokens to fetch events and insert draft entries (conflict-checked on calendarEventId per user).
+  - iOS app consumes REST API via URLSession with Bearer token auth stored in Keychain.
 - Key app directories: `income/`, `analytics/`, `categories/`, `clients/`, `settings/`, `sign-in/`, `(marketing)/`.
 
 --------------------------------------------------
@@ -113,8 +156,8 @@ Route / Screen | Purpose | Notes
 - Pagination/virtualization for very large months.
 - Invoicing and invoice generation (currently tracking only).
 - Two-way calendar sync (currently read-only import).
-- Email notifications for overdue items.
 - Recurring income entries (e.g., monthly retainers).
+- Expense tracking (tab exists with "coming soon" placeholder).
 
 --------------------------------------------------
 8. How to Keep This File Useful
@@ -123,5 +166,4 @@ Route / Screen | Purpose | Notes
 - Update when you add/remove a major screen, change core domain concepts, or adjust tech stack/auth/database choices.
 - Keep descriptions concise; link to deeper docs if needed.
 - Reflect meaningful UX or data-flow changes (e.g., new status rules, new integrations).
-- Treat this as the source of truth—avoid duplicating conflicting overviews elsewhere.
-
+- Treat this as the source of truth — avoid duplicating conflicting overviews elsewhere.

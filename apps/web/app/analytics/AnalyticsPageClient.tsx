@@ -17,6 +17,9 @@ import {
   getNeedsAttentionJobs,
 } from "./utils";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface AnalyticsPageClientProps {
   initialEntries: IncomeEntry[];
@@ -70,37 +73,54 @@ export default function AnalyticsPageClient({
       <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-3 sm:space-y-6">
-        {/* Filters Toolbar */}
-        <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
-          <div className="p-4">
-            <AnalyticsHeader
-              dateRangePreset={dateRangePreset}
-              onDateRangeChange={setDateRangePreset}
-              metricType={metricType}
-              onMetricTypeChange={setMetricType}
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              onMonthChange={setSelectedMonth}
-              onYearChange={setSelectedYear}
-            />
-          </div>
-        </section>
+        {initialEntries.length === 0 ? (
+          <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+            <div dir="rtl" className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-muted flex items-center justify-center mb-4">
+                <BarChart3 className="h-8 w-8 text-slate-400" />
+              </div>
+              <p className="text-lg font-medium text-gray-900 dark:text-slate-200 mb-2">אין נתונים להצגה</p>
+              <p className="text-gray-500 dark:text-slate-400 mb-6">הוסיפו הכנסות כדי לראות את הניתוחים</p>
+              <Button asChild className="bg-emerald-500 hover:bg-emerald-600 text-white h-10 px-4">
+                <Link href="/income">עבור לדף הכנסות</Link>
+              </Button>
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Filters Toolbar */}
+            <section className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/60 dark:border-border overflow-hidden">
+              <div className="p-4">
+                <AnalyticsHeader
+                  dateRangePreset={dateRangePreset}
+                  onDateRangeChange={setDateRangePreset}
+                  metricType={metricType}
+                  onMetricTypeChange={setMetricType}
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                />
+              </div>
+            </section>
 
-        {/* KPI Cards */}
-        <section>
-          <AnalyticsKPICards kpi={analyticsData.kpi} />
-        </section>
+            {/* KPI Cards */}
+            <section>
+              <AnalyticsKPICards kpi={analyticsData.kpi} />
+            </section>
 
-        {/* Charts */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <IncomeOverTimeChart data={analyticsData.timeSeriesData} metricType={metricType} />
-          <IncomeByCategoryChart data={analyticsData.categoryData} metricType={metricType} />
-        </section>
+            {/* Charts */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <IncomeOverTimeChart data={analyticsData.timeSeriesData} metricType={metricType} />
+              <IncomeByCategoryChart data={analyticsData.categoryData} metricType={metricType} />
+            </section>
 
-        {/* Needs Attention Table */}
-        <section>
-          <NeedsAttentionTable jobs={analyticsData.needsAttentionJobs} />
-        </section>
+            {/* Needs Attention Table */}
+            <section>
+              <NeedsAttentionTable jobs={analyticsData.needsAttentionJobs} />
+            </section>
+          </>
+        )}
       </main>
 
       {/* Footer */}

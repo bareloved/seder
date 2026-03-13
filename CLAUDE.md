@@ -74,11 +74,19 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - **Networking**: URLSession (async/await)
 - **Auth Storage**: Keychain (via KeychainService)
 - **Push Notifications**: APNs via Expo Push API
+- **Error Tracking**: Sentry (`sentry-cocoa` via SPM)
 - **State**: ObservableObject ViewModels
 
 ### Build & Tooling
 - **Monorepo**: Turborepo + pnpm workspaces
 - **Package Manager**: pnpm (corepack-managed)
+
+### Production Infrastructure
+- **Error Tracking**: Sentry (`@sentry/nextjs` for web, `sentry-cocoa` for iOS)
+- **Analytics**: Vercel Analytics
+- **Rate Limiting**: Upstash Redis (sliding window on auth endpoints)
+- **DB Backups**: Automated daily via Neon branch API (cron)
+- **Email**: Resend (verification, password reset, welcome, feedback)
 
 ## What Goes Where
 
@@ -116,11 +124,11 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
   - `components/` - Feature-specific React components
 - `app/api/v1/` - REST API routes (consumed by iOS app)
   - `_lib/` - Middleware (auth, errors, response helpers)
-  - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`
+  - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`, `nudges/`, `feedback/`
 
 **iOS App (`apps/ios/Seder/Seder/`):**
 - `Models/` - Swift Codable structs (IncomeEntry, Category, Client, etc.)
-- `Services/` - APIClient (URLSession), KeychainService, NotificationManager
+- `Services/` - APIClient (URLSession), KeychainService, NotificationManager, SentryService
 - `ViewModels/` - ObservableObject state management
 - `Views/` - SwiftUI views organized by feature
 - `Lib/` - Classification engine (Swift port of shared logic)
@@ -156,6 +164,11 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - `lib/auth.ts` - Better Auth configuration
 - `lib/googleCalendar.ts` - Google Calendar API integration
 - `lib/classificationRules.ts` - Re-exports shared classification + localStorage wrappers
+- `lib/email.ts` - Email sending (verification, password reset, welcome, feedback)
+- `lib/ratelimit.ts` - Upstash rate limiting for auth endpoints
+- `lib/sentry.ts` - Sentry userId tagging helpers
+- `lib/nudges/` - Smart nudge engine (compute, types)
+- `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` - Sentry init
 
 ### Core Domain Model
 
@@ -214,7 +227,16 @@ Optional (web app):
 GEMINI_API_KEY=xxx         # AI features
 RESEND_API_KEY=xxx         # Transactional emails
 EMAIL_FROM=xxx             # Sender email
-CRON_SECRET=xxx            # Push notification cron endpoint
+FEEDBACK_EMAIL=xxx         # Where user feedback is sent
+CRON_SECRET=xxx            # Cron endpoint auth (push notifications, DB backup)
+NEXT_PUBLIC_SENTRY_DSN=xxx # Sentry error tracking
+SENTRY_ORG=xxx             # Sentry org slug
+SENTRY_PROJECT=xxx         # Sentry project slug
+SENTRY_AUTH_TOKEN=xxx      # Sentry source map uploads
+UPSTASH_REDIS_REST_URL=xxx # Rate limiting
+UPSTASH_REDIS_REST_TOKEN=xxx # Rate limiting
+NEON_PROJECT_ID=xxx        # Automated DB backups
+NEON_API_KEY=xxx           # Automated DB backups
 ```
 
 ## Project Documentation
@@ -223,7 +245,9 @@ CRON_SECRET=xxx            # Push notification cron endpoint
 - `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
 - `docs/CROSS_PLATFORM_GUIDE.md` - Cross-platform development guide (web + iOS)
 - `docs/api-contract.json` - Generated API contract (from `pnpm sync:contract`)
+- `docs/PRODUCTION_READINESS_TESTING.md` - Beta launch testing checklist
 - `docs/plans/` - Implementation plans and design documents
+- `docs/superpowers/` - Specs and plans from brainstorming sessions
 
 
 <!-- CLAVIX:START -->
