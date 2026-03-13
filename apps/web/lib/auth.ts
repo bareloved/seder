@@ -39,6 +39,26 @@ export const auth = betterAuth({
       prompt: "consent", // Always request consent to ensure refresh token is provided
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const defaults = [
+            { name: "קטגוריה 1", color: "emerald", icon: "Circle", displayOrder: "1" },
+            { name: "קטגוריה 2", color: "indigo", icon: "Circle", displayOrder: "2" },
+            { name: "קטגוריה 3", color: "slate", icon: "Circle", displayOrder: "3" },
+          ];
+
+          await db.insert(schema.categories).values(
+            defaults.map((cat) => ({
+              userId: user.id,
+              ...cat,
+            }))
+          );
+        },
+      },
+    },
+  },
   plugins: [
     bearer(),
     emailOTP({
