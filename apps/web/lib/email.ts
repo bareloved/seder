@@ -223,6 +223,68 @@ ${url}
   `.trim();
 }
 
+export async function sendWelcomeEmail(to: string, name?: string) {
+  const greeting = name ? `שלום ${name},` : "שלום,";
+  await sendEmail({
+    to,
+    subject: "!ברוכים הבאים לסדר",
+    html: `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ברוכים הבאים לסדר</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" style="width: 100%; max-width: 400px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="padding: 32px 32px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">
+                סדר
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #64748b;">
+                ברוכים הבאים!
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 32px 24px;">
+              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center;">
+                ${greeting}
+                <br>
+                האפליקציה שלכם מוכנה. אפשר להתחיל לעקוב אחרי ההכנסות.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 32px 24px; text-align: center;">
+              <a href="https://sedder.app" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">
+                כניסה לאפליקציה
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+                © ${new Date().getFullYear()} סדר. כל הזכויות שמורות.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim(),
+    text: `${greeting} ברוכים הבאים לסדר! האפליקציה שלכם מוכנה. כניסה: https://sedder.app`,
+  });
+}
+
 export function getPasswordResetEmailText(otp: string): string {
   return `
 איפוס סיסמה - סדר

@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import {
   sendEmail,
+  sendWelcomeEmail,
   getPasswordResetEmailHtml,
   getPasswordResetEmailText,
   getVerificationEmailHtml,
@@ -38,6 +39,9 @@ export const auth = betterAuth({
         text: getVerificationEmailText(url),
       });
     },
+    async afterEmailVerification(user) {
+      void sendWelcomeEmail(user.email, user.name);
+    },
   },
   user: {
     changeEmail: {
@@ -69,6 +73,11 @@ export const auth = betterAuth({
               ...cat,
             }))
           );
+
+          // Google OAuth users have emailVerified=true at creation — send welcome email immediately
+          if (user.emailVerified) {
+            void sendWelcomeEmail(user.email, user.name);
+          }
         },
       },
     },
