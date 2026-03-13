@@ -24,20 +24,20 @@ pnpm db:push           # Push schema directly (skips migration files)
 2. Test on a Neon branch first if possible
 3. Ensure RLS policies are preserved (see security section)
 
-### Mobile App (EAS Build)
+### iOS App (TestFlight / App Store)
 
-```bash
-cd apps/mobile
-eas build --platform ios --profile production
-eas submit --platform ios
-```
+1. Open `apps/ios/Seder/Seder.xcodeproj` in Xcode
+2. Bump version/build number in target settings
+3. Product > Archive
+4. Distribute App > App Store Connect
+5. In App Store Connect, submit for TestFlight review or App Store review
 
 Bundle ID: `com.bareloved.seder`
 
 ## Architecture Overview
 
 ```
-Mobile App (Expo)
+iOS App (Swift/SwiftUI)
     |
     v
 REST API (/api/v1/*)  <-- Bearer token auth
@@ -51,11 +51,42 @@ Neon PostgreSQL (RLS enabled)
 
 ## Monitoring
 
+### Error Tracking (Sentry)
+
+- **Web:** Sentry captures client, server, and edge errors automatically via `@sentry/nextjs`
+- **iOS:** Sentry captures crashes via `sentry-cocoa` SPM package
+- Both tag errors with `userId` for user-scoped debugging
+- Error replays enabled on web (on-error only, not session-wide)
+- Config files: `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`
+
+### Analytics (Vercel)
+
+- Page view analytics via `@vercel/analytics` in `app/layout.tsx`
+- Check Vercel dashboard > Analytics tab
+
+### Rate Limiting (Upstash)
+
+- Auth endpoints rate-limited: 10 req/60s per IP (sliding window)
+- Paths: `/sign-in`, `/sign-up`, `/reset-password`, `/email-otp`, `/verify-email`
+- Monitor usage in Upstash dashboard
+- Config: `lib/ratelimit.ts`
+
 ### Database
+
 - **Neon Console**: Check connection pooling, query performance
 - **Drizzle Studio**: `pnpm db:studio` for data inspection
 
+### Cron Jobs
+
+| Endpoint | Schedule | Description |
+|----------|----------|-------------|
+| `/api/cron/backup` | Daily 3:00 UTC | Create Neon backup branch |
+| `/api/calendar/auto-sync` | Every 6 hours | Sync Google Calendar events |
+
+Both require `CRON_SECRET` Bearer token auth (configured in Vercel).
+
 ### Push Notifications
+
 - Cron endpoint: `POST /api/v1/cron` (requires `CRON_SECRET` header)
 - Device tokens stored in `devices` table
 
@@ -73,29 +104,32 @@ Shared packages (`@seder/shared`, `@seder/api-client`) must be built before apps
 - Check Neon dashboard for connection limits
 - Ensure `?sslmode=require` is in the connection string
 
-### iOS build sandbox error
-The project includes a custom plugin at `apps/mobile/plugins/disable-script-sandboxing` to work around Xcode sandbox restrictions. If builds fail:
-1. Clean Xcode derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData`
-2. Rebuild: `npx expo prebuild --clean && npx expo run:ios`
-
-### Mobile app stuck on loading
-- Ensure `EXPO_PUBLIC_API_URL` points to reachable server
-- For simulator: use `http://localhost:3001`
-- For device: use your machine's local IP
-
-### Auth token issues (mobile)
-Tokens are stored via `expo-secure-store`. Clear with:
-```bash
-# In the app: Settings > Sign Out
-# Or reset simulator: Device > Erase All Content and Settings
-```
-
 ### Turborepo cache issues
 ```bash
 turbo daemon stop
 rm -rf node_modules/.cache/turbo
 pnpm dev
 ```
+
+### iOS build issues
+- Clean Xcode derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData`
+- Product > Clean Build Folder (Shift+Cmd+K)
+- Ensure SPM packages are resolved: File > Packages > Resolve Package Versions
+
+### Auth token issues (iOS)
+Tokens are stored in Keychain via `KeychainService`. To clear:
+- In the app: Settings > Sign Out
+- Or reset simulator: Device > Erase All Content and Settings
+
+### Sentry not reporting errors
+- Verify `NEXT_PUBLIC_SENTRY_DSN` is set (must be `NEXT_PUBLIC_` for client-side)
+- Check `SENTRY_AUTH_TOKEN` for source map uploads during build
+- iOS: ensure `sentry-cocoa` SPM package is added and `SentryService.start()` is uncommented
+
+### Rate limiting returning 429 unexpectedly
+- Check Upstash dashboard for current rate limit state
+- Verify `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are correct
+- Only auth paths are limited — other API routes should pass through
 
 ## Rollback Procedures
 
@@ -120,7 +154,7 @@ vercel rollback
 - Retention: manually delete branches older than 7 days (or automate cleanup)
 
 ### Restore Procedure
-1. Go to Neon console -> Project -> Branches
+1. Go to Neon console > Project > Branches
 2. Find the backup branch for the desired date
 3. Create a new branch from the backup (to avoid modifying the backup)
 4. Update `DATABASE_URL` in Vercel env vars to point to the restore branch
@@ -142,4 +176,7 @@ vercel rollback
 - All data scoped by `userId` — Row-Level Security (RLS) enabled
 - API routes validate Bearer tokens via Better Auth middleware (`apps/web/app/api/v1/_lib/`)
 - Google OAuth tokens stored in `account` table, never exposed to client
-- Mobile auth tokens in secure storage (`expo-secure-store`)
+- iOS auth tokens in Keychain via `KeychainService`
+- Auth endpoints rate-limited via Upstash (10 req/60s per IP)
+- Email verification required for email/password sign-ups
+- Feedback endpoint HTML-escapes user input to prevent XSS

@@ -1,6 +1,6 @@
 # Seder – Changelog
 
-> Lightweight changelog for Seder.  
+> Lightweight changelog for Seder.
 > Purpose: quickly see what changed lately and give AI agents context on the current state of the app.
 
 ## How to Use This File
@@ -8,6 +8,64 @@
 - Add a new section at the top for each meaningful development session.
 - Use the format: `## YYYY-MM-DD` (e.g., `## 2025-12-05`).
 - Under each date, add short bullet points covering what was added/removed/changed and any notes for future work.
+
+## 2026-03-13
+
+**Production Readiness (Beta Launch Prep)**
+- Added Sentry error tracking for web (`@sentry/nextjs`) and iOS (`sentry-cocoa`) with userId tagging.
+- Added Vercel Analytics for page view tracking.
+- Added rate limiting on auth endpoints (10 req/60s per IP) via Upstash Redis.
+- Added email verification with `sendOnSignUp`, auto sign-in after verification, and amber banner for unverified users.
+- Added welcome email sent after verification (email/password) or on sign-up (Google OAuth).
+- Seed 3 default categories (קטגוריה 1/2/3) on new user creation.
+- Added Hebrew error pages: global-error.tsx, error.tsx, not-found.tsx.
+- Added iOS error handling: 429 rate limit support, reusable ErrorView component.
+- Improved empty states for income and analytics on both web and iOS with Hebrew CTAs.
+- Added guided tour overlay for iOS first-time users (5-step tour with next/previous).
+- Added in-app feedback: POST `/api/v1/feedback` endpoint, FeedbackModal (web), FeedbackSheet (iOS).
+- Added automated daily DB backups via Neon branch API (cron at 3:00 UTC).
+- Added iOS privacy manifest (PrivacyInfo.xcprivacy) for App Store compliance.
+- Added `docs/PRODUCTION_READINESS_TESTING.md` manual testing checklist.
+
+## 2026-03-12
+
+**Smart Nudges**
+- Added nudge engine: computes context-aware suggestions (overdue invoices, unsent invoices, follow-ups).
+- Added nudge REST API endpoint (`/api/v1/nudges`).
+- Integrated nudges into push notification cron.
+- Added iOS NudgeViewModel, NudgeSection with swipe actions on income list.
+- Added notification settings section in iOS (thresholds, push toggles).
+
+## 2026-03-11
+
+**iOS Reports Overhaul**
+- Redesigned iOS reports/analytics tab with dedicated sections: KPI grid, income chart, invoice tracking, category breakdown, VAT summary.
+- Added expandable/collapsible report sections.
+- Added month/year selector with popover pickers.
+- Used CurrencyText component for consistent ₪ sizing across all reports.
+
+## 2026-03-09
+
+**iOS Settings Redesign**
+- Redesigned iOS settings page with grouped sections, avatar, and account info.
+- Added change email, change password, and account deletion flows.
+- Added notifications settings section.
+
+**iOS Calendar Import**
+- Added Google Calendar import flow in iOS with calendar selection, event preview, and batch import.
+
+**iOS Clients Page**
+- Redesigned iOS clients page with search, analytics per client, and detail view.
+
+## 2026-03-05
+
+**Native iOS App**
+- Built native iOS app (Swift/SwiftUI) replacing the Expo mobile app.
+- Income list, detail view, add/edit forms.
+- APIClient with URLSession, KeychainService for auth tokens.
+- Classification engine ported to Swift.
+- Green navigation bar with settings/avatar button across all tabs.
+- Push notification support via APNs/Expo Push API.
 
 ## 2026-01-25
 
@@ -62,7 +120,3 @@
 - Added "Category" column to the incomes table with inline editable dropdown.
 - Improved description column: allows wrapping to 2 lines for long text only.
 - Fixed header alignment in incomes table.
-
-
-
-
