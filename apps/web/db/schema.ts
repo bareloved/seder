@@ -173,6 +173,18 @@ export const userSettings = pgTable("user_settings", {
   }>().default({}),
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
+  // Smart Nudges settings
+  nudgeInvoiceDays: numeric("nudge_invoice_days", { precision: 3, scale: 0 }).default("3"),
+  nudgePaymentDays: numeric("nudge_payment_days", { precision: 3, scale: 0 }).default("14"),
+  nudgePushEnabled: json("nudge_push_enabled").$type<{
+    uninvoiced: boolean;
+    batch_invoice: boolean;
+    overdue_payment: boolean;
+    way_overdue: boolean;
+    partial_stale: boolean;
+    unlogged_calendar: boolean;
+    month_end: boolean;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -194,3 +206,23 @@ export const deviceTokens = pgTable("device_tokens", {
 }, (table) => ({
   userTokenUnique: uniqueIndex("device_tokens_user_token_idx").on(table.userId, table.token),
 }));
+
+// Dismissed/snoozed nudges for the Smart Nudges system
+export const dismissedNudges = pgTable("dismissed_nudges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  entryId: uuid("entry_id").references(() => incomeEntries.id, { onDelete: "cascade" }),
+  nudgeType: varchar("nudge_type", { length: 30 }).notNull(),
+  periodKey: varchar("period_key", { length: 20 }),
+  dismissedAt: timestamp("dismissed_at").defaultNow().notNull(),
+  snoozeUntil: timestamp("snooze_until"),
+  lastPushedAt: timestamp("last_pushed_at"),
+}, (table) => ({
+  userEntryTypeUnique: uniqueIndex("dismissed_nudges_user_entry_type_key")
+    .on(table.userId, table.entryId, table.nudgeType),
+  userTypePeriodUnique: uniqueIndex("dismissed_nudges_user_type_period_key")
+    .on(table.userId, table.nudgeType, table.periodKey),
+  userIdx: index("dismissed_nudges_user_idx").on(table.userId),
+}));
+
+export type DismissedNudge = typeof dismissedNudges.$inferSelect;
