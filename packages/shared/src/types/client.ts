@@ -15,6 +15,7 @@ export interface Client {
 
 // Client with analytics data
 export interface ClientWithAnalytics extends Client {
+  // Existing fields (do NOT rename — iOS depends on these)
   totalEarned: number;
   thisMonthRevenue: number;
   thisYearRevenue: number;
@@ -23,6 +24,15 @@ export interface ClientWithAnalytics extends Client {
   outstandingAmount: number;
   avgDaysToPayment: number | null;
   overdueInvoices: number;
+
+  // New fields (Phase 2 — Client Intelligence)
+  totalInvoiced: number;
+  incomePercentage: number;
+  latePaymentRate: number;
+  lastGigDate: string | null;
+  lastActiveMonths: number | null;
+  activityTrend: "up" | "down" | "stable" | null;
+  paymentHealth: "good" | "warning" | "bad";
 }
 
 // Client for dropdown selection (simplified)
