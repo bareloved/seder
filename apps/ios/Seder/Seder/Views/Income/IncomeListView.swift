@@ -25,6 +25,7 @@ struct IncomeListView: View {
     @StateObject private var categoriesVM = CategoriesViewModel()
     @State private var clientsVM = ClientsViewModel()
     @StateObject private var nudgeVM = NudgeViewModel()
+    @State private var highlightedEntryId: String?
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -136,6 +137,7 @@ struct IncomeListView: View {
             )
             .padding(.horizontal, 16)
 
+            ScrollViewReader { scrollProxy in
             ScrollView {
                 VStack(spacing: 8) {
                     // KPI Cards (2x2 grid)
@@ -195,8 +197,11 @@ struct IncomeListView: View {
                     }
 
                     // Smart Nudges
-                    NudgeSection(viewModel: nudgeVM) { monthDate in
+                    NudgeSection(viewModel: nudgeVM) { monthDate, entryId in
                         viewModel.selectedMonth = monthDate
+                        if let entryId {
+                            highlightedEntryId = entryId
+                        }
                     }
 
                     // Entries
@@ -233,6 +238,13 @@ struct IncomeListView: View {
                                         Task { await viewModel.deleteEntry(entry.id) }
                                     }
                                 )
+                                .id(entry.id)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.orange.opacity(highlightedEntryId == entry.id ? 0.15 : 0))
+                                        .animation(.easeOut(duration: 0.6), value: highlightedEntryId)
+                                        .allowsHitTesting(false)
+                                )
                                 .onTapGesture { editingEntry = entry }
                             }
                         }
@@ -243,8 +255,23 @@ struct IncomeListView: View {
                 .frame(width: UIScreen.main.bounds.width - 24)
                 .frame(maxWidth: .infinity)
             }
+            .onChange(of: highlightedEntryId) { _ in
+                guard let id = highlightedEntryId else { return }
+                // Delay to allow month data to load first
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation {
+                        scrollProxy.scrollTo(id, anchor: .center)
+                    }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    withAnimation(.easeOut(duration: 0.6)) {
+                        highlightedEntryId = nil
+                    }
+                }
+            }
             .refreshable { await viewModel.loadEntries() }
             .background(SederTheme.pageBg)
+            }
         }
         .ignoresSafeArea(edges: .top)
         .sheet(isPresented: $showAddSheet) {

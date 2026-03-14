@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NudgeSection: View {
     @ObservedObject var viewModel: NudgeViewModel
-    var onNavigateToMonth: ((Date) -> Void)?
+    var onNavigateToEntry: ((Date, String?) -> Void)?
     @State private var isExpanded = false
 
     private static var daysUntilEndOfMonth: Int {
@@ -35,7 +35,7 @@ struct NudgeSection: View {
 
         let components = calendar.dateComponents([.year, .month], from: entryDate)
         guard let monthDate = calendar.date(from: components) else { return }
-        onNavigateToMonth?(monthDate)
+        onNavigateToEntry?(monthDate, nudge.entryId)
     }
 
     var body: some View {
@@ -104,7 +104,7 @@ struct NudgeSection: View {
                     }
                     .listStyle(.plain)
                     .scrollDisabled(true)
-                    .frame(height: CGFloat(viewModel.nudges.count) * 52)
+                    .frame(height: CGFloat(viewModel.nudges.count) * 56)
                 }
             }
             .background(Color.orange.opacity(0.05))
@@ -117,18 +117,6 @@ struct NudgeSection: View {
 
 struct NudgeCard: View {
     let nudge: Nudge
-
-    private var iconName: String {
-        switch nudge.nudgeType {
-        case "uninvoiced": return "doc.text"
-        case "overdue_payment": return "creditcard"
-        case "way_overdue": return "exclamationmark.triangle"
-        case "partial_stale": return "creditcard"
-        case "unlogged_calendar": return "calendar"
-        case "month_end": return "clock"
-        default: return "bell"
-        }
-    }
 
     private var iconColor: Color {
         switch nudge.nudgeType {
@@ -143,14 +131,10 @@ struct NudgeCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Icon
-            Image(systemName: iconName)
-                .foregroundColor(iconColor)
-                .font(.system(size: 16))
-                .frame(width: 32, height: 32)
-                .background(iconColor.opacity(0.1))
-                .cornerRadius(8)
+        HStack(spacing: 10) {
+            Circle()
+                .fill(iconColor.opacity(0.5))
+                .frame(width: 6, height: 6)
 
             // Text
             VStack(alignment: .leading, spacing: 2) {
