@@ -8,6 +8,7 @@ export type { ClientOption, DuplicateGroup } from "@seder/shared";
 
 // Client with analytics data — extends DB Client (Drizzle-inferred) for type accuracy
 export interface ClientWithAnalytics extends DBClient {
+  // Existing fields
   totalEarned: number;
   thisMonthRevenue: number;
   thisYearRevenue: number;
@@ -16,4 +17,13 @@ export interface ClientWithAnalytics extends DBClient {
   outstandingAmount: number;
   avgDaysToPayment: number | null;
   overdueInvoices: number;
+
+  // New fields (Phase 2 — Client Intelligence)
+  totalInvoiced: number;
+  incomePercentage: number;
+  latePaymentRate: number;
+  lastGigDate: string | null;
+  lastActiveMonths: number | null;
+  activityTrend: "up" | "down" | "stable" | null;
+  paymentHealth: "good" | "warning" | "bad";
 }
