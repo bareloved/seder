@@ -2,6 +2,7 @@ import { db } from "@/db/client";
 import { clients, incomeEntries, type Client, type NewClient } from "@/db/schema";
 import { eq, and, asc, desc, sql, count, inArray } from "drizzle-orm";
 import type { ClientWithAnalytics, DuplicateGroup } from "./types";
+import { computePaymentHealth, computeActivityTrend } from "@seder/shared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query functions
@@ -210,20 +211,39 @@ export async function getClientsWithAnalytics(userId: string): Promise<ClientWit
   const yearStart = `${currentYear}-01-01`;
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
+  // Date boundaries for activity trend (last 3mo vs prior 3mo)
+  const threeMonthsAgo = new Date(currentYear, now.getMonth() - 3, 1).toISOString().split("T")[0];
+  const sixMonthsAgo = new Date(currentYear, now.getMonth() - 6, 1).toISOString().split("T")[0];
+
   // Get all clients
   const allClients = await getUserClients(userId);
+
+  // Get total user revenue (denominator for incomePercentage)
+  const [totalRow] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${incomeEntries.amountPaid}), 0)`.mapWith(Number),
+    })
+    .from(incomeEntries)
+    .where(eq(incomeEntries.userId, userId));
+  const totalUserRevenue = totalRow?.total ?? 0;
 
   // Get aggregated analytics for all clients
   const analytics = await db
     .select({
       clientId: incomeEntries.clientId,
       totalEarned: sql<string>`COALESCE(SUM(${incomeEntries.amountPaid}), 0)`.mapWith(Number),
+      totalInvoiced: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`.mapWith(Number),
       thisMonthRevenue: sql<string>`COALESCE(SUM(CASE WHEN ${incomeEntries.date} >= ${monthStart} THEN ${incomeEntries.amountPaid} ELSE 0 END), 0)`.mapWith(Number),
       thisYearRevenue: sql<string>`COALESCE(SUM(CASE WHEN ${incomeEntries.date} >= ${yearStart} THEN ${incomeEntries.amountPaid} ELSE 0 END), 0)`.mapWith(Number),
       jobCount: count(),
       outstandingAmount: sql<string>`COALESCE(SUM(CASE WHEN ${incomeEntries.invoiceStatus} = 'sent' AND ${incomeEntries.paymentStatus} != 'paid' THEN (${incomeEntries.amountGross} - ${incomeEntries.amountPaid}) ELSE 0 END), 0)`.mapWith(Number),
       overdueInvoices: sql<number>`COUNT(CASE WHEN ${incomeEntries.invoiceStatus} = 'sent' AND ${incomeEntries.paymentStatus} != 'paid' AND ${incomeEntries.invoiceSentDate} < ${thirtyDaysAgo} THEN 1 END)`.mapWith(Number),
       avgDaysToPayment: sql<number | null>`AVG(CASE WHEN ${incomeEntries.paidDate} IS NOT NULL AND ${incomeEntries.invoiceSentDate} IS NOT NULL THEN EXTRACT(DAY FROM (${incomeEntries.paidDate}::timestamp - ${incomeEntries.invoiceSentDate}::timestamp)) END)`.mapWith(Number),
+      lastGigDate: sql<string | null>`MAX(${incomeEntries.date})`,
+      totalPaidWithDates: sql<number>`COUNT(CASE WHEN ${incomeEntries.paidDate} IS NOT NULL AND ${incomeEntries.invoiceSentDate} IS NOT NULL THEN 1 END)`.mapWith(Number),
+      latePaidCount: sql<number>`COUNT(CASE WHEN ${incomeEntries.paidDate} IS NOT NULL AND ${incomeEntries.invoiceSentDate} IS NOT NULL AND EXTRACT(DAY FROM (${incomeEntries.paidDate}::timestamp - ${incomeEntries.invoiceSentDate}::timestamp)) > 30 THEN 1 END)`.mapWith(Number),
+      last3moCount: sql<number>`COUNT(CASE WHEN ${incomeEntries.date} >= ${threeMonthsAgo} THEN 1 END)`.mapWith(Number),
+      prior3moCount: sql<number>`COUNT(CASE WHEN ${incomeEntries.date} >= ${sixMonthsAgo} AND ${incomeEntries.date} < ${threeMonthsAgo} THEN 1 END)`.mapWith(Number),
     })
     .from(incomeEntries)
     .where(
@@ -238,20 +258,41 @@ export async function getClientsWithAnalytics(userId: string): Promise<ClientWit
   const analyticsMap = new Map(analytics.map((a) => [a.clientId, a]));
 
   return allClients.map((client) => {
-    const clientAnalytics = analyticsMap.get(client.id);
-    const jobCount = clientAnalytics?.jobCount ?? 0;
-    const totalEarned = clientAnalytics?.totalEarned ?? 0;
+    const a = analyticsMap.get(client.id);
+    const jobCount = a?.jobCount ?? 0;
+    const totalEarned = a?.totalEarned ?? 0;
+    const overdueInvoices = a?.overdueInvoices ?? 0;
+    const latePaymentRate = a?.totalPaidWithDates
+      ? Math.round((a.latePaidCount / a.totalPaidWithDates) * 100)
+      : 0;
+
+    // lastActiveMonths: months since last gig
+    let lastActiveMonths: number | null = null;
+    const lastGigDate = a?.lastGigDate ?? null;
+    if (lastGigDate) {
+      const lastGig = new Date(lastGigDate);
+      lastActiveMonths =
+        (now.getFullYear() - lastGig.getFullYear()) * 12 +
+        (now.getMonth() - lastGig.getMonth());
+    }
 
     return {
       ...client,
       totalEarned,
-      thisMonthRevenue: clientAnalytics?.thisMonthRevenue ?? 0,
-      thisYearRevenue: clientAnalytics?.thisYearRevenue ?? 0,
+      totalInvoiced: a?.totalInvoiced ?? 0,
+      thisMonthRevenue: a?.thisMonthRevenue ?? 0,
+      thisYearRevenue: a?.thisYearRevenue ?? 0,
       averagePerJob: jobCount > 0 ? totalEarned / jobCount : 0,
       jobCount,
-      outstandingAmount: clientAnalytics?.outstandingAmount ?? 0,
-      avgDaysToPayment: clientAnalytics?.avgDaysToPayment ?? null,
-      overdueInvoices: clientAnalytics?.overdueInvoices ?? 0,
+      outstandingAmount: a?.outstandingAmount ?? 0,
+      avgDaysToPayment: a?.avgDaysToPayment ?? null,
+      overdueInvoices,
+      incomePercentage: totalUserRevenue > 0 ? Math.round((totalEarned / totalUserRevenue) * 100) : 0,
+      latePaymentRate,
+      lastGigDate,
+      lastActiveMonths,
+      activityTrend: computeActivityTrend(a?.last3moCount ?? 0, a?.prior3moCount ?? 0),
+      paymentHealth: computePaymentHealth(overdueInvoices, latePaymentRate),
     };
   });
 }

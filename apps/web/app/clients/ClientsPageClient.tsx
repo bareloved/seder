@@ -78,7 +78,7 @@ export function ClientsPageClient({
   const [editingClient, setEditingClient] = React.useState<ClientWithAnalytics | null>(null);
   const [isMergeToolOpen, setIsMergeToolOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [sortBy, setSortBy] = React.useState<"name" | "jobs" | "outstanding" | "total">("name");
+  const [sortBy, setSortBy] = React.useState<"name" | "jobs" | "outstanding" | "total" | "lastActivity">("name");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = React.useState(false);
@@ -86,8 +86,8 @@ export function ClientsPageClient({
   // Load sorting preferences from localStorage after hydration
   React.useEffect(() => {
     const savedSortBy = localStorage.getItem("clients-sort-by");
-    if (savedSortBy && ["name", "jobs", "outstanding", "total"].includes(savedSortBy)) {
-      setSortBy(savedSortBy as "name" | "jobs" | "outstanding" | "total");
+    if (savedSortBy && ["name", "jobs", "outstanding", "total", "lastActivity"].includes(savedSortBy)) {
+      setSortBy(savedSortBy as "name" | "jobs" | "outstanding" | "total" | "lastActivity");
     }
     const savedSortDirection = localStorage.getItem("clients-sort-direction");
     if (savedSortDirection && ["asc", "desc"].includes(savedSortDirection)) {
@@ -114,6 +114,7 @@ export function ClientsPageClient({
     { value: "jobs" as const, label: "מספר עבודות" },
     { value: "outstanding" as const, label: "ממתין לתשלום" },
     { value: "total" as const, label: "סה״כ הכנסות" },
+    { value: "lastActivity" as const, label: "פעילות אחרונה" },
   ];
 
   const sortedAndFilteredClients = React.useMemo(() => {
@@ -146,6 +147,12 @@ export function ClientsPageClient({
         case "total":
           comparison = a.totalEarned - b.totalEarned;
           break;
+        case "lastActivity": {
+          const dateA = a.lastGigDate ? new Date(a.lastGigDate).getTime() : 0;
+          const dateB = b.lastGigDate ? new Date(b.lastGigDate).getTime() : 0;
+          comparison = dateA - dateB;
+          break;
+        }
       }
       return sortDirection === "asc" ? comparison : -comparison;
     });
@@ -246,6 +253,14 @@ export function ClientsPageClient({
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  function healthDotColor(health: "good" | "warning" | "bad") {
+    switch (health) {
+      case "good": return "bg-green-400";
+      case "warning": return "bg-amber-400";
+      case "bad": return "bg-red-400";
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] dark:bg-background/50 pb-24 md:pb-20 font-sans" dir="rtl">
@@ -399,9 +414,12 @@ export function ClientsPageClient({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                            {client.name}
-                          </h3>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-medium text-slate-900 dark:text-white truncate">
+                              {client.name}
+                            </h3>
+                            <span className={cn("inline-block w-2 h-2 rounded-full ms-1 shrink-0", healthDotColor(client.paymentHealth))} />
+                          </div>
                           <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 dark:text-slate-400">
                             <span className="flex items-center gap-1">
                               <Briefcase className="h-3.5 w-3.5" />
@@ -410,6 +428,15 @@ export function ClientsPageClient({
                             <span className="font-numbers" dir="ltr">
                               {formatCurrency(client.totalEarned)}
                             </span>
+                            {client.lastGigDate && (
+                              <span className="text-xs text-slate-400">
+                                {client.lastActiveMonths === 0
+                                  ? "פעיל החודש"
+                                  : client.lastActiveMonths === 1
+                                    ? "לפני חודש"
+                                    : `לפני ${client.lastActiveMonths} חודשים`}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import {
   FileText,
   DollarSign,
   Briefcase,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ClientWithAnalytics } from "../types";
@@ -46,6 +47,14 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
           {client.name}
         </h2>
+        <span className={cn(
+          "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
+          client.paymentHealth === "good" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+          client.paymentHealth === "warning" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+          client.paymentHealth === "bad" && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        )}>
+          {client.paymentHealth === "good" ? "תקין" : client.paymentHealth === "warning" ? "לתשומת לב" : "בעייתי"}
+        </span>
 
         {/* Contact Info */}
         <div className="mt-2 space-y-1">
@@ -175,6 +184,77 @@ export function ClientAnalyticsPanel({ client }: ClientAnalyticsPanelProps) {
               </div>
             )}
           </>
+        )}
+
+        {/* Phase 2 — Client Intelligence */}
+        <div className="border-t border-slate-100 dark:border-border pt-4" />
+
+        {/* Income Share */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <PieChart className="h-4 w-4" />
+            חלק מסה״כ הכנסות
+          </div>
+          <span className="font-semibold text-slate-900 dark:text-white">
+            {client.incomePercentage}%
+          </span>
+        </div>
+
+        {/* Total Invoiced */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <FileText className="h-4 w-4" />
+            סה״כ חויב
+          </div>
+          <span className="font-semibold text-slate-900 dark:text-white">
+            {formatCurrency(client.totalInvoiced)}
+          </span>
+        </div>
+
+        {/* Late Payment Rate */}
+        {client.latePaymentRate > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <Clock className="h-4 w-4" />
+              אחוז תשלום מאוחר
+            </div>
+            <span className={cn(
+              "font-semibold",
+              client.latePaymentRate >= 50 ? "text-red-600" : client.latePaymentRate >= 20 ? "text-amber-600" : "text-slate-900 dark:text-white"
+            )}>
+              {client.latePaymentRate}%
+            </span>
+          </div>
+        )}
+
+        {/* Activity Trend */}
+        {client.activityTrend && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <TrendingUp className="h-4 w-4" />
+              מגמת פעילות
+            </div>
+            <span className="font-semibold text-slate-900 dark:text-white">
+              {client.activityTrend === "up" ? "↑ עולה" : client.activityTrend === "down" ? "↓ יורדת" : "→ יציבה"}
+            </span>
+          </div>
+        )}
+
+        {/* Last Active */}
+        {client.lastGigDate && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <Calendar className="h-4 w-4" />
+              עבודה אחרונה
+            </div>
+            <span className="font-semibold text-slate-900 dark:text-white">
+              {client.lastActiveMonths === 0
+                ? "החודש"
+                : client.lastActiveMonths === 1
+                  ? "לפני חודש"
+                  : `לפני ${client.lastActiveMonths} חודשים`}
+            </span>
+          </div>
         )}
       </div>
 

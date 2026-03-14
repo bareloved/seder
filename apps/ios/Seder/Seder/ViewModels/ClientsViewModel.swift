@@ -1,7 +1,7 @@
 import Foundation
 
 enum ClientSortOption: String, CaseIterable {
-    case name, revenue, jobs, outstanding
+    case name, revenue, jobs, outstanding, lastActivity
 
     var label: String {
         switch self {
@@ -9,6 +9,7 @@ enum ClientSortOption: String, CaseIterable {
         case .revenue: return "הכנסות"
         case .jobs: return "עבודות"
         case .outstanding: return "חוב"
+        case .lastActivity: return "פעילות אחרונה"
         }
     }
 }
@@ -54,6 +55,10 @@ class ClientsViewModel {
                 cmp = (a.jobCount ?? 0) < (b.jobCount ?? 0)
             case .outstanding:
                 cmp = (a.outstandingAmount ?? 0) < (b.outstandingAmount ?? 0)
+            case .lastActivity:
+                let dateA = a.lastGigDate ?? ""
+                let dateB = b.lastGigDate ?? ""
+                cmp = dateA < dateB
             }
             return sortAscending ? cmp : !cmp
         }

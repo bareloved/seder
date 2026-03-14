@@ -135,6 +135,16 @@ struct ClientsView: View {
         }
     }
 
+    // MARK: - Health Color Helper
+
+    private func healthColor(_ health: String) -> Color {
+        switch health {
+        case "bad": return .red
+        case "warning": return .orange
+        default: return .green
+        }
+    }
+
     // MARK: - Client Row
 
     private func clientRow(_ client: Client) -> some View {
@@ -149,9 +159,16 @@ struct ClientsView: View {
 
             // Name + email
             VStack(alignment: .leading, spacing: 2) {
-                Text(client.name)
-                    .font(SederTheme.ploni(18, weight: .semibold))
-                    .foregroundStyle(SederTheme.textPrimary)
+                HStack(spacing: 6) {
+                    Text(client.name)
+                        .font(SederTheme.ploni(18, weight: .semibold))
+                        .foregroundStyle(SederTheme.textPrimary)
+                    if let health = client.paymentHealth {
+                        Circle()
+                            .fill(healthColor(health))
+                            .frame(width: 6, height: 6)
+                    }
+                }
                 if let email = client.email, !email.isEmpty {
                     Text(email)
                         .font(SederTheme.ploni(14))
@@ -163,6 +180,11 @@ struct ClientsView: View {
                         .font(SederTheme.ploni(14))
                         .foregroundStyle(SederTheme.textTertiary)
                         .lineLimit(1)
+                }
+                if let months = client.lastActiveMonths {
+                    Text(months == 0 ? "פעיל החודש" : months == 1 ? "לפני חודש" : "לפני \(months) חודשים")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -270,9 +292,20 @@ struct ClientDetailSheet: View {
                             .background(SederTheme.brandGreen.opacity(0.1))
                             .clipShape(Circle())
 
-                        Text(client.name)
-                            .font(SederTheme.ploni(22, weight: .semibold))
-                            .foregroundStyle(SederTheme.textPrimary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(client.name)
+                                .font(SederTheme.ploni(22, weight: .semibold))
+                                .foregroundStyle(SederTheme.textPrimary)
+                            if let health = client.paymentHealth {
+                                Text(health == "good" ? "תקין" : health == "warning" ? "לתשומת לב" : "בעייתי")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(healthColor(health).opacity(0.15))
+                                    .foregroundColor(healthColor(health))
+                                    .clipShape(Capsule())
+                            }
+                        }
                     }
 
                     Spacer()
@@ -343,6 +376,20 @@ struct ClientDetailSheet: View {
                             analyticsCard(label: "ממוצע לעבודה", value: formatCurrency(client.averagePerJob ?? 0))
                             if let outstanding = client.outstandingAmount, outstanding > 0 {
                                 analyticsCard(label: "ממתין לתשלום", value: formatCurrency(outstanding), color: SederTheme.sentColor)
+                            }
+                            if let percentage = client.incomePercentage, percentage > 0 {
+                                analyticsCard(label: "חלק מההכנסות", value: "\(Int(percentage))%")
+                            }
+                            if let lateRate = client.latePaymentRate, lateRate > 0 {
+                                analyticsCard(label: "תשלום מאוחר", value: "\(Int(lateRate))%")
+                            }
+                            if let trend = client.activityTrend {
+                                let trendText = trend == "up" ? "↑ עולה" : trend == "down" ? "↓ יורדת" : "→ יציבה"
+                                analyticsCard(label: "מגמה", value: trendText)
+                            }
+                            if let months = client.lastActiveMonths {
+                                let text = months == 0 ? "החודש" : months == 1 ? "לפני חודש" : "לפני \(months) חודשים"
+                                analyticsCard(label: "עבודה אחרונה", value: text)
                             }
                         }
                     }
@@ -417,6 +464,14 @@ struct ClientDetailSheet: View {
     } // end body
 
     // MARK: - Helper Views
+
+    private func healthColor(_ health: String) -> Color {
+        switch health {
+        case "bad": return .red
+        case "warning": return .orange
+        default: return .green
+        }
+    }
 
     private func contactActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {

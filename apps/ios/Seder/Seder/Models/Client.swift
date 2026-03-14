@@ -21,6 +21,15 @@ nonisolated struct Client: Codable, Identifiable, Sendable {
     let outstandingAmount: Double?
     let avgDaysToPayment: Double?
     let overdueInvoices: Int?
+
+    // Phase 2 — Client Intelligence
+    var totalInvoiced: Double?
+    var incomePercentage: Double?
+    var latePaymentRate: Double?
+    var lastGigDate: String?
+    var lastActiveMonths: Int?
+    var activityTrend: String?    // "up" | "down" | "stable" | null
+    var paymentHealth: String?    // "good" | "warning" | "bad"
 }
 
 /// Handles JSON values that can be either a string or a number
