@@ -126,12 +126,13 @@ nonisolated class APIClient: @unchecked Sendable {
         return try await request(endpoint: "/api/v1/nudges", method: "GET")
     }
 
-    func dismissNudge(_ nudgeType: String, entryId: String?, periodKey: String?, snooze: Bool = false) async throws {
+    func dismissNudge(_ nudgeType: String, entryId: String?, periodKey: String?, snooze: Bool = false, snoozeDays: Int? = nil) async throws {
         let body = DismissNudgeRequest(
             nudgeType: nudgeType,
             entryId: entryId,
             periodKey: periodKey,
-            snooze: snooze
+            snooze: snooze,
+            snoozeDays: snoozeDays
         )
         let _: EmptyData = try await request(endpoint: "/api/v1/nudges", method: "POST", body: body)
     }

@@ -195,7 +195,9 @@ struct IncomeListView: View {
                     }
 
                     // Smart Nudges
-                    NudgeSection(viewModel: nudgeVM)
+                    NudgeSection(viewModel: nudgeVM) { monthDate in
+                        viewModel.selectedMonth = monthDate
+                    }
 
                     // Entries
                     if viewModel.isLoading {

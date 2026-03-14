@@ -21,20 +21,7 @@ class NudgeViewModel: ObservableObject {
         }
     }
 
-    func dismiss(_ nudge: Nudge) {
-        withAnimation {
-            nudges.removeAll { $0.id == nudge.id }
-        }
-        Task {
-            try? await apiClient.dismissNudge(
-                nudge.nudgeType,
-                entryId: nudge.entryId,
-                periodKey: nudge.periodKey
-            )
-        }
-    }
-
-    func snooze(_ nudge: Nudge) {
+    func snooze(_ nudge: Nudge, days: Int) {
         withAnimation {
             nudges.removeAll { $0.id == nudge.id }
         }
@@ -43,7 +30,7 @@ class NudgeViewModel: ObservableObject {
                 nudge.nudgeType,
                 entryId: nudge.entryId,
                 periodKey: nudge.periodKey,
-                snooze: true
+                snoozeDays: days
             )
         }
     }

@@ -121,6 +121,7 @@ export function computeNudges(
             title: "עבודה ללא חשבונית",
             description: `${entry.description} (${formatCurrency(entry.amountGross)}) · ${days} ימים בלי חשבונית`,
             actionType: "mark_sent",
+            entryDate: entry.date,
             entryDescription: entry.description,
             clientName: entry.clientName,
             amountGross: Number(entry.amountGross),
@@ -147,6 +148,7 @@ export function computeNudges(
             title: "תשלום באיחור חמור",
             description: `${entry.clientName} · ${formatCurrency(entry.amountGross)} · ${days} יום מאז שליחת החשבונית`,
             actionType: "mark_paid",
+            entryDate: entry.date,
             entryDescription: entry.description,
             clientName: entry.clientName,
             amountGross: Number(entry.amountGross),
@@ -166,6 +168,7 @@ export function computeNudges(
             title: "ממתין לתשלום",
             description: `${entry.clientName} · ${formatCurrency(entry.amountGross)} · ${days} יום מאז שליחת החשבונית`,
             actionType: "mark_paid",
+            entryDate: entry.date,
             entryDescription: entry.description,
             clientName: entry.clientName,
             amountGross: Number(entry.amountGross),
@@ -188,6 +191,7 @@ export function computeNudges(
               title: "תשלום חלקי תקוע",
               description: `${entry.clientName} · שולם חלקית, ${lastActivity} יום בלי פעילות`,
               actionType: "mark_paid",
+              entryDate: entry.date,
               entryDescription: entry.description,
               clientName: entry.clientName,
               amountGross: Number(entry.amountGross),
@@ -215,6 +219,7 @@ export function computeNudges(
         title: "עבודות ממתינות לחשבונית",
         description: `יש ${uninvoicedEntries.length} עבודות בסך ${formatCurrency(String(totalAmount))} שממתינות לחשבונית`,
         actionType: "view_entry",
+        entryDate: now.toISOString().split("T")[0],
       });
     }
   }
@@ -232,6 +237,7 @@ export function computeNudges(
         title: "סוף חודש מתקרב",
         description: `יש ${uninvoicedEntries.length} עבודות בלי חשבונית לפני סוף החודש`,
         actionType: "view_entry",
+        entryDate: now.toISOString().split("T")[0],
       });
     }
   }

@@ -2,7 +2,41 @@ import SwiftUI
 
 struct NudgeSection: View {
     @ObservedObject var viewModel: NudgeViewModel
+    var onNavigateToMonth: ((Date) -> Void)?
     @State private var isExpanded = false
+
+    private static var daysUntilEndOfMonth: Int {
+        let calendar = Calendar.current
+        let today = Date()
+        guard let endOfMonth = calendar.range(of: .day, in: .month, for: today)?.upperBound else {
+            return 7
+        }
+        let currentDay = calendar.component(.day, from: today)
+        return max(endOfMonth - 1 - currentDay, 1)
+    }
+
+    private func navigateToNudgeMonth(_ nudge: Nudge) {
+        let calendar = Calendar.current
+        let entryDate: Date
+
+        if let dateStr = nudge.entryDate {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            if let parsed = formatter.date(from: dateStr) {
+                entryDate = parsed
+            } else {
+                return
+            }
+        } else if let daysSince = nudge.daysSince {
+            entryDate = calendar.date(byAdding: .day, value: -daysSince, to: Date()) ?? Date()
+        } else {
+            return
+        }
+
+        let components = calendar.dateComponents([.year, .month], from: entryDate)
+        guard let monthDate = calendar.date(from: components) else { return }
+        onNavigateToMonth?(monthDate)
+    }
 
     var body: some View {
         if !viewModel.nudges.isEmpty {
@@ -30,24 +64,47 @@ struct NudgeSection: View {
                 }
 
                 if isExpanded {
-                    ForEach(viewModel.nudges) { nudge in
-                        NudgeCard(nudge: nudge)
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    viewModel.snooze(nudge)
-                                } label: {
-                                    Label("אח״כ", systemImage: "clock")
+                    List {
+                        ForEach(viewModel.nudges) { nudge in
+                            NudgeCard(nudge: nudge)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    Button {
+                                        viewModel.snooze(nudge, days: 3)
+                                    } label: {
+                                        Label("3 ימים", systemImage: "clock")
+                                    }
+                                    .tint(.blue)
+
+                                    Button {
+                                        viewModel.snooze(nudge, days: 7)
+                                    } label: {
+                                        Label("שבוע", systemImage: "clock.badge")
+                                    }
+                                    .tint(.indigo)
+
+                                    Button {
+                                        viewModel.snooze(nudge, days: Self.daysUntilEndOfMonth)
+                                    } label: {
+                                        Label("סוף החודש", systemImage: "calendar")
+                                    }
+                                    .tint(.purple)
                                 }
-                                .tint(.blue)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    viewModel.dismiss(nudge)
-                                } label: {
-                                    Label("סגור", systemImage: "xmark")
+                                .swipeActions(edge: .trailing) {
+                                    Button {
+                                        navigateToNudgeMonth(nudge)
+                                    } label: {
+                                        Label("עבור לחודש", systemImage: "arrow.right.circle")
+                                    }
+                                    .tint(.green)
                                 }
-                            }
+                        }
                     }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .frame(height: CGFloat(viewModel.nudges.count) * 52)
                 }
             }
             .background(Color.orange.opacity(0.05))

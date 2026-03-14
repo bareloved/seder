@@ -9,6 +9,7 @@ nonisolated struct Nudge: Codable, Identifiable, Sendable {
     let title: String
     let description: String
     let actionType: String
+    let entryDate: String?
     let entryDescription: String?
     let clientName: String?
     let amountGross: Double?
@@ -20,4 +21,5 @@ nonisolated struct DismissNudgeRequest: Codable, Sendable {
     let entryId: String?
     let periodKey: String?
     let snooze: Bool?
+    let snoozeDays: Int?
 }

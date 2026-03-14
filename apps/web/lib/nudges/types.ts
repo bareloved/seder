@@ -19,6 +19,7 @@ export interface Nudge {
   title: string; // Hebrew display title
   description: string; // Hebrew description with amounts/dates
   actionType: "mark_sent" | "mark_paid" | "import_calendar" | "view_entry";
+  entryDate?: string; // ISO date string of the related entry/period
   entryDescription?: string; // entry description for context
   clientName?: string;
   amountGross?: number;

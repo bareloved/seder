@@ -21,15 +21,19 @@ export async function POST(request: NextRequest) {
     const userId = await requireAuth();
     const body = await request.json();
 
-    const { nudgeType, entryId, periodKey, snooze } = body as {
+    const { nudgeType, entryId, periodKey, snooze, snoozeDays } = body as {
       nudgeType: string;
       entryId: string | null;
       periodKey: string | null;
       snooze?: boolean;
+      snoozeDays?: number;
     };
 
     let snoozeUntil: Date | null = null;
-    if (snooze) {
+    if (snoozeDays && snoozeDays > 0) {
+      snoozeUntil = new Date();
+      snoozeUntil.setDate(snoozeUntil.getDate() + snoozeDays);
+    } else if (snooze) {
       snoozeUntil = new Date();
       snoozeUntil.setDate(snoozeUntil.getDate() + 3);
     }

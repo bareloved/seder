@@ -24,11 +24,12 @@ export async function dismissNudgeAction(
 export async function snoozeNudgeAction(
   nudgeType: string,
   entryId: string | null,
-  periodKey: string | null
+  periodKey: string | null,
+  snoozeDays: number = 3
 ) {
   const userId = await requireUserId();
   const snoozeUntil = new Date();
-  snoozeUntil.setDate(snoozeUntil.getDate() + 3);
+  snoozeUntil.setDate(snoozeUntil.getDate() + snoozeDays);
   await dismissNudge(userId, nudgeType, entryId, periodKey, snoozeUntil);
   revalidatePath("/income");
 }
