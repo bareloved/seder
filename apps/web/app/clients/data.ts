@@ -2,7 +2,7 @@ import { db } from "@/db/client";
 import { clients, incomeEntries, type Client, type NewClient } from "@/db/schema";
 import { eq, and, asc, desc, sql, count, inArray } from "drizzle-orm";
 import type { ClientWithAnalytics, DuplicateGroup } from "./types";
-import { computePaymentHealth, computeActivityTrend } from "@seder/shared/utils";
+import { computePaymentHealth, computeActivityTrend } from "@seder/shared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query functions
