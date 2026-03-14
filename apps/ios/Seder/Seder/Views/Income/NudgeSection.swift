@@ -96,7 +96,7 @@ struct NudgeSection: View {
                                     Button {
                                         navigateToNudgeMonth(nudge)
                                     } label: {
-                                        Label("עבור לחודש", systemImage: "arrow.right.circle")
+                                        Image(systemName: "arrow.right")
                                     }
                                     .tint(.green)
                                 }
