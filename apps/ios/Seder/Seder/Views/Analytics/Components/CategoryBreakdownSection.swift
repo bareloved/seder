@@ -58,19 +58,23 @@ private struct CategoryBar: View {
                 }
             }
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(SederTheme.subtleBg)
-                        .frame(height: 8)
+            if let monthly = category.monthlyAmounts {
+                MiniSparkline(values: monthly)
+            } else {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(SederTheme.subtleBg)
+                            .frame(height: 8)
 
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(resolveColor(category.categoryColor))
-                        .frame(width: geo.size.width * (category.percentage / 100), height: 8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(resolveColor(category.categoryColor))
+                            .frame(width: geo.size.width * (category.percentage / 100), height: 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .frame(height: 8)
             }
-            .frame(height: 8)
         }
     }
 }
