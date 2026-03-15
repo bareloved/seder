@@ -98,9 +98,9 @@ struct SettingsView: View {
                 await viewModel.loadSettings()
                 await viewModel.checkCalendarStatus()
             }
-            .onChange(of: viewModel.currency) { _ in Task { await viewModel.savePreferences() } }
-            .onChange(of: viewModel.timezone) { _ in Task { await viewModel.savePreferences() } }
-            .onChange(of: viewModel.language) { _ in Task { await viewModel.savePreferences() } }
+            .onChange(of: viewModel.currency) { Task { await viewModel.savePreferences() } }
+            .onChange(of: viewModel.timezone) { Task { await viewModel.savePreferences() } }
+            .onChange(of: viewModel.language) { Task { await viewModel.savePreferences() } }
         }
         .environment(\.layoutDirection, .rightToLeft)
     }
@@ -525,7 +525,7 @@ struct NotificationsSettingsSection: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .onChange(of: value.wrappedValue) { _ in
+        .onChange(of: value.wrappedValue) {
             Task { await viewModel.saveNudgeSettings() }
         }
     }
@@ -563,7 +563,7 @@ struct NotificationsSettingsSection: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .onChange(of: isOn.wrappedValue) { _ in
+        .onChange(of: isOn.wrappedValue) {
             Task { await viewModel.saveNudgeSettings() }
         }
     }

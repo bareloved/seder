@@ -77,7 +77,7 @@ struct MainTabView: View {
         .overlay {
             if showTour {
                 TourOverlay(isShowing: $showTour)
-                    .onChange(of: showTour) { newValue in
+                    .onChange(of: showTour) { oldValue, newValue in
                         if !newValue {
                             hasSeenTour = true
                         }
