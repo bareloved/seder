@@ -5,6 +5,7 @@ enum ReportSection: Hashable {
     case incomeChart
     case invoiceTracking
     case categoryBreakdown
+    case clientBreakdown
     case vatSummary
 }
 
@@ -15,6 +16,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var trends: [EnhancedMonthTrend] = []
     @Published var categories: [CategoryBreakdown] = []
     @Published var attention: AttentionResponse?
+    @Published var clientBreakdown: [ClientBreakdown] = []
 
     // MARK: - State
     @Published var isLoading = false
@@ -26,6 +28,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var kpiError = false
     @Published var trendsError = false
     @Published var categoriesError = false
+    @Published var clientBreakdownError = false
     @Published var attentionError = false
 
     private let api = APIClient.shared
@@ -79,6 +82,7 @@ class AnalyticsViewModel: ObservableObject {
         kpiError = false
         trendsError = false
         categoriesError = false
+        clientBreakdownError = false
         attentionError = false
 
         async let kpis: IncomeAggregates = api.request(
@@ -100,11 +104,16 @@ class AnalyticsViewModel: ObservableObject {
             endpoint: "/api/v1/analytics/attention",
             queryItems: [URLQueryItem(name: "month", value: monthString)]
         )
+        async let clients: [ClientBreakdown] = api.request(
+            endpoint: "/api/v1/analytics/clients",
+            queryItems: [URLQueryItem(name: "month", value: monthString)]
+        )
 
         // Settle each independently
         do { aggregates = try await kpis } catch { kpiError = true }
         do { trends = try await monthTrends } catch { trendsError = true }
         do { categories = try await cats } catch { categoriesError = true }
+        do { clientBreakdown = try await clients } catch { clientBreakdownError = true }
         do { attention = try await att } catch { attentionError = true }
     }
 
@@ -137,6 +146,14 @@ class AnalyticsViewModel: ObservableObject {
                     queryItems: [URLQueryItem(name: "month", value: monthString)]
                 )
             } catch { categoriesError = true }
+        case .clientBreakdown:
+            clientBreakdownError = false
+            do {
+                clientBreakdown = try await api.request(
+                    endpoint: "/api/v1/analytics/clients",
+                    queryItems: [URLQueryItem(name: "month", value: monthString)]
+                )
+            } catch { clientBreakdownError = true }
         case .vatSummary:
             // VAT uses KPI data
             kpiError = false
