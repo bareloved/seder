@@ -9,6 +9,10 @@ enum ReportSection: Hashable {
     case vatSummary
 }
 
+enum AnalyticsPeriod {
+    case monthly, yearly
+}
+
 @MainActor
 class AnalyticsViewModel: ObservableObject {
     // MARK: - Data
@@ -22,6 +26,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isReloading = false
     @Published var selectedMonth = Date()
+    @Published var period: AnalyticsPeriod = .monthly
     @Published var expandedSections: Set<ReportSection> = [.incomeChart]
 
     // MARK: - Per-section errors
@@ -39,6 +44,27 @@ class AnalyticsViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         return formatter.string(from: selectedMonth)
+    }
+
+    private var periodQueryItems: [URLQueryItem] {
+        var items = [URLQueryItem(name: "month", value: monthString)]
+        if period == .yearly {
+            items.append(URLQueryItem(name: "period", value: "year"))
+        }
+        return items
+    }
+
+    private var trendsQueryItems: [URLQueryItem] {
+        if period == .yearly {
+            return [
+                URLQueryItem(name: "month", value: monthString),
+                URLQueryItem(name: "period", value: "year"),
+            ]
+        }
+        return [
+            URLQueryItem(name: "month", value: monthString),
+            URLQueryItem(name: "count", value: "6"),
+        ]
     }
 
     var hasData: Bool {
@@ -87,34 +113,40 @@ class AnalyticsViewModel: ObservableObject {
 
         async let kpis: IncomeAggregates = api.request(
             endpoint: "/api/v1/analytics/kpis",
-            queryItems: [URLQueryItem(name: "month", value: monthString)]
+            queryItems: periodQueryItems
         )
         async let monthTrends: [EnhancedMonthTrend] = api.request(
             endpoint: "/api/v1/analytics/trends",
-            queryItems: [
-                URLQueryItem(name: "month", value: monthString),
-                URLQueryItem(name: "count", value: "6"),
-            ]
+            queryItems: trendsQueryItems
         )
         async let cats: [CategoryBreakdown] = api.request(
             endpoint: "/api/v1/analytics/categories",
-            queryItems: [URLQueryItem(name: "month", value: monthString)]
-        )
-        async let att: AttentionResponse = api.request(
-            endpoint: "/api/v1/analytics/attention",
-            queryItems: [URLQueryItem(name: "month", value: monthString)]
+            queryItems: periodQueryItems
         )
         async let clients: [ClientBreakdown] = api.request(
             endpoint: "/api/v1/analytics/clients",
-            queryItems: [URLQueryItem(name: "month", value: monthString)]
+            queryItems: periodQueryItems
         )
 
-        // Settle each independently
-        do { aggregates = try await kpis } catch { kpiError = true }
-        do { trends = try await monthTrends } catch { trendsError = true }
-        do { categories = try await cats } catch { categoriesError = true }
-        do { clientBreakdown = try await clients } catch { clientBreakdownError = true }
-        do { attention = try await att } catch { attentionError = true }
+        // Fire attention concurrently only in monthly mode
+        if period == .monthly {
+            async let att: AttentionResponse = api.request(
+                endpoint: "/api/v1/analytics/attention",
+                queryItems: [URLQueryItem(name: "month", value: monthString)]
+            )
+            // Settle each independently
+            do { aggregates = try await kpis } catch { kpiError = true }
+            do { trends = try await monthTrends } catch { trendsError = true }
+            do { categories = try await cats } catch { categoriesError = true }
+            do { clientBreakdown = try await clients } catch { clientBreakdownError = true }
+            do { attention = try await att } catch { attentionError = true }
+        } else {
+            attention = nil
+            do { aggregates = try await kpis } catch { kpiError = true }
+            do { trends = try await monthTrends } catch { trendsError = true }
+            do { categories = try await cats } catch { categoriesError = true }
+            do { clientBreakdown = try await clients } catch { clientBreakdownError = true }
+        }
     }
 
     func retrySection(_ section: ReportSection) async {
@@ -124,13 +156,11 @@ class AnalyticsViewModel: ObservableObject {
             do {
                 trends = try await api.request(
                     endpoint: "/api/v1/analytics/trends",
-                    queryItems: [
-                        URLQueryItem(name: "month", value: monthString),
-                        URLQueryItem(name: "count", value: "6"),
-                    ]
+                    queryItems: trendsQueryItems
                 )
             } catch { trendsError = true }
         case .invoiceTracking:
+            guard period == .monthly else { return }
             attentionError = false
             do {
                 attention = try await api.request(
@@ -143,7 +173,7 @@ class AnalyticsViewModel: ObservableObject {
             do {
                 categories = try await api.request(
                     endpoint: "/api/v1/analytics/categories",
-                    queryItems: [URLQueryItem(name: "month", value: monthString)]
+                    queryItems: periodQueryItems
                 )
             } catch { categoriesError = true }
         case .clientBreakdown:
@@ -151,16 +181,15 @@ class AnalyticsViewModel: ObservableObject {
             do {
                 clientBreakdown = try await api.request(
                     endpoint: "/api/v1/analytics/clients",
-                    queryItems: [URLQueryItem(name: "month", value: monthString)]
+                    queryItems: periodQueryItems
                 )
             } catch { clientBreakdownError = true }
         case .vatSummary:
-            // VAT uses KPI data
             kpiError = false
             do {
                 aggregates = try await api.request(
                     endpoint: "/api/v1/analytics/kpis",
-                    queryItems: [URLQueryItem(name: "month", value: monthString)]
+                    queryItems: periodQueryItems
                 )
             } catch { kpiError = true }
         }

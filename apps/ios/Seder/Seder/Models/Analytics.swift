@@ -39,6 +39,7 @@ nonisolated struct CategoryBreakdown: Codable, Sendable {
     let amount: Double
     let count: Int
     let percentage: Double
+    let monthlyAmounts: [Double]?
 }
 
 // MARK: - Client Breakdown
@@ -48,6 +49,7 @@ nonisolated struct ClientBreakdown: Codable, Sendable, Identifiable {
     let amount: Double
     let count: Int
     let percentage: Double
+    let monthlyAmounts: [Double]?
 
     var id: String { clientName }
 }

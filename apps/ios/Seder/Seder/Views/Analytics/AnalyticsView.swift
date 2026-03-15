@@ -65,7 +65,9 @@ struct AnalyticsView: View {
                                 hasError: viewModel.trendsError,
                                 onToggle: { viewModel.toggleSection(.incomeChart) },
                                 onRetry: { Task { await viewModel.retrySection(.incomeChart) } },
+                                isYearly: viewModel.period == .yearly,
                                 onMonthTap: { month, year in
+                                    viewModel.period = .monthly
                                     var components = DateComponents()
                                     components.year = year
                                     components.month = month
@@ -76,16 +78,18 @@ struct AnalyticsView: View {
                                 }
                             )
 
-                            InvoiceTrackingSection(
-                                attention: viewModel.attention,
-                                isExpanded: viewModel.isSectionExpanded(.invoiceTracking),
-                                hasError: viewModel.attentionError,
-                                onToggle: { viewModel.toggleSection(.invoiceTracking) },
-                                onRetry: { Task { await viewModel.retrySection(.invoiceTracking) } },
-                                onItemTap: { entryId in
-                                    appState.navigateToEntry(id: entryId)
-                                }
-                            )
+                            if viewModel.period == .monthly {
+                                InvoiceTrackingSection(
+                                    attention: viewModel.attention,
+                                    isExpanded: viewModel.isSectionExpanded(.invoiceTracking),
+                                    hasError: viewModel.attentionError,
+                                    onToggle: { viewModel.toggleSection(.invoiceTracking) },
+                                    onRetry: { Task { await viewModel.retrySection(.invoiceTracking) } },
+                                    onItemTap: { entryId in
+                                        appState.navigateToEntry(id: entryId)
+                                    }
+                                )
+                            }
 
                             CategoryBreakdownSection(
                                 categories: viewModel.categories,
@@ -129,6 +133,9 @@ struct AnalyticsView: View {
         .onChange(of: viewModel.selectedMonth) {
             Task { await viewModel.loadAll() }
         }
+        .onChange(of: viewModel.period) {
+            Task { await viewModel.loadAll() }
+        }
     }
 
     // MARK: - Month Selector
@@ -148,7 +155,8 @@ struct AnalyticsView: View {
             // Center: Month picker with arrows
             HStack(spacing: 0) {
                 Button {
-                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: viewModel.selectedMonth)!
+                    let unit: Calendar.Component = viewModel.period == .yearly ? .year : .month
+                    viewModel.selectedMonth = Calendar.current.date(byAdding: unit, value: -1, to: viewModel.selectedMonth)!
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
@@ -158,9 +166,9 @@ struct AnalyticsView: View {
                 }
 
                 Button { showMonthPicker.toggle() } label: {
-                    Text(months[currentMonthIndex - 1])
+                    Text(viewModel.period == .yearly ? "שנה שלמה" : months[currentMonthIndex - 1])
                         .font(SederTheme.ploni(15))
-                        .foregroundStyle(SederTheme.textPrimary)
+                        .foregroundStyle(viewModel.period == .yearly ? SederTheme.brandGreen : SederTheme.textPrimary)
                         .lineLimit(1)
                         .fixedSize()
                         .frame(minWidth: 100)
@@ -171,7 +179,8 @@ struct AnalyticsView: View {
                 }
 
                 Button {
-                    viewModel.selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: viewModel.selectedMonth)!
+                    let unit: Calendar.Component = viewModel.period == .yearly ? .year : .month
+                    viewModel.selectedMonth = Calendar.current.date(byAdding: unit, value: 1, to: viewModel.selectedMonth)!
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 12, weight: .semibold))
@@ -218,11 +227,35 @@ struct AnalyticsView: View {
     private var monthPickerList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                // Full year option
+                Button {
+                    viewModel.period = .yearly
+                    showMonthPicker = false
+                } label: {
+                    HStack(spacing: 10) {
+                        Text("שנה שלמה")
+                            .font(SederTheme.ploni(16, weight: viewModel.period == .yearly ? .semibold : .regular))
+                            .foregroundStyle(viewModel.period == .yearly ? SederTheme.brandGreen : SederTheme.textPrimary)
+                        Spacer()
+                        if viewModel.period == .yearly {
+                            Image(systemName: "checkmark")
+                                .font(.caption)
+                                .foregroundStyle(SederTheme.brandGreen)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 11)
+                    .background(viewModel.period == .yearly ? SederTheme.subtleBg : Color.clear)
+                }
+
+                Divider().padding(.horizontal, 12)
+
                 ForEach(0..<12, id: \.self) { i in
                     let monthNum = i + 1
-                    let isCurrent = currentMonthIndex == monthNum
+                    let isCurrent = currentMonthIndex == monthNum && viewModel.period == .monthly
 
                     Button {
+                        viewModel.period = .monthly
                         var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedMonth)
                         components.month = monthNum
                         if let newDate = Calendar.current.date(from: components) {

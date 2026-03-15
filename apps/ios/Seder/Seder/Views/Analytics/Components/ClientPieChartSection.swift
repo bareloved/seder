@@ -50,23 +50,30 @@ struct ClientPieChartSection: View {
                     // Legend list
                     VStack(spacing: 6) {
                         ForEach(Array(clients.enumerated()), id: \.element.id) { index, client in
-                            HStack {
-                                Circle()
-                                    .fill(sliceColors[index % sliceColors.count])
-                                    .frame(width: 10, height: 10)
+                            VStack(spacing: 4) {
+                                HStack {
+                                    Circle()
+                                        .fill(sliceColors[index % sliceColors.count])
+                                        .frame(width: 10, height: 10)
 
-                                Text(client.clientName)
-                                    .font(SederTheme.ploni(14, weight: .medium))
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                    .lineLimit(1)
+                                    Text(client.clientName)
+                                        .font(SederTheme.ploni(14, weight: .medium))
+                                        .foregroundStyle(SederTheme.textPrimary)
+                                        .lineLimit(1)
 
-                                Spacer()
+                                    Spacer()
 
-                                HStack(spacing: 4) {
-                                    CurrencyText(amount: client.amount, size: 13, color: SederTheme.textSecondary)
-                                    Text("(\(Int(client.percentage))%)")
-                                        .font(SederTheme.ploni(13))
-                                        .foregroundStyle(SederTheme.textSecondary)
+                                    HStack(spacing: 4) {
+                                        CurrencyText(amount: client.amount, size: 13, color: SederTheme.textSecondary)
+                                        Text("(\(Int(client.percentage))%)")
+                                            .font(SederTheme.ploni(13))
+                                            .foregroundStyle(SederTheme.textSecondary)
+                                    }
+                                }
+
+                                if let monthly = client.monthlyAmounts {
+                                    MiniSparkline(values: monthly)
+                                        .padding(.leading, 20)
                                 }
                             }
                         }

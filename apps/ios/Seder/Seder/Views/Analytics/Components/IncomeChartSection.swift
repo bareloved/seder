@@ -7,13 +7,14 @@ struct IncomeChartSection: View {
     let hasError: Bool
     let onToggle: () -> Void
     let onRetry: () -> Void
+    var isYearly: Bool = false
     let onMonthTap: (Int, Int) -> Void // (month, year)
 
     @State private var selectedTrend: EnhancedMonthTrend?
 
     var body: some View {
         ExpandableSection(
-            title: "הכנסות לאורך זמן",
+            title: isYearly ? "הכנסות לאורך השנה" : "הכנסות לאורך זמן",
             isExpanded: isExpanded,
             hasError: hasError,
             onToggle: onToggle,
@@ -66,18 +67,20 @@ struct IncomeChartSection: View {
                     }
                     .frame(height: 120)
 
-                    // Amount labels below chart
-                    HStack(spacing: 0) {
-                        ForEach(trends) { trend in
-                            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                                Text("₪")
-                                    .font(.system(size: 6, weight: .semibold, design: .rounded))
-                                Text(AmountFormatter.abbreviatedNumber(trend.totalGross))
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    // Amount labels below chart (hidden in yearly mode with 12 bars)
+                    if !isYearly {
+                        HStack(spacing: 0) {
+                            ForEach(trends) { trend in
+                                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                                    Text("₪")
+                                        .font(.system(size: 6, weight: .semibold, design: .rounded))
+                                    Text(AmountFormatter.abbreviatedNumber(trend.totalGross))
+                                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundStyle(SederTheme.textSecondary)
+                                .environment(\.layoutDirection, .leftToRight)
+                                .frame(maxWidth: .infinity)
                             }
-                            .foregroundStyle(SederTheme.textSecondary)
-                            .environment(\.layoutDirection, .leftToRight)
-                            .frame(maxWidth: .infinity)
                         }
                     }
 

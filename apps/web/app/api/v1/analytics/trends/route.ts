@@ -1,13 +1,14 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "../../_lib/middleware";
 import { apiSuccess, apiError } from "../../_lib/response";
-import { getEnhancedTrends } from "@/app/income/data";
+import { getEnhancedTrends, getYearTrends } from "@/app/income/data";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireAuth();
     const monthParam = request.nextUrl.searchParams.get("month");
     const countParam = request.nextUrl.searchParams.get("count");
+    const period = request.nextUrl.searchParams.get("period");
 
     let endYear: number;
     let endMonth: number;
@@ -22,14 +23,13 @@ export async function GET(request: NextRequest) {
       endMonth = now.getMonth() + 1;
     }
 
-    const count = countParam ? Number(countParam) : 6;
+    if (period === "year") {
+      const trends = await getYearTrends({ year: endYear, userId });
+      return apiSuccess(trends);
+    }
 
-    const trends = await getEnhancedTrends({
-      endMonth,
-      endYear,
-      count,
-      userId,
-    });
+    const count = countParam ? Number(countParam) : 6;
+    const trends = await getEnhancedTrends({ endMonth, endYear, count, userId });
     return apiSuccess(trends);
   } catch (error) {
     return apiError(error);
