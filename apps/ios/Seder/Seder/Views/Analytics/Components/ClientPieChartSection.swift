@@ -8,8 +8,7 @@ struct ClientPieChartSection: View {
     let onToggle: () -> Void
     let onRetry: () -> Void
 
-    @State private var selectedIndex: Int?
-    @State private var chartSelection: Double?
+    @State private var selectedClientName: String?
 
     private let sliceColors: [Color] = [
         SederTheme.brandGreen,
@@ -19,6 +18,12 @@ struct ClientPieChartSection: View {
         SederTheme.color(hex: "#8B5CF6"),
         SederTheme.color(hex: "#9CA3AF"),
     ]
+
+    private var selectedClient: (index: Int, client: ClientBreakdown)? {
+        guard let name = selectedClientName else { return nil }
+        guard let idx = clients.firstIndex(where: { $0.clientName == name }) else { return nil }
+        return (idx, clients[idx])
+    }
 
     var body: some View {
         ExpandableSection(
@@ -38,54 +43,47 @@ struct ClientPieChartSection: View {
                 VStack(spacing: 12) {
                     // Donut pie chart with tap tooltip
                     ZStack {
-                        Chart(Array(clients.enumerated()), id: \.element.id) { index, client in
+                        Chart(clients) { client in
                             SectorMark(
                                 angle: .value("סכום", client.amount),
                                 innerRadius: .ratio(0.55),
                                 angularInset: 1.5
                             )
-                            .foregroundStyle(sliceColors[index % sliceColors.count])
+                            .foregroundStyle(by: .value("לקוח", client.clientName))
                             .cornerRadius(3)
-                            .opacity(selectedIndex == nil || selectedIndex == index ? 1 : 0.4)
+                            .opacity(selectedClientName == nil || selectedClientName == client.clientName ? 1 : 0.4)
                         }
                         .chartLegend(.hidden)
-                        .chartAngleSelection(value: $chartSelection)
+                        .chartForegroundStyleScale(
+                            domain: clients.map(\.clientName),
+                            mapping: { name in
+                                guard let idx = clients.firstIndex(where: { $0.clientName == name }) else {
+                                    return sliceColors.last!
+                                }
+                                return sliceColors[idx % sliceColors.count]
+                            }
+                        )
+                        .chartAngleSelection(value: $selectedClientName)
 
                         // Center tooltip
-                        if let idx = selectedIndex, idx < clients.count {
+                        if let selected = selectedClient {
                             VStack(spacing: 2) {
-                                Text(clients[idx].clientName)
+                                Text(selected.client.clientName)
                                     .font(SederTheme.ploni(13, weight: .semibold))
                                     .foregroundStyle(SederTheme.textPrimary)
                                     .lineLimit(1)
-                                CurrencyText(amount: clients[idx].amount, size: 12, color: SederTheme.textSecondary)
-                                Text("\(Int(clients[idx].percentage))%")
+                                CurrencyText(amount: selected.client.amount, size: 12, color: SederTheme.textSecondary)
+                                Text("\(Int(selected.client.percentage))%")
                                     .font(SederTheme.ploni(11))
                                     .foregroundStyle(SederTheme.textTertiary)
                             }
+                            .allowsHitTesting(false)
                             .transition(.opacity)
                         }
                     }
                     .frame(height: 180)
                     .padding(.top, 4)
-                    .onChange(of: chartSelection) { _, newValue in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            guard let newValue else {
-                                selectedIndex = nil
-                                return
-                            }
-                            // Map cumulative angle value to client index
-                            var cumulative = 0.0
-                            for (i, client) in clients.enumerated() {
-                                cumulative += client.amount
-                                if newValue <= cumulative {
-                                    selectedIndex = i
-                                    return
-                                }
-                            }
-                            selectedIndex = nil
-                        }
-                    }
+                    .sensoryFeedback(.selection, trigger: selectedClientName)
 
                     // Legend list
                     VStack(spacing: 6) {
