@@ -98,9 +98,8 @@ struct IncomeListView: View {
     }
 
     private var uniqueClientNames: [String] {
-        let apiNames = clientsVM.clients.map(\.name)
         let entryNames = viewModel.entries.map(\.clientName)
-        return Array(Set(apiNames + entryNames)).filter { !$0.isEmpty }.sorted()
+        return Array(Set(entryNames)).filter { !$0.isEmpty }.sorted()
     }
 
     private var hasActiveFilter: Bool {

@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var deleteConfirmText = ""
     @State private var showSignOutConfirm = false
     @State private var showFeedback = false
+    @State private var showIconPicker = false
 
     var body: some View {
         NavigationStack {
@@ -61,6 +62,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showFeedback) {
                 FeedbackSheet()
+            }
+            .sheet(isPresented: $showIconPicker) {
+                AppIconPickerView()
             }
             .confirmationDialog("האם להתנתק?", isPresented: $showSignOutConfirm) {
                 Button("התנתקות", role: .destructive) {
@@ -167,6 +171,12 @@ struct SettingsView: View {
                 Divider().padding(.horizontal, 16)
 
                 languageRow
+
+                Divider().padding(.horizontal, 16)
+
+                SettingsRow(icon: "app.badge", label: "סמל אפליקציה") {
+                    showIconPicker = true
+                }
 
                 Divider().padding(.horizontal, 16)
 

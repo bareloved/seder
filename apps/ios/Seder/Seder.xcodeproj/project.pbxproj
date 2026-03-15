@@ -250,8 +250,10 @@
 		8D358BF52F5B5FD600078CB6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-abyss AppIcon-ember AppIcon-jade AppIcon-lime AppIcon-midnight AppIcon-mint AppIcon-obsidian AppIcon-ocean AppIcon-pistachio AppIcon-spring AppIcon-sunset";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TH23B83VA3;
@@ -284,8 +286,10 @@
 		8D358BF62F5B5FD600078CB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-abyss AppIcon-ember AppIcon-jade AppIcon-lime AppIcon-midnight AppIcon-mint AppIcon-obsidian AppIcon-ocean AppIcon-pistachio AppIcon-spring AppIcon-sunset";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TH23B83VA3;
