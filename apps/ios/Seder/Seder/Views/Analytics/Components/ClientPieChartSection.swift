@@ -8,7 +8,6 @@ struct ClientPieChartSection: View {
     let onToggle: () -> Void
     let onRetry: () -> Void
 
-    @State private var selectedAngle: Double?
     @State private var selectedIndex: Int?
 
     private let sliceColors: [Color] = [
@@ -20,11 +19,14 @@ struct ClientPieChartSection: View {
         SederTheme.color(hex: "#9CA3AF"),
     ]
 
-    private func indexForAngle(_ angle: Double) -> Int? {
+    /// Convert a tap angle (0...1 fraction of full circle) to a client index
+    private func indexForFraction(_ fraction: Double) -> Int? {
+        let totalAmount = clients.reduce(0.0) { $0 + $1.amount }
+        guard totalAmount > 0 else { return nil }
         var cumulative = 0.0
         for (i, client) in clients.enumerated() {
-            cumulative += client.amount
-            if angle <= cumulative {
+            cumulative += client.amount / totalAmount
+            if fraction <= cumulative {
                 return i
             }
         }
@@ -59,26 +61,57 @@ struct ClientPieChartSection: View {
 
     private var pieChart: some View {
         ZStack {
-            Chart(clients) { client in
+            Chart(Array(clients.enumerated()), id: \.element.id) { index, client in
                 SectorMark(
                     angle: .value("סכום", client.amount),
                     innerRadius: .ratio(0.55),
                     angularInset: 1.5
                 )
-                .foregroundStyle(by: .value("לקוח", client.clientName))
+                .foregroundStyle(sliceColors[index % sliceColors.count])
                 .cornerRadius(3)
+                .opacity(selectedIndex == nil || selectedIndex == index ? 1.0 : 0.4)
             }
             .chartLegend(.hidden)
-            .chartForegroundStyleScale(
-                domain: clients.map(\.clientName),
-                mapping: { name in
-                    guard let idx = clients.firstIndex(where: { $0.clientName == name }) else {
-                        return sliceColors.last!
-                    }
-                    return sliceColors[idx % sliceColors.count]
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    Rectangle().fill(Color.clear).contentShape(Rectangle())
+                        .onTapGesture { location in
+                            // Convert tap location to angle fraction
+                            guard let plotFrame = proxy.plotFrame else { return }
+                            let frame = geo[plotFrame]
+                            let center = CGPoint(x: frame.midX, y: frame.midY)
+                            let dx = location.x - center.x
+                            let dy = location.y - center.y
+
+                            // Check if tap is in the donut ring (not the hole or outside)
+                            let distance = sqrt(dx * dx + dy * dy)
+                            let outerRadius = min(frame.width, frame.height) / 2
+                            let innerRadius = outerRadius * 0.55
+                            guard distance >= innerRadius && distance <= outerRadius else {
+                                // Tapped hole or outside — deselect
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    selectedIndex = nil
+                                }
+                                return
+                            }
+
+                            // atan2 gives angle from positive X axis, counter-clockwise
+                            // Charts draws from top (12 o'clock), clockwise
+                            var angle = atan2(dx, -dy) // 0 = top, increases clockwise
+                            if angle < 0 { angle += 2 * .pi }
+                            let fraction = angle / (2 * .pi)
+
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                let tapped = indexForFraction(fraction)
+                                if tapped == selectedIndex {
+                                    selectedIndex = nil // toggle off
+                                } else {
+                                    selectedIndex = tapped
+                                }
+                            }
+                        }
                 }
-            )
-            .chartAngleSelection(value: $selectedAngle)
+            }
 
             // Center tooltip
             if let idx = selectedIndex, idx < clients.count {
@@ -98,15 +131,6 @@ struct ClientPieChartSection: View {
         }
         .frame(height: 180)
         .padding(.top, 4)
-        .onChange(of: selectedAngle) { _, newValue in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                if let angle = newValue {
-                    selectedIndex = indexForAngle(angle)
-                } else {
-                    selectedIndex = nil
-                }
-            }
-        }
     }
 
     // MARK: - Legend
