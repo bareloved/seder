@@ -21,6 +21,7 @@ export interface ClientWithAnalytics extends Client {
   thisYearRevenue: number;
   averagePerJob: number;
   jobCount: number;
+  thisYearJobCount: number;
   outstandingAmount: number;
   avgDaysToPayment: number | null;
   overdueInvoices: number;

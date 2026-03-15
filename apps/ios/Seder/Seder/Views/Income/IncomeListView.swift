@@ -229,13 +229,22 @@ struct IncomeListView: View {
                                 IncomeEntryRow(
                                     entry: entry,
                                     onMarkSent: {
-                                        Task { await viewModel.markSent(entry.id) }
+                                        Task {
+                                            await viewModel.markSent(entry.id)
+                                            await nudgeVM.fetchNudges()
+                                        }
                                     },
                                     onMarkPaid: {
-                                        Task { await viewModel.markPaid(entry.id) }
+                                        Task {
+                                            await viewModel.markPaid(entry.id)
+                                            await nudgeVM.fetchNudges()
+                                        }
                                     },
                                     onDelete: {
-                                        Task { await viewModel.deleteEntry(entry.id) }
+                                        Task {
+                                            await viewModel.deleteEntry(entry.id)
+                                            await nudgeVM.fetchNudges()
+                                        }
                                     }
                                 )
                                 .id(entry.id)
@@ -255,7 +264,7 @@ struct IncomeListView: View {
                 .frame(width: UIScreen.main.bounds.width - 24)
                 .frame(maxWidth: .infinity)
             }
-            .onChange(of: highlightedEntryId) { _ in
+            .onChange(of: highlightedEntryId) {
                 guard let id = highlightedEntryId else { return }
                 // Delay to allow month data to load first
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -269,12 +278,17 @@ struct IncomeListView: View {
                     }
                 }
             }
-            .refreshable { await viewModel.loadEntries() }
+            .refreshable {
+                await viewModel.loadEntries()
+                await nudgeVM.fetchNudges()
+            }
             .background(SederTheme.pageBg)
             }
         }
         .ignoresSafeArea(edges: .top)
-        .sheet(isPresented: $showAddSheet) {
+        .sheet(isPresented: $showAddSheet, onDismiss: {
+            Task { await nudgeVM.fetchNudges() }
+        }) {
             IncomeDetailSheet(
                 viewModel: viewModel,
                 categories: categoriesVM.categories,
@@ -283,7 +297,9 @@ struct IncomeListView: View {
             )
             .presentationDetents([.medium, .large])
         }
-        .sheet(item: $editingEntry) { entry in
+        .sheet(item: $editingEntry, onDismiss: {
+            Task { await nudgeVM.fetchNudges() }
+        }) { entry in
             IncomeDetailSheet(
                 viewModel: viewModel,
                 entry: entry,
@@ -321,20 +337,20 @@ struct IncomeListView: View {
             await clientsVM.loadClients()
             await nudgeVM.fetchNudges()
         }
-        .onChange(of: viewModel.selectedMonth) { _ in
+        .onChange(of: viewModel.selectedMonth) {
             Task {
                 await viewModel.loadEntries()
                 await viewModel.loadAllMonthStatuses()
             }
         }
-        .onChange(of: appState.deepLinkEntryId) { _ in
+        .onChange(of: appState.deepLinkEntryId) {
             guard let entryId = appState.deepLinkEntryId else { return }
             if let entry = viewModel.entries.first(where: { $0.id == entryId }) {
                 editingEntry = entry
             }
             appState.clearDeepLink()
         }
-        .onChange(of: appState.navigateToMonth) { _ in
+        .onChange(of: appState.navigateToMonth) {
             guard let date = appState.navigateToMonth else { return }
             viewModel.selectedMonth = date
             appState.clearMonthNavigation()

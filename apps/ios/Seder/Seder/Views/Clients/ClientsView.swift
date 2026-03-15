@@ -159,16 +159,9 @@ struct ClientsView: View {
 
             // Name + email
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(client.name)
-                        .font(SederTheme.ploni(18, weight: .semibold))
-                        .foregroundStyle(SederTheme.textPrimary)
-                    if let health = client.paymentHealth {
-                        Circle()
-                            .fill(healthColor(health))
-                            .frame(width: 6, height: 6)
-                    }
-                }
+                Text(client.name)
+                    .font(SederTheme.ploni(18, weight: .semibold))
+                    .foregroundStyle(SederTheme.textPrimary)
                 if let email = client.email, !email.isEmpty {
                     Text(email)
                         .font(SederTheme.ploni(14))
@@ -180,11 +173,6 @@ struct ClientsView: View {
                         .font(SederTheme.ploni(14))
                         .foregroundStyle(SederTheme.textTertiary)
                         .lineLimit(1)
-                }
-                if let months = client.lastActiveMonths {
-                    Text(months == 0 ? "פעיל החודש" : months == 1 ? "לפני חודש" : "לפני \(months) חודשים")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -200,7 +188,7 @@ struct ClientsView: View {
                         color: SederTheme.paidColor
                     )
                 }
-                if let jobs = client.jobCount, jobs > 0 {
+                if let jobs = client.thisYearJobCount, jobs > 0 {
                     Text("\(jobs) עבודות")
                         .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textSecondary)
@@ -277,6 +265,9 @@ struct ClientDetailSheet: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedEntry: IncomeEntry?
     @State private var showEditSheet = false
+    @State private var showAllTimeRevenue = false
+    @State private var showMonthlyPercentage = false
+    @State private var showAllTimeJobs = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -370,36 +361,86 @@ struct ClientDetailSheet: View {
                     // Analytics grid
                     if client.jobCount ?? 0 > 0 {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                            analyticsCard(label: "סה״כ הכנסות", value: formatCurrency(client.totalEarned ?? 0))
-                            analyticsCard(label: "השנה", value: formatCurrency(client.thisYearRevenue ?? 0))
-                            analyticsCard(label: "עבודות", value: "\(client.jobCount ?? 0)")
+                            analyticsCard(label: "החודש", value: formatCurrency(client.thisMonthRevenue ?? 0))
+
+                            // Year card — tap to toggle all-time
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showAllTimeRevenue.toggle()
+                                }
+                            } label: {
+                                analyticsCard(
+                                    label: showAllTimeRevenue ? "סה״כ" : "השנה",
+                                    value: formatCurrency(showAllTimeRevenue ? (client.totalEarned ?? 0) : (client.thisYearRevenue ?? 0))
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showAllTimeJobs.toggle()
+                                }
+                            } label: {
+                                analyticsCard(
+                                    label: showAllTimeJobs ? "סה״כ עבודות" : "עבודות השנה",
+                                    value: "\(showAllTimeJobs ? (client.jobCount ?? 0) : (client.thisYearJobCount ?? 0))"
+                                )
+                            }
+                            .buttonStyle(.plain)
                             analyticsCard(label: "ממוצע לעבודה", value: formatCurrency(client.averagePerJob ?? 0))
                             if let outstanding = client.outstandingAmount, outstanding > 0 {
                                 analyticsCard(label: "ממתין לתשלום", value: formatCurrency(outstanding), color: SederTheme.sentColor)
                             }
                             if let percentage = client.incomePercentage, percentage > 0 {
-                                analyticsCard(label: "חלק מההכנסות", value: "\(Int(percentage))%")
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        showMonthlyPercentage.toggle()
+                                    }
+                                } label: {
+                                    if showMonthlyPercentage {
+                                        let monthPct: Int = {
+                                            let total = (client.thisMonthRevenue ?? 0)
+                                            guard total > 0, let yearRev = client.thisYearRevenue, yearRev > 0 else { return 0 }
+                                            // Approximate: use year percentage scaled by month/year ratio
+                                            // Not exact, but gives a sense
+                                            return Int(total / yearRev * Double(percentage))
+                                        }()
+                                        analyticsCard(label: "מההכנסות החודש", value: "\(monthPct)%")
+                                    } else {
+                                        analyticsCard(label: "מההכנסות השנה", value: "\(Int(percentage))%")
+                                    }
+                                }
+                                .buttonStyle(.plain)
                             }
                             if let lateRate = client.latePaymentRate, lateRate > 0 {
                                 analyticsCard(label: "תשלום מאוחר", value: "\(Int(lateRate))%")
                             }
-                            if let trend = client.activityTrend {
-                                let trendText = trend == "up" ? "↑ עולה" : trend == "down" ? "↓ יורדת" : "→ יציבה"
-                                analyticsCard(label: "מגמה", value: trendText)
-                            }
                             if let months = client.lastActiveMonths {
-                                let text = months == 0 ? "החודש" : months == 1 ? "לפני חודש" : "לפני \(months) חודשים"
+                                let text = months == 0 ? "החודש" : months == 1 ? "לפני חודש" : months == 2 ? "לפני חודשיים" : "לפני \(months) חודשים"
                                 analyticsCard(label: "עבודה אחרונה", value: text)
                             }
                         }
+
                     }
 
                     // Recent jobs
                     if !viewModel.clientEntries.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("עבודות אחרונות")
-                                .font(SederTheme.ploni(15, weight: .medium))
-                                .foregroundStyle(SederTheme.textSecondary)
+                            HStack {
+                                Text("עבודות אחרונות")
+                                    .font(SederTheme.ploni(15, weight: .medium))
+                                    .foregroundStyle(SederTheme.textSecondary)
+                                Spacer()
+                                if let trend = client.activityTrend {
+                                    HStack(spacing: 4) {
+                                        Text(trend == "up" ? "יותר עבודות לאחרונה" : trend == "down" ? "פחות עבודות לאחרונה" : "פעילות יציבה")
+                                            .foregroundStyle(.secondary)
+                                        Text(trend == "up" ? "↑" : trend == "down" ? "↓" : "→")
+                                            .foregroundStyle(trend == "up" ? .green : trend == "down" ? .red : .secondary)
+                                    }
+                                    .font(.system(size: 12))
+                                }
+                            }
 
                             ForEach(viewModel.clientEntries.prefix(5)) { entry in
                                 Button {

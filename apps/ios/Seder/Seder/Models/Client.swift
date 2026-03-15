@@ -18,6 +18,7 @@ nonisolated struct Client: Codable, Identifiable, Sendable {
     let thisYearRevenue: Double?
     let averagePerJob: Double?
     let jobCount: Int?
+    let thisYearJobCount: Int?
     let outstandingAmount: Double?
     let avgDaysToPayment: Double?
     let overdueInvoices: Int?
