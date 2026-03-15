@@ -283,6 +283,50 @@ export async function getEnhancedTrends({
   return results;
 }
 
+export async function getYearTrends({ year, userId }: { year: number; userId: string }) {
+  const months = Array.from({ length: 12 }, (_, i) => ({ year, month: i + 1 }));
+
+  const results = await Promise.all(
+    months.map(async ({ year: y, month }) => {
+      const startDate = `${y}-${String(month).padStart(2, "0")}-01`;
+      const endDate =
+        month === 12
+          ? `${y + 1}-01-01`
+          : `${y}-${String(month + 1).padStart(2, "0")}-01`;
+
+      const [row] = await db
+        .select({
+          totalGross: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+          totalPaid: sql<string>`COALESCE(SUM(${incomeEntries.amountPaid}), 0)`,
+          jobsCount: sql<number>`COUNT(*)::int`,
+          unpaidCount: sql<number>`COUNT(*) FILTER (WHERE ${incomeEntries.paymentStatus} != 'paid' AND ${incomeEntries.date} < CURRENT_DATE)::int`,
+        })
+        .from(incomeEntries)
+        .where(
+          and(
+            eq(incomeEntries.userId, userId),
+            gte(incomeEntries.date, startDate),
+            lt(incomeEntries.date, endDate)
+          )
+        );
+
+      const totalGross = Number(row?.totalGross ?? 0);
+      const totalPaid = Number(row?.totalPaid ?? 0);
+      const jobsCount = row?.jobsCount ?? 0;
+      const unpaidCount = row?.unpaidCount ?? 0;
+
+      let status: "all-paid" | "has-unpaid" | "empty" = "empty";
+      if (jobsCount > 0) {
+        status = unpaidCount > 0 ? "has-unpaid" : "all-paid";
+      }
+
+      return { month, year: y, status, totalGross, totalPaid, jobsCount };
+    })
+  );
+
+  return results;
+}
+
 export async function getCategoryBreakdown({
   year,
   month,
@@ -343,6 +387,96 @@ export async function getCategoryBreakdown({
   return top5;
 }
 
+export async function getCategoryBreakdownYearly({ year, userId }: { year: number; userId: string }) {
+  const startDate = `${year}-01-01`;
+  const endDate = `${year + 1}-01-01`;
+
+  const rows = await db
+    .select({
+      categoryId: incomeEntries.categoryId,
+      categoryName: categories.name,
+      categoryColor: categories.color,
+      month: sql<number>`EXTRACT(MONTH FROM ${incomeEntries.date}::date)::int`,
+      amount: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(incomeEntries)
+    .leftJoin(categories, eq(incomeEntries.categoryId, categories.id))
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        gte(incomeEntries.date, startDate),
+        lt(incomeEntries.date, endDate)
+      )
+    )
+    .groupBy(incomeEntries.categoryId, categories.name, categories.color, sql`EXTRACT(MONTH FROM ${incomeEntries.date}::date)`)
+    .orderBy(sql`SUM(${incomeEntries.amountGross}) DESC`);
+
+  const catMap = new Map<string | null, {
+    categoryId: string | null;
+    categoryName: string;
+    categoryColor: string;
+    totalAmount: number;
+    totalCount: number;
+    monthlyAmounts: number[];
+  }>();
+
+  for (const row of rows) {
+    const key = row.categoryId;
+    if (!catMap.has(key)) {
+      catMap.set(key, {
+        categoryId: row.categoryId,
+        categoryName: row.categoryName ?? "ללא קטגוריה",
+        categoryColor: row.categoryColor ?? "#9ca3af",
+        totalAmount: 0,
+        totalCount: 0,
+        monthlyAmounts: new Array(12).fill(0),
+      });
+    }
+    const entry = catMap.get(key)!;
+    const amt = Number(row.amount);
+    entry.totalAmount += amt;
+    entry.totalCount += row.count;
+    entry.monthlyAmounts[row.month - 1] += amt;
+  }
+
+  const sorted = Array.from(catMap.values()).sort((a, b) => b.totalAmount - a.totalAmount);
+  const totalAmount = sorted.reduce((sum, c) => sum + c.totalAmount, 0);
+
+  const top5 = sorted.slice(0, 5).map((c) => ({
+    categoryId: c.categoryId,
+    categoryName: c.categoryName,
+    categoryColor: c.categoryColor,
+    amount: c.totalAmount,
+    count: c.totalCount,
+    percentage: totalAmount > 0 ? Math.round((c.totalAmount / totalAmount) * 100 * 10) / 10 : 0,
+    monthlyAmounts: c.monthlyAmounts,
+  }));
+
+  if (sorted.length > 5) {
+    const others = sorted.slice(5);
+    const otherAmount = others.reduce((sum, c) => sum + c.totalAmount, 0);
+    const otherCount = others.reduce((sum, c) => sum + c.totalCount, 0);
+    const otherMonthly = new Array(12).fill(0);
+    for (const c of others) {
+      for (let i = 0; i < 12; i++) {
+        otherMonthly[i] += c.monthlyAmounts[i];
+      }
+    }
+    top5.push({
+      categoryId: null,
+      categoryName: "אחר",
+      categoryColor: "#9ca3af",
+      amount: otherAmount,
+      count: otherCount,
+      percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100 * 10) / 10 : 0,
+      monthlyAmounts: otherMonthly,
+    });
+  }
+
+  return top5;
+}
+
 export async function getClientBreakdown({
   year,
   month,
@@ -389,6 +523,85 @@ export async function getClientBreakdown({
       amount: otherAmount,
       count: otherCount,
       percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100 * 10) / 10 : 0,
+    });
+  }
+
+  return top5;
+}
+
+export async function getClientBreakdownYearly({ year, userId }: { year: number; userId: string }) {
+  const startDate = `${year}-01-01`;
+  const endDate = `${year + 1}-01-01`;
+
+  const rows = await db
+    .select({
+      clientName: incomeEntries.clientName,
+      month: sql<number>`EXTRACT(MONTH FROM ${incomeEntries.date}::date)::int`,
+      amount: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(incomeEntries)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        gte(incomeEntries.date, startDate),
+        lt(incomeEntries.date, endDate)
+      )
+    )
+    .groupBy(incomeEntries.clientName, sql`EXTRACT(MONTH FROM ${incomeEntries.date}::date)`)
+    .orderBy(sql`SUM(${incomeEntries.amountGross}) DESC`);
+
+  const clientMap = new Map<string, {
+    clientName: string;
+    totalAmount: number;
+    totalCount: number;
+    monthlyAmounts: number[];
+  }>();
+
+  for (const row of rows) {
+    const key = row.clientName || "ללא לקוח";
+    if (!clientMap.has(key)) {
+      clientMap.set(key, {
+        clientName: key,
+        totalAmount: 0,
+        totalCount: 0,
+        monthlyAmounts: new Array(12).fill(0),
+      });
+    }
+    const entry = clientMap.get(key)!;
+    const amt = Number(row.amount);
+    entry.totalAmount += amt;
+    entry.totalCount += row.count;
+    entry.monthlyAmounts[row.month - 1] += amt;
+  }
+
+  const sorted = Array.from(clientMap.values()).sort((a, b) => b.totalAmount - a.totalAmount);
+  const totalAmount = sorted.reduce((sum, c) => sum + c.totalAmount, 0);
+
+  const top5 = sorted.slice(0, 5).map((c) => ({
+    clientName: c.clientName,
+    amount: c.totalAmount,
+    count: c.totalCount,
+    percentage: totalAmount > 0 ? Math.round((c.totalAmount / totalAmount) * 100 * 10) / 10 : 0,
+    monthlyAmounts: c.monthlyAmounts,
+  }));
+
+  if (sorted.length > 5) {
+    const others = sorted.slice(5);
+    const otherAmount = others.reduce((sum, c) => sum + c.totalAmount, 0);
+    const otherCount = others.reduce((sum, c) => sum + c.totalCount, 0);
+    const otherMonthly = new Array(12).fill(0);
+    for (const c of others) {
+      for (let i = 0; i < 12; i++) {
+        otherMonthly[i] += c.monthlyAmounts[i];
+      }
+    }
+    top5.push({
+      clientName: "אחר",
+      amount: otherAmount,
+      count: otherCount,
+      percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100 * 10) / 10 : 0,
+      monthlyAmounts: otherMonthly,
     });
   }
 
@@ -644,6 +857,170 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
     { tags: ["income-data"], revalidate: 30 }
   );
   return cachedFn(year, month, userId);
+}
+
+export async function getIncomeAggregatesForYear({ year, userId }: { year: number; userId: string }): Promise<IncomeAggregates> {
+  const startDate = `${year}-01-01`;
+  const endDate = `${year + 1}-01-01`;
+  const today = getTodayString();
+
+  // Determine comparison period
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const isCurrentYear = year === currentYear;
+  const compMonth = isCurrentYear ? now.getMonth() + 1 : 12;
+
+  // Comparison period: same months of previous year
+  const prevStart = `${year - 1}-01-01`;
+  const prevEnd = isCurrentYear
+    ? `${year - 1}-${String(compMonth + 1).padStart(2, "0")}-01`
+    : `${year}-01-01`;
+
+  const [
+    yearStatsResult,
+    vatTotalResult,
+    outstandingStatsResult,
+    readyToInvoiceStatsResult,
+    overdueStatsResult,
+    prevPeriodStatsResult
+  ] = await Promise.all([
+    // 1. Year Aggregates
+    db
+      .select({
+        totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+        totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+        jobsCount: count(),
+      })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, startDate),
+          lt(incomeEntries.date, endDate)
+        )
+      ),
+
+    // 2. VAT Total
+    db
+      .select({
+        vatTotal: sql<string>`sum(
+          CASE
+            WHEN ${incomeEntries.includesVat} THEN
+              (${incomeEntries.amountGross} - (${incomeEntries.amountGross} / (1 + ${incomeEntries.vatRate} / 100)))
+            ELSE
+              (${incomeEntries.amountGross} * (${incomeEntries.vatRate} / 100))
+          END
+        )`.mapWith(Number)
+      })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, startDate),
+          lt(incomeEntries.date, endDate)
+        )
+      ),
+
+    // 3. Outstanding (invoiced but not paid)
+    db
+      .select({
+        totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+        totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+        count: count(),
+      })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, startDate),
+          lt(incomeEntries.date, endDate),
+          eq(incomeEntries.invoiceStatus, "sent"),
+          sql`${incomeEntries.paymentStatus} != 'paid'`
+        )
+      ),
+
+    // 4. Ready to Invoice
+    db
+      .select({
+        total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
+        count: count(),
+      })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, startDate),
+          lt(incomeEntries.date, endDate),
+          eq(incomeEntries.invoiceStatus, "draft"),
+          lt(incomeEntries.date, today)
+        )
+      ),
+
+    // 5. Overdue Count
+    db
+      .select({ count: count() })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, startDate),
+          lt(incomeEntries.date, endDate),
+          eq(incomeEntries.invoiceStatus, "sent"),
+          sql`${incomeEntries.paymentStatus} != 'paid'`,
+          sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
+        )
+      ),
+
+    // 6. Previous period paid (for trend)
+    db
+      .select({
+        totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
+      })
+      .from(incomeEntries)
+      .where(
+        and(
+          eq(incomeEntries.userId, userId),
+          gte(incomeEntries.date, prevStart),
+          lt(incomeEntries.date, prevEnd),
+          eq(incomeEntries.paymentStatus, "paid")
+        )
+      )
+  ]);
+
+  const yearStats = yearStatsResult[0];
+  const outstandingStats = outstandingStatsResult[0];
+  const readyToInvoiceStats = readyToInvoiceStatsResult[0];
+  const overdueStats = overdueStatsResult[0];
+  const prevPeriodStats = prevPeriodStatsResult[0];
+  const vatTotal = vatTotalResult[0]?.vatTotal || 0;
+
+  const outstanding = Currency.subtract(
+    outstandingStats?.totalGross || 0,
+    outstandingStats?.totalPaid || 0
+  );
+  const totalGross = yearStats?.totalGross || 0;
+  const totalPaid = yearStats?.totalPaid || 0;
+  const totalUnpaid = Currency.subtract(totalGross, totalPaid);
+  const previousMonthPaid = prevPeriodStats?.totalPaid || 0;
+
+  const trend = previousMonthPaid > 0
+    ? Currency.multiply(Currency.divide(Currency.subtract(totalPaid, previousMonthPaid), previousMonthPaid), 100)
+    : 0;
+
+  return {
+    totalGross,
+    totalPaid,
+    totalUnpaid,
+    vatTotal,
+    jobsCount: yearStats?.jobsCount || 0,
+    outstanding,
+    readyToInvoice: readyToInvoiceStats?.total || 0,
+    readyToInvoiceCount: readyToInvoiceStats?.count || 0,
+    invoicedCount: outstandingStats?.count || 0,
+    overdueCount: overdueStats?.count || 0,
+    previousMonthPaid,
+    trend,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

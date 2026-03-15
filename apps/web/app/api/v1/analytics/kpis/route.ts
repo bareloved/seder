@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "../../_lib/middleware";
 import { apiSuccess, apiError } from "../../_lib/response";
-import { getIncomeAggregatesForMonth } from "@/app/income/data";
+import { getIncomeAggregatesForMonth, getIncomeAggregatesForYear } from "@/app/income/data";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireAuth();
     const month = request.nextUrl.searchParams.get("month");
+    const period = request.nextUrl.searchParams.get("period");
 
     let year: number;
     let m: number;
@@ -19,6 +20,11 @@ export async function GET(request: NextRequest) {
       const now = new Date();
       year = now.getFullYear();
       m = now.getMonth() + 1;
+    }
+
+    if (period === "year") {
+      const kpis = await getIncomeAggregatesForYear({ year, userId });
+      return apiSuccess(kpis);
     }
 
     const kpis = await getIncomeAggregatesForMonth({ year, month: m, userId });

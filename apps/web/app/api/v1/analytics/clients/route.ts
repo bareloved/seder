@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "../../_lib/middleware";
 import { apiSuccess, apiError } from "../../_lib/response";
-import { getClientBreakdown } from "@/app/income/data";
+import { getClientBreakdown, getClientBreakdownYearly } from "@/app/income/data";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireAuth();
     const monthParam = request.nextUrl.searchParams.get("month");
+    const period = request.nextUrl.searchParams.get("period");
 
     let year: number;
     let month: number;
@@ -19,6 +20,11 @@ export async function GET(request: NextRequest) {
       const now = new Date();
       year = now.getFullYear();
       month = now.getMonth() + 1;
+    }
+
+    if (period === "year") {
+      const breakdown = await getClientBreakdownYearly({ year, userId });
+      return apiSuccess(breakdown);
     }
 
     const breakdown = await getClientBreakdown({ year, month, userId });
