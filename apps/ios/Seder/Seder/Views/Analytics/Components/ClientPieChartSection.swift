@@ -8,7 +8,7 @@ struct ClientPieChartSection: View {
     let onToggle: () -> Void
     let onRetry: () -> Void
 
-    @State private var selectedClientName: String?
+    @State private var selectedAngle: Double?
 
     private let sliceColors: [Color] = [
         SederTheme.brandGreen,
@@ -19,10 +19,17 @@ struct ClientPieChartSection: View {
         SederTheme.color(hex: "#9CA3AF"),
     ]
 
+    /// Find which client the selected cumulative angle value falls within
     private var selectedClient: (index: Int, client: ClientBreakdown)? {
-        guard let name = selectedClientName else { return nil }
-        guard let idx = clients.firstIndex(where: { $0.clientName == name }) else { return nil }
-        return (idx, clients[idx])
+        guard let angle = selectedAngle else { return nil }
+        var cumulative = 0.0
+        for (i, client) in clients.enumerated() {
+            cumulative += client.amount
+            if angle <= cumulative {
+                return (i, client)
+            }
+        }
+        return nil
     }
 
     var body: some View {
@@ -51,7 +58,7 @@ struct ClientPieChartSection: View {
                             )
                             .foregroundStyle(by: .value("לקוח", client.clientName))
                             .cornerRadius(3)
-                            .opacity(selectedClientName == nil || selectedClientName == client.clientName ? 1 : 0.4)
+                            .opacity(selectedClient == nil || selectedClient?.client.clientName == client.clientName ? 1 : 0.4)
                         }
                         .chartLegend(.hidden)
                         .chartForegroundStyleScale(
@@ -63,9 +70,9 @@ struct ClientPieChartSection: View {
                                 return sliceColors[idx % sliceColors.count]
                             }
                         )
-                        .chartAngleSelection(value: $selectedClientName)
+                        .chartAngleSelection(value: $selectedAngle)
 
-                        // Center tooltip
+                        // Center tooltip inside the donut hole
                         if let selected = selectedClient {
                             VStack(spacing: 2) {
                                 Text(selected.client.clientName)
@@ -79,11 +86,11 @@ struct ClientPieChartSection: View {
                             }
                             .allowsHitTesting(false)
                             .transition(.opacity)
+                            .animation(.easeInOut(duration: 0.15), value: selected.index)
                         }
                     }
                     .frame(height: 180)
                     .padding(.top, 4)
-                    .sensoryFeedback(.selection, trigger: selectedClientName)
 
                     // Legend list
                     VStack(spacing: 6) {
