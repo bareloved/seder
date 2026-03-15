@@ -95,6 +95,14 @@ struct AnalyticsView: View {
                                 onRetry: { Task { await viewModel.retrySection(.categoryBreakdown) } }
                             )
 
+                            ClientPieChartSection(
+                                clients: viewModel.clientBreakdown,
+                                isExpanded: viewModel.isSectionExpanded(.clientBreakdown),
+                                hasError: viewModel.clientBreakdownError,
+                                onToggle: { viewModel.toggleSection(.clientBreakdown) },
+                                onRetry: { Task { await viewModel.retrySection(.clientBreakdown) } }
+                            )
+
                             VATSummarySection(
                                 aggregates: viewModel.aggregates,
                                 isExpanded: viewModel.isSectionExpanded(.vatSummary),
@@ -118,7 +126,7 @@ struct AnalyticsView: View {
             SettingsView()
         }
         .task { await viewModel.loadAll() }
-        .onChange(of: viewModel.selectedMonth) { _ in
+        .onChange(of: viewModel.selectedMonth) {
             Task { await viewModel.loadAll() }
         }
     }

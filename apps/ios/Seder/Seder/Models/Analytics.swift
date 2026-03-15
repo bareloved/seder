@@ -41,6 +41,17 @@ nonisolated struct CategoryBreakdown: Codable, Sendable {
     let percentage: Double
 }
 
+// MARK: - Client Breakdown
+
+nonisolated struct ClientBreakdown: Codable, Sendable, Identifiable {
+    let clientName: String
+    let amount: Double
+    let count: Int
+    let percentage: Double
+
+    var id: String { clientName }
+}
+
 // MARK: - Attention Items
 
 nonisolated struct AttentionResponse: Codable, Sendable {

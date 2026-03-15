@@ -343,6 +343,58 @@ export async function getCategoryBreakdown({
   return top5;
 }
 
+export async function getClientBreakdown({
+  year,
+  month,
+  userId,
+}: MonthFilter) {
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate =
+    month === 12
+      ? `${year + 1}-01-01`
+      : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+
+  const rows = await db
+    .select({
+      clientName: incomeEntries.clientName,
+      amount: sql<string>`COALESCE(SUM(${incomeEntries.amountGross}), 0)`,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(incomeEntries)
+    .where(
+      and(
+        eq(incomeEntries.userId, userId),
+        gte(incomeEntries.date, startDate),
+        lt(incomeEntries.date, endDate)
+      )
+    )
+    .groupBy(incomeEntries.clientName)
+    .orderBy(sql`SUM(${incomeEntries.amountGross}) DESC`);
+
+  const totalAmount = rows.reduce((sum, r) => sum + Number(r.amount), 0);
+
+  const top5 = rows.slice(0, 5).map((r) => ({
+    clientName: r.clientName || "ללא לקוח",
+    amount: Number(r.amount),
+    count: r.count,
+    percentage: totalAmount > 0 ? Math.round((Number(r.amount) / totalAmount) * 100 * 10) / 10 : 0,
+  }));
+
+  if (rows.length > 5) {
+    const otherRows = rows.slice(5);
+    const otherAmount = otherRows.reduce((sum, r) => sum + Number(r.amount), 0);
+    const otherCount = otherRows.reduce((sum, r) => sum + r.count, 0);
+    top5.push({
+      clientName: "אחר",
+      amount: otherAmount,
+      count: otherCount,
+      percentage: totalAmount > 0 ? Math.round((otherAmount / totalAmount) * 100 * 10) / 10 : 0,
+    });
+  }
+
+  return top5;
+}
+
 export async function getAttentionItems({
   year,
   month,
