@@ -8,6 +8,9 @@ struct ClientPieChartSection: View {
     let onToggle: () -> Void
     let onRetry: () -> Void
 
+    @State private var selectedIndex: Int?
+    @State private var chartSelection: Double?
+
     private let sliceColors: [Color] = [
         SederTheme.brandGreen,
         SederTheme.color(hex: "#3B82F6"),
@@ -33,19 +36,56 @@ struct ClientPieChartSection: View {
                     .frame(maxWidth: .infinity)
             } else {
                 VStack(spacing: 12) {
-                    // Donut pie chart
-                    Chart(Array(clients.enumerated()), id: \.element.id) { index, client in
-                        SectorMark(
-                            angle: .value("סכום", client.amount),
-                            innerRadius: .ratio(0.55),
-                            angularInset: 1.5
-                        )
-                        .foregroundStyle(sliceColors[index % sliceColors.count])
-                        .cornerRadius(3)
+                    // Donut pie chart with tap tooltip
+                    ZStack {
+                        Chart(Array(clients.enumerated()), id: \.element.id) { index, client in
+                            SectorMark(
+                                angle: .value("סכום", client.amount),
+                                innerRadius: .ratio(0.55),
+                                angularInset: 1.5
+                            )
+                            .foregroundStyle(sliceColors[index % sliceColors.count])
+                            .cornerRadius(3)
+                            .opacity(selectedIndex == nil || selectedIndex == index ? 1 : 0.4)
+                        }
+                        .chartLegend(.hidden)
+                        .chartAngleSelection(value: $chartSelection)
+
+                        // Center tooltip
+                        if let idx = selectedIndex, idx < clients.count {
+                            VStack(spacing: 2) {
+                                Text(clients[idx].clientName)
+                                    .font(SederTheme.ploni(13, weight: .semibold))
+                                    .foregroundStyle(SederTheme.textPrimary)
+                                    .lineLimit(1)
+                                CurrencyText(amount: clients[idx].amount, size: 12, color: SederTheme.textSecondary)
+                                Text("\(Int(clients[idx].percentage))%")
+                                    .font(SederTheme.ploni(11))
+                                    .foregroundStyle(SederTheme.textTertiary)
+                            }
+                            .transition(.opacity)
+                        }
                     }
-                    .chartLegend(.hidden)
                     .frame(height: 180)
                     .padding(.top, 4)
+                    .onChange(of: chartSelection) { _, newValue in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            guard let newValue else {
+                                selectedIndex = nil
+                                return
+                            }
+                            // Map cumulative angle value to client index
+                            var cumulative = 0.0
+                            for (i, client) in clients.enumerated() {
+                                cumulative += client.amount
+                                if newValue <= cumulative {
+                                    selectedIndex = i
+                                    return
+                                }
+                            }
+                            selectedIndex = nil
+                        }
+                    }
 
                     // Legend list
                     VStack(spacing: 6) {
