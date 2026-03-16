@@ -47,10 +47,54 @@ export function LoginForm({
     setIsGoogleLoading(true)
     setError("")
     try {
-      await authClient.signIn.social({
+      const { data } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/income",
+        callbackURL: "/auth/callback",
+        disableRedirect: true,
       })
+
+      if (!data?.url) {
+        throw new Error("No redirect URL")
+      }
+
+      const width = 500
+      const height = 600
+      const left = window.screenX + (window.outerWidth - width) / 2
+      const top = window.screenY + (window.outerHeight - height) / 2
+
+      const popup = window.open(
+        data.url,
+        "google-auth",
+        `width=${width},height=${height},left=${left},top=${top},popup=yes`
+      )
+
+      if (!popup) {
+        // Popup blocked — fall back to redirect
+        window.location.href = data.url
+        return
+      }
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return
+        if (event.data?.type === "auth:success") {
+          window.removeEventListener("message", handleMessage)
+          router.push("/income")
+        } else if (event.data?.type === "auth:error") {
+          window.removeEventListener("message", handleMessage)
+          setError("ההתחברות נכשלה. נסו שוב.")
+          setIsGoogleLoading(false)
+        }
+      }
+      window.addEventListener("message", handleMessage)
+
+      // Poll for popup closed manually (user closed it)
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer)
+          window.removeEventListener("message", handleMessage)
+          setIsGoogleLoading(false)
+        }
+      }, 500)
     } catch (err) {
       console.error("Sign in failed", err)
       setError("ההתחברות נכשלה. נסו שוב.")

@@ -20,7 +20,7 @@ async function withRateLimit(
   const pathname = new URL(req.url).pathname.replace("/api/auth", "");
   const shouldLimit = RATE_LIMITED_PATHS.some((p) => pathname.startsWith(p));
 
-  if (shouldLimit) {
+  if (shouldLimit && authRatelimit) {
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const { success } = await authRatelimit.limit(ip);
