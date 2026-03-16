@@ -88,11 +88,17 @@ export function LoginForm({
       window.addEventListener("message", handleMessage)
 
       // Poll for popup closed manually (user closed it)
+      // Wrapped in try/catch because COOP headers on Google's OAuth page
+      // block cross-origin access to popup.closed
       const pollTimer = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(pollTimer)
-          window.removeEventListener("message", handleMessage)
-          setIsGoogleLoading(false)
+        try {
+          if (popup.closed) {
+            clearInterval(pollTimer)
+            window.removeEventListener("message", handleMessage)
+            setIsGoogleLoading(false)
+          }
+        } catch {
+          // COOP blocked access — ignore, postMessage callback handles it
         }
       }, 500)
     } catch (err) {
