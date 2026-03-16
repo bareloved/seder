@@ -122,15 +122,31 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
   - `currency.ts` - Re-exports `Currency` from `@seder/shared`
   - `status-mapper.ts` - Re-exports status mapping from `@seder/shared`
   - `components/` - Feature-specific React components
+- `app/(marketing)/` - Landing page components (hero, features, testimonials, CTA)
 - `app/api/v1/` - REST API routes (consumed by iOS app)
   - `_lib/` - Middleware (auth, errors, response helpers)
   - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`, `nudges/`, `feedback/`
+- `app/api/auth/` - Better Auth handler (`[...all]`)
+- `app/api/calendar/` - Calendar auto-sync and sync-now endpoints
+- `app/api/cron/` - Cron jobs: `backup/` (daily DB backup), `overdue-notifications/` (push notifications)
+- `app/api/google/` - Google OAuth helpers: `calendars/`, `disconnect/`
+- `app/api/settings/` - Calendar settings endpoint
+- `app/privacy/`, `app/terms/` - Legal pages
 
 **iOS App (`apps/ios/Seder/Seder/`):**
 - `Models/` - Swift Codable structs (IncomeEntry, Category, Client, etc.)
-- `Services/` - APIClient (URLSession), KeychainService, NotificationManager, SentryService
+- `Services/` - APIClient (URLSession), KeychainService, NotificationService, SentryService
 - `ViewModels/` - ObservableObject state management
-- `Views/` - SwiftUI views organized by feature
+- `Views/` - SwiftUI views organized by feature:
+  - `Auth/` - SignInView, SignUpView
+  - `Income/` - IncomeListView, IncomeEntryRow, IncomeFormSheet, IncomeDetailSheet, FilterSheet, NudgeSection
+  - `Analytics/` - AnalyticsView with Components/ (KPI grid, charts, category breakdown, VAT summary)
+  - `Categories/` - CategoriesView, CategoryFormSheet
+  - `Clients/` - ClientsView, ClientFormSheet
+  - `Settings/` - SettingsView, ChangePasswordView, ChangeEmailView, ExportDataSheet, FeedbackSheet, AppIconPickerView
+  - `Calendar/` - CalendarImportView, EventPreviewView, RulesManagerView
+  - `Components/` - Shared: CurrencyText, MonthPicker, StatusBadge, ErrorView, GreenNavBar, TourOverlay
+  - `MainTabView.swift` - Tab bar navigation
 - `Lib/` - Classification engine (Swift port of shared logic)
 - `Theme.swift` - Colors, fonts, SF Symbol icon mappings
 
@@ -157,8 +173,14 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - **`IncomeListView.tsx`** - Main list view, uses `IncomeEntryRow` for both mobile and desktop
 - `app/analytics/` - Charts and KPI reporting
 - `app/categories/` - User-defined income categories
-- `app/settings/` - User account settings
+- `app/clients/` - Client directory with contact info, analytics, and merge tool
+- `app/settings/` - User account settings (tabs: account, preferences, calendar, data, danger zone)
+- `app/sign-in/` - Authentication page (split-screen design)
 - `components/ui/` - Shared shadcn-style UI components (Radix wrappers)
+- `components/onboarding/` - Guided tour system (OnboardingTour, SpotlightOverlay, TourTooltip, HelpButton)
+- `components/EmailVerificationBanner.tsx` - Amber banner for unverified email users
+- `components/FeedbackModal.tsx` - In-app user feedback dialog
+- `components/SentryUserTag.tsx` - Client-side Sentry user tagging
 - `db/schema.ts` - Drizzle schema definitions (source of truth for data model)
 - `db/client.ts` - Lazy-loading Drizzle client instance
 - `lib/auth.ts` - Better Auth configuration
@@ -167,6 +189,8 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - `lib/email.ts` - Email sending (verification, password reset, welcome, feedback)
 - `lib/ratelimit.ts` - Upstash rate limiting for auth endpoints
 - `lib/sentry.ts` - Sentry userId tagging helpers
+- `lib/googleTokens.ts` - Google OAuth token refresh helpers
+- `lib/pushNotifications.ts` - Push notification sending
 - `lib/nudges/` - Smart nudge engine (compute, types)
 - `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` - Sentry init
 
@@ -241,6 +265,7 @@ NEON_API_KEY=xxx           # Automated DB backups
 
 ## Project Documentation
 
+- `apps/web/documents/APP_OVERVIEW.md` - High-level app overview (screens, features, domain model)
 - `docs/CONTRIB.md` - Development workflow, scripts reference, environment setup
 - `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
 - `docs/CROSS_PLATFORM_GUIDE.md` - Cross-platform development guide (web + iOS)

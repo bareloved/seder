@@ -114,7 +114,7 @@ The web app exposes a REST API at `/api/v1/` consumed by the iOS app:
 | Income | `/api/v1/income` | CRUD for income entries |
 | Income Actions | `/api/v1/income/[id]/mark-paid`, `mark-sent` | Status transitions |
 | Income Batch | `/api/v1/income/batch` | Bulk operations |
-| Analytics | `/api/v1/analytics/kpis`, `trends`, `categories`, `attention` | KPI and reporting data |
+| Analytics | `/api/v1/analytics/kpis`, `trends`, `categories`, `clients`, `attention` | KPI and reporting data |
 | Categories | `/api/v1/categories`, `[id]`, `reorder` | Category management |
 | Clients | `/api/v1/clients`, `[id]` | Client management |
 | Calendar | `/api/v1/calendar/list`, `events`, `import` | Google Calendar integration |
@@ -123,7 +123,20 @@ The web app exposes a REST API at `/api/v1/` consumed by the iOS app:
 | Nudges | `/api/v1/nudges` | Smart nudge suggestions |
 | Feedback | `/api/v1/feedback` | In-app user feedback |
 
-All endpoints require Bearer token authentication via Better Auth session tokens.
+All v1 endpoints require Bearer token authentication via Better Auth session tokens.
+
+### Non-v1 API Routes
+
+| Endpoint | Description |
+|----------|-------------|
+| `/api/auth/[...all]` | Better Auth handler (sign-in, sign-up, OAuth, sessions) |
+| `/api/calendar/auto-sync` | Cron-triggered calendar auto-sync |
+| `/api/calendar/sync-now` | Manual calendar sync trigger |
+| `/api/cron/backup` | Daily database backup via Neon branch API |
+| `/api/cron/overdue-notifications` | Push notifications for overdue invoices |
+| `/api/google/calendars` | List user's Google Calendar calendars |
+| `/api/google/disconnect` | Disconnect Google account |
+| `/api/settings/calendar` | Calendar sync preferences |
 
 ## Cross-Platform Development
 
