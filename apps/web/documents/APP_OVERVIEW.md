@@ -51,7 +51,7 @@ Route / Screen | Purpose | Notes
 /sign-in | Auth screen | Split-screen design: email/password, Google OAuth, password reset via OTP
 /income | Primary dashboard | Month selector, KPIs, filters, income table + quick add, detail dialog, calendar import, onboarding tour, smart nudges
 /analytics | Charts and reporting | KPIs, income over time, income by category, needs attention table
-/clients | Client directory | Client management with contact info, defaults, and analytics
+/clients | Client directory | Client management with contact info, defaults, analytics, and merge tool
 /settings | User settings | Tabs: account, preferences, calendar, data, danger zone; feedback button
 /api/auth/[...all] | Auth handler | Better Auth Next.js route with rate limiting
 

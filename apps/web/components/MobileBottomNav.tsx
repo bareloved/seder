@@ -29,6 +29,7 @@ export function MobileBottomNav({ hidden = false }: MobileBottomNavProps) {
         hidden ? "translate-y-full" : "translate-y-0"
       )}
       dir="rtl"
+      data-tour="navigation"
     >
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
@@ -49,10 +50,15 @@ export function MobileBottomNav({ hidden = false }: MobileBottomNavProps) {
             );
           }
 
+          const tourId = item.href === "/analytics" ? "nav-analytics"
+            : item.href === "/clients" ? "nav-clients"
+            : undefined;
+
           return (
             <Link
               key={item.href}
               href={item.href}
+              data-tour={tourId}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 min-w-[64px] h-full px-3",
                 "transition-colors",

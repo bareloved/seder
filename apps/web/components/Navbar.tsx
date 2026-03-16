@@ -63,9 +63,12 @@ export function Navbar({ user }: NavbarProps) {
                     </div>
 
                     {/* Navigation Links */}
-                    <nav className="hidden md:flex items-center gap-14">
+                    <nav className="hidden md:flex items-center gap-14" data-tour="navigation">
                         {navItems.map((item) => {
                             const isActive = pathname.startsWith(item.href);
+                            const tourId = item.href === "/analytics" ? "nav-analytics"
+                                : item.href === "/clients" ? "nav-clients"
+                                : undefined;
 
                             if (item.comingSoon) {
                                 return (
@@ -85,6 +88,7 @@ export function Navbar({ user }: NavbarProps) {
                                 <Link
                                     key={item.href}
                                     href={item.href}
+                                    data-tour={tourId}
                                     className={cn(
                                         "text-base font-normal transition-opacity hover:opacity-100",
                                         isActive ? "opacity-100 font-medium" : "opacity-80"

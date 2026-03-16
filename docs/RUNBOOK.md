@@ -81,14 +81,16 @@ Neon PostgreSQL (RLS enabled)
 | Endpoint | Schedule | Description |
 |----------|----------|-------------|
 | `/api/cron/backup` | Daily 3:00 UTC | Create Neon backup branch |
-| `/api/calendar/auto-sync` | Every 6 hours | Sync Google Calendar events |
+| `/api/cron/overdue-notifications` | Daily | Send push notifications for overdue invoices |
+| `/api/calendar/auto-sync` | Every 6 hours | Sync Google Calendar events for all users |
 
-Both require `CRON_SECRET` Bearer token auth (configured in Vercel).
+All cron endpoints require `CRON_SECRET` Bearer token auth (configured in Vercel cron settings).
 
 ### Push Notifications
 
-- Cron endpoint: `POST /api/v1/cron` (requires `CRON_SECRET` header)
+- Overdue notification cron: `POST /api/cron/overdue-notifications` (requires `CRON_SECRET`)
 - Device tokens stored in `devices` table
+- Push sending logic in `lib/pushNotifications.ts`
 
 ## Common Issues
 
@@ -129,7 +131,18 @@ Tokens are stored in Keychain via `KeychainService`. To clear:
 ### Rate limiting returning 429 unexpectedly
 - Check Upstash dashboard for current rate limit state
 - Verify `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are correct
-- Only auth paths are limited — other API routes should pass through
+- Only auth paths are limited -- other API routes should pass through
+
+### Emails not sending (verification, welcome, feedback)
+- Verify `RESEND_API_KEY` and `EMAIL_FROM` are set
+- Check Resend dashboard for delivery status and bounces
+- `FEEDBACK_EMAIL` controls where user feedback is sent
+- Email logic is in `lib/email.ts`
+
+### Onboarding tour not showing
+- Tour state is stored in `userSettings.onboardingCompleted` in the database
+- Web: components in `components/onboarding/`; help button resets tour
+- iOS: TourOverlay in `Views/Components/TourOverlay.swift`; reset via Settings
 
 ## Rollback Procedures
 
@@ -161,15 +174,9 @@ vercel rollback
 5. Redeploy
 6. Verify data, then switch DNS back to the main branch
 
-### Manual Backup
-```bash
-./scripts/db-backup.sh
-```
+### Manual Backup / Restore
 
-### Manual Restore
-```bash
-./scripts/db-restore.sh backups/<backup-file>
-```
+Manual backup and restore are done through the Neon console or API. There are no local scripts for this -- use the Neon dashboard to create branches manually or restore from existing backup branches.
 
 ## Security
 

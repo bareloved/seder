@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import { SpotlightOverlay } from "./SpotlightOverlay";
 import { TourTooltip } from "./TourTooltip";
 import { HelpButton } from "./HelpButton";
@@ -11,25 +10,17 @@ import { completeOnboarding } from "@/app/settings/actions";
 
 interface OnboardingTourProps {
   showOnboarding: boolean;
-  onOpenAddDialog: () => void;
-  onOpenCalendarDialog: () => void;
   isGoogleConnected: boolean;
-  isDialogOpen?: boolean; // Track if add dialog is open
 }
 
 export function OnboardingTour({
   showOnboarding,
-  onOpenAddDialog,
-  onOpenCalendarDialog,
   isGoogleConnected,
-  isDialogOpen = false,
 }: OnboardingTourProps) {
-  const router = useRouter();
   const [isActive, setIsActive] = React.useState(false);
   const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
   const [targetRect, setTargetRect] = React.useState<DOMRect | null>(null);
   const [mounted, setMounted] = React.useState(false);
-  const [isPaused, setIsPaused] = React.useState(false); // Paused while dialog is open
 
   // Handle SSR - only mount on client
   React.useEffect(() => {
@@ -38,27 +29,14 @@ export function OnboardingTour({
 
   // Start tour automatically if user hasn't completed onboarding
   React.useEffect(() => {
-    if (showOnboarding && mounted && !isPaused) {
+    if (showOnboarding && mounted) {
       // Small delay to let the page render first
       const timer = setTimeout(() => {
         setIsActive(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [showOnboarding, mounted, isPaused]);
-
-  // Resume tour when dialog closes (after add-income step)
-  React.useEffect(() => {
-    if (isPaused && !isDialogOpen) {
-      // Dialog just closed, resume tour at next step
-      const timer = setTimeout(() => {
-        setIsPaused(false);
-        setCurrentStepIndex((prev) => prev + 1);
-        setIsActive(true);
-      }, 300); // Small delay for smooth transition
-      return () => clearTimeout(timer);
-    }
-  }, [isPaused, isDialogOpen]);
+  }, [showOnboarding, mounted]);
 
   // Get effective steps - show appropriate calendar step based on connection status
   const effectiveSteps = React.useMemo(() => {
@@ -145,34 +123,6 @@ export function OnboardingTour({
   }, [isActive]);
 
   const handleNext = React.useCallback(async () => {
-    const step = effectiveSteps[currentStepIndex];
-
-    // Handle special actions for specific steps
-    if (step.id === "add-income") {
-      // Open add dialog with empty fields
-      // Pause the tour - it will resume when dialog closes
-      setIsActive(false);
-      setIsPaused(true);
-      onOpenAddDialog();
-      return;
-    }
-
-    if (step.id === "calendar-connected") {
-      // Open calendar dialog and complete onboarding
-      setIsActive(false);
-      onOpenCalendarDialog();
-      await completeOnboarding();
-      return;
-    }
-
-    if (step.id === "calendar-not-connected") {
-      // Navigate to settings calendar tab to connect Google Calendar
-      setIsActive(false);
-      await completeOnboarding();
-      router.push("/settings?tab=calendar");
-      return;
-    }
-
     // Move to next step
     if (currentStepIndex < effectiveSteps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
@@ -181,32 +131,25 @@ export function OnboardingTour({
       setIsActive(false);
       await completeOnboarding();
     }
-  }, [currentStepIndex, effectiveSteps, onOpenAddDialog, onOpenCalendarDialog, router]);
+  }, [currentStepIndex, effectiveSteps]);
 
   const handleSkip = React.useCallback(async () => {
     setIsActive(false);
-    setIsPaused(false);
-    // Treat skip as completed (won't auto-show again)
     await completeOnboarding();
   }, []);
 
   const handleSecondaryAction = React.useCallback(async () => {
-    const step = effectiveSteps[currentStepIndex];
-
-    if ((step.id === "calendar-connected" || step.id === "calendar-not-connected") && step.secondaryAction) {
-      // "Maybe later" - skip to next step
-      if (currentStepIndex < effectiveSteps.length - 1) {
-        setCurrentStepIndex((prev) => prev + 1);
-      } else {
-        setIsActive(false);
-        await completeOnboarding();
-      }
+    // Skip to next step
+    if (currentStepIndex < effectiveSteps.length - 1) {
+      setCurrentStepIndex((prev) => prev + 1);
+    } else {
+      setIsActive(false);
+      await completeOnboarding();
     }
   }, [currentStepIndex, effectiveSteps]);
 
   const restartTour = React.useCallback(() => {
     setCurrentStepIndex(0);
-    setIsPaused(false);
     setIsActive(true);
   }, []);
 
@@ -215,7 +158,7 @@ export function OnboardingTour({
   return (
     <>
       {/* Help button - always visible when not in active tour */}
-      <HelpButton onRestartTour={restartTour} isHidden={isActive || isPaused} />
+      <HelpButton onRestartTour={restartTour} isHidden={isActive} />
 
       {/* Tour overlay and tooltip */}
       {isActive &&

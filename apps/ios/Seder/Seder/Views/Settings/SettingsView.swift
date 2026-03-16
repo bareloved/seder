@@ -1,4 +1,5 @@
 import SwiftUI
+import Sentry
 
 struct SettingsView: View {
     @EnvironmentObject var auth: AuthViewModel
@@ -261,6 +262,24 @@ struct SettingsView: View {
 
     private var dangerSection: some View {
         SettingsSection(title: "אזור מסוכן") {
+            #if DEBUG
+            Button {
+                SentrySDK.capture(error: NSError(domain: "test", code: 0, userInfo: [NSLocalizedDescriptionKey: "Sentry test error from iOS"]))
+            } label: {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "ant")
+                        Text("Test Sentry")
+                            .font(SederTheme.ploni(16))
+                    }
+                    .foregroundStyle(.orange)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            Divider().padding(.horizontal, 16)
+            #endif
             Button {
                 showDeleteConfirm = true
             } label: {

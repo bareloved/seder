@@ -11,10 +11,12 @@ Everything implemented in the production readiness session. Use this to verify e
 **Env vars:** `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`
 
 **Test:**
-- [ ] Create Sentry project, set env vars
-- [ ] Trigger a JS error → appears in Sentry dashboard
+- [x] Create Sentry project, set env vars
+- [x] Trigger a JS error → appears in Sentry dashboard
 - [ ] Check source maps upload (readable stack traces)
-- [ ] Verify userId is attached to errors (log in, trigger error, check Sentry event)
+- [x] Verify userId is attached to errors (log in, trigger error, check Sentry event)
+
+**Notes (2026-03-16):** Created `javascript-nextjs` project in Sentry. Added `instrumentation.ts` and `instrumentation-client.ts` for proper Next.js App Router integration. Added `SentryUserTag` component to root layout for userId tagging. Removed deprecated `disableLogger` from next.config.js. Source maps not yet verified in production build.
 
 ---
 
@@ -23,8 +25,10 @@ Everything implemented in the production readiness session. Use this to verify e
 **Files:** `app/layout.tsx` (added `<Analytics />`)
 
 **Test:**
-- [ ] Deploy to Vercel
-- [ ] Visit pages → check Vercel Analytics tab shows page views
+- [x] Deploy to Vercel
+- [x] Visit pages → check Vercel Analytics tab shows page views
+
+**Notes (2026-03-16):** Fixed import from `@vercel/analytics/react` to `@vercel/analytics/next` — the `/react` import doesn't work with Next.js App Router. Analytics confirmed working after fix.
 
 ---
 
@@ -35,10 +39,12 @@ Everything implemented in the production readiness session. Use this to verify e
 **Note:** Code is commented out until you add the Sentry Swift SDK via SPM.
 
 **Test:**
-- [ ] Add `sentry-cocoa` package in Xcode via SPM
-- [ ] Uncomment code in `SentryService.swift`
-- [ ] Set DSN, build, force crash → verify in Sentry dashboard
+- [x] Add `sentry-cocoa` package in Xcode via SPM
+- [x] Uncomment code in `SentryService.swift`
+- [x] Set DSN, build, force crash → verify in Sentry dashboard
 - [ ] Check userId is attached after login
+
+**Notes (2026-03-16):** Created separate `seder-ios` Sentry project. Uncommented all SentryService code, set DSN. Added DEBUG-only test button in Settings. Test error confirmed in Sentry dashboard. userId tagging not yet verified.
 
 ---
 
@@ -52,9 +58,11 @@ Everything implemented in the production readiness session. Use this to verify e
 **Limit:** 10 requests per 60 seconds per IP (sliding window)
 
 **Test:**
-- [ ] Set up Upstash Redis, add env vars
-- [ ] Rapidly hit sign-in 11+ times → should get 429 response with Hebrew message "נסה שוב מאוחר יותר"
+- [x] Set up Upstash Redis, add env vars
+- [x] Rapidly hit sign-in 11+ times → should get 429 response with Hebrew message "נסה שוב מאוחר יותר"
 - [ ] Verify non-auth routes (session, callbacks) are NOT rate limited
+
+**Notes (2026-03-16):** Created Upstash Redis instance. Rate limiting confirmed: 10 requests pass with 401, then 429 kicks in. Added Hebrew rate limit error handling in login form (`signInError.status === 429`). Hebrew message "יותר מדי ניסיונות. נסו שוב מאוחר יותר." displays correctly.
 
 ---
 
@@ -63,11 +71,13 @@ Everything implemented in the production readiness session. Use this to verify e
 **Files:** `lib/auth.ts` (emailVerification config), `lib/email.ts` (verification email template), `components/EmailVerificationBanner.tsx`, `app/layout.tsx`
 
 **Test:**
-- [ ] Sign up with email/password → verification email arrives (Hebrew, RTL, green button)
+- [x] Sign up with email/password → verification email arrives (Hebrew, RTL, green button)
 - [ ] Click verification link → auto-signed in
 - [ ] Before verifying: amber banner shows at top of page with "שלח שוב" button
 - [ ] After verifying: banner disappears
 - [ ] Resend button works
+
+**Notes (2026-03-16):** Verification email confirmed arriving (was in spam folder). Fixed RTL in all email templates: added `direction: rtl; unicode-bidi: embed;` to `<td>` and `<p>` elements, added `&#x200F;` RTL marks, changed font stack to `Arial Hebrew, Heebo`. Verification link click, banner, and resend not yet tested.
 
 ---
 
@@ -80,9 +90,11 @@ Everything implemented in the production readiness session. Use this to verify e
 - Google OAuth: welcome email sent immediately on sign-up (emailVerified is already true)
 
 **Test:**
-- [ ] Sign up with email → verify → check inbox for welcome email (Hebrew, RTL, green CTA button)
+- [x] Sign up with email → verify → check inbox for welcome email (Hebrew, RTL, green CTA button)
 - [ ] Sign up with Google → check inbox for welcome email (no verification step needed)
-- [ ] Email contains user's name if available
+- [x] Email contains user's name if available
+
+**Notes (2026-03-16):** Welcome email confirmed working after verification. Redesigned email to include 4 feature highlights (income tracking, Google Calendar import, analytics, smart nudges) with emojis. Fixed subject line RTL (`!` placement). Updated body copy to "החשבון שלך אומת!". Google OAuth welcome flow not yet tested.
 
 ---
 
@@ -148,11 +160,13 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 **Files:** `components/onboarding/` (OnboardingTour, SpotlightOverlay, TourTooltip, HelpButton, types)
 
 **Test:**
-- [ ] New account → tour starts automatically after page load
-- [ ] Tour highlights: income list, add button, calendar import, navigation
-- [ ] Esc key skips tour
-- [ ] Help button (?) lets you restart tour
-- [ ] Tour doesn't show again after completion
+- [x] New account → tour starts automatically after page load
+- [x] Tour highlights: income list, add button, calendar import, navigation
+- [x] Esc key skips tour
+- [x] Help button (?) lets you restart tour
+- [x] Tour doesn't show again after completion
+
+**Notes (2026-03-16):** Refactored tour to be highlight-only (no actions triggered). Expanded from 4 to 7 steps: welcome, add button, calendar import, navigation bar, analytics, clients, and "יאללה תהנו!" completion. Added `data-tour` attributes to Navbar and MobileBottomNav.
 
 ---
 
@@ -161,11 +175,13 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 **Files:** `Views/Components/TourOverlay.swift`, `Views/MainTabView.swift`, `Views/Settings/SettingsView.swift`
 
 **Test:**
-- [ ] First launch on iOS → tour overlay appears after 1 second
-- [ ] 5 steps with next/previous navigation, Hebrew text
-- [ ] Step counter "X מתוך 5"
-- [ ] Tour doesn't show again after completion
+- [x] First launch on iOS → tour overlay appears after 1 second
+- [x] 5 steps with next/previous navigation, Hebrew text
+- [x] Step counter "X מתוך 5"
+- [x] Tour doesn't show again after completion
 - [ ] Settings → "הצג סיור מודרך שוב" resets and shows tour again
+
+**Notes (2026-03-16):** Redesigned tour: white card with green icons instead of gray blur material. Updated to 6 steps matching web tour. Fixed persistence bug — tour was re-showing on every app launch because onChange binding wasn't triggering reliably. Fixed by writing UserDefaults directly in TourOverlay on completion/dismiss.
 
 ---
 

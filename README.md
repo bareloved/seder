@@ -8,9 +8,14 @@ Seder helps gig-based earners track income, invoices, and payments across client
 
 - Track income per gig/client with status (draft/sent/paid/overdue)
 - See paid vs unpaid at a glance with monthly KPIs
-- Import gigs from Google Calendar
+- Import gigs from Google Calendar (with auto-sync)
 - Analytics and reporting dashboards
+- Client directory with contact info, default rates, and analytics
 - Smart nudges for overdue invoices and follow-ups
+- Onboarding tour for first-time users (web + iOS)
+- In-app feedback system
+- Email verification and welcome emails
+- Push notifications for overdue reminders (iOS)
 
 ## Tech Stack
 
@@ -77,6 +82,7 @@ pnpm sync:check-ios  # Check iOS models against contract
 
 ## Documentation
 
+- [APP_OVERVIEW.md](apps/web/documents/APP_OVERVIEW.md) — High-level app overview (screens, features, domain model)
 - [CLAUDE.md](CLAUDE.md) — AI agent guidance and architecture reference
 - [docs/CONTRIB.md](docs/CONTRIB.md) — Development workflow and environment setup
 - [docs/RUNBOOK.md](docs/RUNBOOK.md) — Deployment, monitoring, and operations

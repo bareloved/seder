@@ -978,10 +978,7 @@ export default function IncomePageClient({
       {/* Onboarding Tour */}
       <OnboardingTour
         showOnboarding={showOnboarding}
-        onOpenAddDialog={openNewEntryDialog}
-        onOpenCalendarDialog={() => setIsCalendarDialogOpen(true)}
         isGoogleConnected={isGoogleConnected}
-        isDialogOpen={isDialogOpen}
       />
 
       </div>

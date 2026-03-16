@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { useState } from "react"
-import { Loader2, ChevronDown, Check, Circle } from "lucide-react"
+import { Loader2, ChevronDown, Check, Circle, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { PasswordResetDialog } from "./password-reset-dialog"
 
@@ -33,6 +33,7 @@ export function LoginForm({
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false)
 
   // Password validation for signup
@@ -130,14 +131,16 @@ export function LoginForm({
           callbackURL: "/income",
         })
         if (signInError) {
-          throw new Error(signInError.message)
+          throw new Error(signInError.status === 429 ? "RATE_LIMITED" : signInError.message)
         }
       }
       router.push("/income")
     } catch (err) {
       console.error("Authentication failed", err)
       const message = err instanceof Error ? err.message : ""
-      if (isSignUp) {
+      if (message.includes("RATE_LIMITED") || message.includes("Too many requests") || message.includes("429")) {
+        setError("יותר מדי ניסיונות. נסו שוב מאוחר יותר.")
+      } else if (isSignUp) {
         if (message.includes("already exists") || message.includes("User already exists")) {
           setError("כתובת האימייל כבר רשומה במערכת.")
         } else {
@@ -233,7 +236,7 @@ export function LoginForm({
         "grid transition-all duration-200 ease-out",
         showEmailForm ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
       )}>
-        <div className="overflow-hidden">
+        <div className="overflow-hidden px-1 -mx-1">
           <form onSubmit={handleSubmit} className="space-y-4 pb-1">
             {isSignUp && (
               <div className="space-y-2">
@@ -283,16 +286,25 @@ export function LoginForm({
                   </button>
                 )}
               </div>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 text-left"
-                dir="ltr"
-                placeholder="••••••••"
-              />
+              <div className="relative" dir="ltr">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 text-left pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-0 h-11 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {isSignUp && password.length > 0 && (
                 <div className="space-y-1 mt-2">
                   <PasswordCheck passed={passwordChecks.length} label="לפחות 8 תווים" />
