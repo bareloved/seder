@@ -68,18 +68,23 @@ struct MainTabView: View {
         }
         .task {
             await clientsVM.loadClients()
-            // Show tour for first-time users
-            if !hasSeenTour {
-                try? await Task.sleep(for: .seconds(1))
-                showTour = true
+        }
+        .onAppear {
+            // Show tour for first-time users (only once)
+            let seen = UserDefaults.standard.bool(forKey: "hasSeenTour")
+            if !seen && !showTour {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    showTour = true
+                }
             }
         }
         .overlay {
             if showTour {
                 TourOverlay(isShowing: $showTour)
-                    .onChange(of: showTour) { oldValue, newValue in
-                        if !newValue {
+                    .onChange(of: showTour) {
+                        if !showTour {
                             hasSeenTour = true
+                            UserDefaults.standard.set(true, forKey: "hasSeenTour")
                         }
                     }
             }

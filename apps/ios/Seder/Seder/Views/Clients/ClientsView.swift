@@ -41,8 +41,10 @@ struct ClientsView: View {
                     clientList
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(SederTheme.pageBg)
         }
+        .background(SederTheme.pageBg)
         .ignoresSafeArea(edges: .top)
         .environment(\.layoutDirection, .rightToLeft)
         .sheet(isPresented: $showFormSheet) {

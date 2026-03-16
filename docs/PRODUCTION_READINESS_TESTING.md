@@ -160,11 +160,13 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 **Files:** `components/onboarding/` (OnboardingTour, SpotlightOverlay, TourTooltip, HelpButton, types)
 
 **Test:**
-- [ ] New account → tour starts automatically after page load
-- [ ] Tour highlights: income list, add button, calendar import, navigation
-- [ ] Esc key skips tour
-- [ ] Help button (?) lets you restart tour
-- [ ] Tour doesn't show again after completion
+- [x] New account → tour starts automatically after page load
+- [x] Tour highlights: income list, add button, calendar import, navigation
+- [x] Esc key skips tour
+- [x] Help button (?) lets you restart tour
+- [x] Tour doesn't show again after completion
+
+**Notes (2026-03-16):** Refactored tour to be highlight-only (no actions triggered). Expanded from 4 to 7 steps: welcome, add button, calendar import, navigation bar, analytics, clients, and "יאללה תהנו!" completion. Added `data-tour` attributes to Navbar and MobileBottomNav.
 
 ---
 
@@ -173,11 +175,13 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 **Files:** `Views/Components/TourOverlay.swift`, `Views/MainTabView.swift`, `Views/Settings/SettingsView.swift`
 
 **Test:**
-- [ ] First launch on iOS → tour overlay appears after 1 second
-- [ ] 5 steps with next/previous navigation, Hebrew text
-- [ ] Step counter "X מתוך 5"
-- [ ] Tour doesn't show again after completion
+- [x] First launch on iOS → tour overlay appears after 1 second
+- [x] 5 steps with next/previous navigation, Hebrew text
+- [x] Step counter "X מתוך 5"
+- [x] Tour doesn't show again after completion
 - [ ] Settings → "הצג סיור מודרך שוב" resets and shows tour again
+
+**Notes (2026-03-16):** Redesigned tour: white card with green icons instead of gray blur material. Updated to 6 steps matching web tour. Fixed persistence bug — tour was re-showing on every app launch because onChange binding wasn't triggering reliably. Fixed by writing UserDefaults directly in TourOverlay on completion/dismiss.
 
 ---
 
