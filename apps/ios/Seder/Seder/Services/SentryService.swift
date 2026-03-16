@@ -1,26 +1,24 @@
 import Foundation
-// import Sentry  // Uncomment after adding Sentry SPM package in Xcode
+import Sentry
 
 /// Sentry crash reporting service.
-/// Setup: In Xcode, File > Add Package Dependencies > https://github.com/getsentry/sentry-cocoa
-/// Select the "Sentry" product. Then uncomment the `import Sentry` above and the method bodies below.
 enum SentryService {
     static func start() {
-        // SentrySDK.start { options in
-        //     options.dsn = "YOUR_SENTRY_DSN_HERE"
-        //     options.tracesSampleRate = 1.0
-        //     options.environment = "production"
-        //     options.enableCaptureFailedRequests = true
-        // }
+        SentrySDK.start { options in
+            options.dsn = "https://5f9b5779bd0f7dfdff1210779bcd69bd@o4511050703175680.ingest.de.sentry.io/4511053992034384"
+            options.tracesSampleRate = 1.0
+            options.environment = "production"
+            options.enableCaptureFailedRequests = true
+        }
     }
 
     static func setUser(id: String) {
-        // let user = Sentry.User()
-        // user.userId = id
-        // SentrySDK.setUser(user)
+        let user = Sentry.User()
+        user.userId = id
+        SentrySDK.setUser(user)
     }
 
     static func clearUser() {
-        // SentrySDK.setUser(nil)
+        SentrySDK.setUser(nil)
     }
 }

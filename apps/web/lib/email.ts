@@ -49,7 +49,7 @@ export function getPasswordResetEmailHtml(otp: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>איפוס סיסמה - סדר</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
+<body style="margin: 0; padding: 0; font-family: 'Arial Hebrew', 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
@@ -68,11 +68,11 @@ export function getPasswordResetEmailHtml(otp: string): string {
 
           <!-- Content -->
           <tr>
-            <td style="padding: 0 32px 24px;">
-              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center;">
-                קיבלנו בקשה לאיפוס הסיסמה שלכם.
+            <td style="padding: 0 32px 24px; direction: rtl;">
+              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center; direction: rtl; unicode-bidi: embed;">
+                &#x200F;קיבלנו בקשה לאיפוס הסיסמה שלכם.
                 <br>
-                הקוד שלכם הוא:
+                &#x200F;הקוד שלכם הוא:
               </p>
             </td>
           </tr>
@@ -81,7 +81,7 @@ export function getPasswordResetEmailHtml(otp: string): string {
           <tr>
             <td style="padding: 0 32px 24px;">
               <div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center;">
-                <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #0f172a; font-family: 'Monaco', 'Consolas', monospace;">
+                <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #0f172a; font-family: 'Monaco', 'Consolas', monospace; direction: ltr; unicode-bidi: embed;">
                   ${otp}
                 </span>
               </div>
@@ -90,19 +90,19 @@ export function getPasswordResetEmailHtml(otp: string): string {
 
           <!-- Expiry Notice -->
           <tr>
-            <td style="padding: 0 32px 24px;">
-              <p style="margin: 0; font-size: 13px; color: #94a3b8; text-align: center;">
-                הקוד יפוג תוך 5 דקות
+            <td style="padding: 0 32px 24px; direction: rtl;">
+              <p style="margin: 0; font-size: 13px; color: #94a3b8; text-align: center; direction: rtl; unicode-bidi: embed;">
+                &#x200F;הקוד יפוג תוך 5 דקות
               </p>
             </td>
           </tr>
 
           <!-- Warning -->
           <tr>
-            <td style="padding: 0 32px 32px;">
+            <td style="padding: 0 32px 32px; direction: rtl;">
               <div style="background-color: #fef9c3; border: 1px solid #fde047; border-radius: 8px; padding: 12px 16px;">
-                <p style="margin: 0; font-size: 13px; color: #713f12; text-align: center;">
-                  אם לא ביקשתם לאפס את הסיסמה, התעלמו מאימייל זה.
+                <p style="margin: 0; font-size: 13px; color: #713f12; text-align: center; direction: rtl; unicode-bidi: embed;">
+                  &#x200F;אם לא ביקשתם לאפס את הסיסמה, התעלמו מאימייל זה.
                 </p>
               </div>
             </td>
@@ -110,9 +110,9 @@ export function getPasswordResetEmailHtml(otp: string): string {
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                © ${new Date().getFullYear()} סדר. כל הזכויות שמורות.
+            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center; direction: rtl;">
+              <p style="margin: 0; font-size: 12px; color: #94a3b8; direction: rtl; unicode-bidi: embed;">
+                &#x200F;סדר. כל הזכויות שמורות. © ${new Date().getFullYear()}
               </p>
             </td>
           </tr>
@@ -134,7 +134,7 @@ export function getVerificationEmailHtml(url: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>אימות כתובת אימייל - סדר</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
+<body style="margin: 0; padding: 0; font-family: 'Arial Hebrew', 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
@@ -153,11 +153,11 @@ export function getVerificationEmailHtml(url: string): string {
 
           <!-- Content -->
           <tr>
-            <td style="padding: 0 32px 24px;">
-              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center;">
-                תודה שנרשמתם לסדר!
+            <td style="padding: 0 32px 24px; direction: rtl;">
+              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center; direction: rtl; unicode-bidi: embed;">
+                &#x200F;תודה שנרשמתם לסדר!
                 <br>
-                לחצו על הכפתור למטה כדי לאמת את כתובת האימייל שלכם.
+                &#x200F;לחצו על הכפתור למטה כדי לאמת את כתובת האימייל שלכם.
               </p>
             </td>
           </tr>
@@ -173,21 +173,21 @@ export function getVerificationEmailHtml(url: string): string {
 
           <!-- Fallback link -->
           <tr>
-            <td style="padding: 0 32px 24px;">
-              <p style="margin: 0; font-size: 13px; color: #94a3b8; text-align: center; word-break: break-all;">
-                אם הכפתור לא עובד, העתיקו את הקישור הבא לדפדפן:
+            <td style="padding: 0 32px 24px; direction: rtl;">
+              <p style="margin: 0; font-size: 13px; color: #94a3b8; text-align: center; word-break: break-all; direction: rtl; unicode-bidi: embed;">
+                &#x200F;אם הכפתור לא עובד, העתיקו את הקישור הבא לדפדפן:
                 <br>
-                <a href="${url}" style="color: #16a34a;">${url}</a>
+                <a href="${url}" style="color: #16a34a; direction: ltr; unicode-bidi: embed;">${url}</a>
               </p>
             </td>
           </tr>
 
           <!-- Warning -->
           <tr>
-            <td style="padding: 0 32px 32px;">
+            <td style="padding: 0 32px 32px; direction: rtl;">
               <div style="background-color: #fef9c3; border: 1px solid #fde047; border-radius: 8px; padding: 12px 16px;">
-                <p style="margin: 0; font-size: 13px; color: #713f12; text-align: center;">
-                  אם לא נרשמתם לסדר, התעלמו מאימייל זה.
+                <p style="margin: 0; font-size: 13px; color: #713f12; text-align: center; direction: rtl; unicode-bidi: embed;">
+                  &#x200F;אם לא נרשמתם לסדר, התעלמו מאימייל זה.
                 </p>
               </div>
             </td>
@@ -195,9 +195,9 @@ export function getVerificationEmailHtml(url: string): string {
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                © ${new Date().getFullYear()} סדר. כל הזכויות שמורות.
+            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center; direction: rtl;">
+              <p style="margin: 0; font-size: 12px; color: #94a3b8; direction: rtl; unicode-bidi: embed;">
+                &#x200F;סדר. כל הזכויות שמורות. © ${new Date().getFullYear()}
               </p>
             </td>
           </tr>
@@ -227,7 +227,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
   const greeting = name ? `שלום ${name},` : "שלום,";
   await sendEmail({
     to,
-    subject: "!ברוכים הבאים לסדר",
+    subject: "ברוכים הבאים לסדר!",
     html: `
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
@@ -236,7 +236,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ברוכים הבאים לסדר</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
+<body style="margin: 0; padding: 0; font-family: 'Arial Hebrew', 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f4f4f5; direction: rtl;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
@@ -246,20 +246,88 @@ export async function sendWelcomeEmail(to: string, name?: string) {
               <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">
                 סדר
               </h1>
-              <p style="margin: 8px 0 0; font-size: 14px; color: #64748b;">
-                ברוכים הבאים!
+              <p style="margin: 8px 0 0; font-size: 14px; color: #64748b; direction: rtl; unicode-bidi: embed;">
+                &#x200F;ברוכים הבאים!
               </p>
             </td>
           </tr>
           <tr>
-            <td style="padding: 0 32px 24px;">
-              <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.6; text-align: center;">
-                ${greeting}
+            <td style="padding: 0 32px 16px; direction: rtl;">
+              <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6; text-align: center; direction: rtl; unicode-bidi: embed;">
+                &#x200F;${greeting}
                 <br>
-                האפליקציה שלכם מוכנה. אפשר להתחיל לעקוב אחרי ההכנסות.
+                &#x200F;החשבון שלך אומת!
+                <br>
+                &#x200F;הנה כמה דברים שאפשר לעשות עם האפליקציה:
               </p>
             </td>
           </tr>
+
+          <!-- Features -->
+          <tr>
+            <td style="padding: 0 32px 24px; direction: rtl;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; direction: rtl;">
+                    <table role="presentation" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 32px; font-size: 18px; vertical-align: top; padding-top: 2px;">📊</td>
+                        <td style="direction: rtl; unicode-bidi: embed;">
+                          <span style="font-size: 14px; font-weight: 600; color: #0f172a;">&#x200F;מעקב הכנסות</span>
+                          <br>
+                          <span style="font-size: 13px; color: #64748b;">&#x200F;ניהול חשבוניות ותשלומים במקום אחד</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; direction: rtl;">
+                    <table role="presentation" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 32px; font-size: 18px; vertical-align: top; padding-top: 2px;">📅</td>
+                        <td style="direction: rtl; unicode-bidi: embed;">
+                          <span style="font-size: 14px; font-weight: 600; color: #0f172a;">&#x200F;ייבוא מיומן Google</span>
+                          <br>
+                          <span style="font-size: 13px; color: #64748b;">&#x200F;הפכו אירועים להכנסות באופן אוטומטי</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; direction: rtl;">
+                    <table role="presentation" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 32px; font-size: 18px; vertical-align: top; padding-top: 2px;">📈</td>
+                        <td style="direction: rtl; unicode-bidi: embed;">
+                          <span style="font-size: 14px; font-weight: 600; color: #0f172a;">&#x200F;דוחות וניתוחים</span>
+                          <br>
+                          <span style="font-size: 13px; color: #64748b;">&#x200F;תמונה ברורה של ההכנסות שלכם</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; direction: rtl;">
+                    <table role="presentation" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 32px; font-size: 18px; vertical-align: top; padding-top: 2px;">🔔</td>
+                        <td style="direction: rtl; unicode-bidi: embed;">
+                          <span style="font-size: 14px; font-weight: 600; color: #0f172a;">&#x200F;תזכורות חכמות</span>
+                          <br>
+                          <span style="font-size: 13px; color: #64748b;">&#x200F;לא לשכוח חשבוניות ותשלומים</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
           <tr>
             <td style="padding: 0 32px 24px; text-align: center;">
               <a href="https://sedder.app" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px;">
@@ -268,9 +336,9 @@ export async function sendWelcomeEmail(to: string, name?: string) {
             </td>
           </tr>
           <tr>
-            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                © ${new Date().getFullYear()} סדר. כל הזכויות שמורות.
+            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center; direction: rtl;">
+              <p style="margin: 0; font-size: 12px; color: #94a3b8; direction: rtl; unicode-bidi: embed;">
+                &#x200F;סדר. כל הזכויות שמורות. © ${new Date().getFullYear()}
               </p>
             </td>
           </tr>
@@ -281,7 +349,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
 </body>
 </html>
     `.trim(),
-    text: `${greeting} ברוכים הבאים לסדר! האפליקציה שלכם מוכנה. כניסה: https://sedder.app`,
+    text: `${greeting}\n\nברוכים הבאים לסדר! החשבון שלך אומת!\nהנה כמה דברים שאפשר לעשות עם האפליקציה:\n\n📊 מעקב הכנסות — ניהול חשבוניות ותשלומים במקום אחד\n📅 ייבוא מיומן Google — הפכו אירועים להכנסות באופן אוטומטי\n📈 דוחות וניתוחים — תמונה ברורה של ההכנסות שלכם\n🔔 תזכורות חכמות — לא לשכוח חשבוניות ותשלומים\n\nכניסה: https://sedder.app`,
   });
 }
 
