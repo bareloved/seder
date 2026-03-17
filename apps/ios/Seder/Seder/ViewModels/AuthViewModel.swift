@@ -8,6 +8,7 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = true
     @Published var user: User?
     @Published var errorMessage: String?
+    @Published var avatarImage: UIImage?
 
     private let api = APIClient.shared
 
@@ -35,6 +36,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
+            loadAvatarImage()
         } catch {
             // Token might be expired — clear auth state
             api.token = nil
@@ -65,6 +67,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
+            loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -91,6 +94,7 @@ class AuthViewModel: ObservableObject {
             api.token = token
             user = response.user
             isAuthenticated = true
+            loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -101,7 +105,21 @@ class AuthViewModel: ObservableObject {
     func signOut() {
         api.token = nil
         user = nil
+        avatarImage = nil
         isAuthenticated = false
         SentryService.clearUser()
+    }
+
+    private func loadAvatarImage() {
+        guard let urlString = user?.image, let url = URL(string: urlString) else {
+            avatarImage = nil
+            return
+        }
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let data, let uiImage = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                self?.avatarImage = uiImage
+            }
+        }.resume()
     }
 }

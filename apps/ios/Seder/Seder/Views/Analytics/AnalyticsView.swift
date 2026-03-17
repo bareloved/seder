@@ -19,7 +19,8 @@ struct AnalyticsView: View {
                 title: "דוחות",
                 onSettingsTap: { showSettings = true },
                 onFeedbackTap: { showFeedback = true },
-                avatarURL: auth.user?.image
+                avatarURL: auth.user?.image,
+                avatarImage: auth.avatarImage
             )
 
             if viewModel.isLoading {

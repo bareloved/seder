@@ -1,10 +1,28 @@
 import SwiftUI
 
+// Separate view that subscribes to auth directly — re-renders independently of parent
+private struct NavBarAvatar: View {
+    @EnvironmentObject var auth: AuthViewModel
+
+    var body: some View {
+        if let uiImage = auth.avatarImage {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 34, height: 34)
+                .clipShape(Circle())
+        } else {
+            Image(systemName: "person.crop.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(.white.opacity(0.9))
+        }
+    }
+}
+
 struct GreenNavBar<LeadingContent: View>: View {
     let title: String
     var onSettingsTap: () -> Void
     var onFeedbackTap: (() -> Void)?
-    var avatarURL: String?
     @ViewBuilder var leadingContent: () -> LeadingContent
 
     init(
@@ -12,12 +30,12 @@ struct GreenNavBar<LeadingContent: View>: View {
         onSettingsTap: @escaping () -> Void,
         onFeedbackTap: (() -> Void)? = nil,
         avatarURL: String? = nil,
+        avatarImage: UIImage? = nil,
         @ViewBuilder leadingContent: @escaping () -> LeadingContent = { EmptyView() }
     ) {
         self.title = title
         self.onSettingsTap = onSettingsTap
         self.onFeedbackTap = onFeedbackTap
-        self.avatarURL = avatarURL
         self.leadingContent = leadingContent
     }
 
@@ -45,23 +63,7 @@ struct GreenNavBar<LeadingContent: View>: View {
                 }
 
                 Button(action: onSettingsTap) {
-                    if let urlString = avatarURL, let url = URL(string: urlString) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
-                            Image(systemName: "person.crop.circle.fill")
-                                .font(.system(size: 22))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }
-                        .frame(width: 34, height: 34)
-                        .clipShape(Circle())
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
+                    NavBarAvatar()
                 }
                 }
             }

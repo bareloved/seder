@@ -114,7 +114,8 @@ struct IncomeListView: View {
                 title: "הכנסות",
                 onSettingsTap: { showSettings = true },
                 onFeedbackTap: { showFeedback = true },
-                avatarURL: auth.user?.image
+                avatarURL: auth.user?.image,
+                avatarImage: auth.avatarImage
             ) {
                 Button(action: { showAddSheet = true }) {
                     HStack(spacing: 4) {

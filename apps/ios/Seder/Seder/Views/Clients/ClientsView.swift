@@ -15,7 +15,8 @@ struct ClientsView: View {
                 title: "לקוחות",
                 onSettingsTap: { showSettings = true },
                 onFeedbackTap: { showFeedback = true },
-                avatarURL: auth.user?.image
+                avatarURL: auth.user?.image,
+                avatarImage: auth.avatarImage
             ) {
                 Button {
                     editingClient = nil

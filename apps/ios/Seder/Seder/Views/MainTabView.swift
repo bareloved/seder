@@ -36,7 +36,8 @@ struct MainTabView: View {
                     GreenNavBar(
                         title: "הוצאות",
                         onSettingsTap: { showSettings = true },
-                        avatarURL: auth.user?.image
+                        avatarURL: auth.user?.image,
+                        avatarImage: auth.avatarImage
                     )
                     Spacer()
                     VStack(spacing: 12) {
