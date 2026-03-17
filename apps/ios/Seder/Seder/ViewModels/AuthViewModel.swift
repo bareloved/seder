@@ -36,7 +36,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
-            loadAvatarImage()
+            await loadAvatarImage()
         } catch {
             // Token might be expired — clear auth state
             api.token = nil
@@ -67,7 +67,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
-            loadAvatarImage()
+            await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -94,7 +94,7 @@ class AuthViewModel: ObservableObject {
             api.token = token
             user = response.user
             isAuthenticated = true
-            loadAvatarImage()
+            await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -110,16 +110,16 @@ class AuthViewModel: ObservableObject {
         SentryService.clearUser()
     }
 
-    private func loadAvatarImage() {
+    private func loadAvatarImage() async {
         guard let urlString = user?.image, let url = URL(string: urlString) else {
             avatarImage = nil
             return
         }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data, let uiImage = UIImage(data: data) else { return }
-            DispatchQueue.main.async {
-                self?.avatarImage = uiImage
-            }
-        }.resume()
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            avatarImage = UIImage(data: data)
+        } catch {
+            avatarImage = nil
+        }
     }
 }

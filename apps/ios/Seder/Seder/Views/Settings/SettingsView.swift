@@ -1,5 +1,4 @@
 import SwiftUI
-import Sentry
 
 struct SettingsView: View {
     @EnvironmentObject var auth: AuthViewModel
@@ -30,8 +29,8 @@ struct SettingsView: View {
                     preferencesSection
                     notificationsSection
                     calendarSection
-                    dataSection
                     managementSection
+                    dataSection
                     dangerSection
                     signOutButton
                 }
@@ -133,7 +132,7 @@ struct SettingsView: View {
                             .font(.body)
                             .foregroundStyle(SederTheme.textSecondary)
                         Text("מראה")
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(17))
                             .foregroundStyle(SederTheme.textPrimary)
                     }
                     Spacer()
@@ -190,7 +189,7 @@ struct SettingsView: View {
                             .font(.body)
                             .foregroundStyle(SederTheme.textSecondary)
                         Text("הצג סיור מודרך שוב")
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(17))
                             .foregroundStyle(SederTheme.textPrimary)
                         Spacer()
                         Image(systemName: "chevron.left")
@@ -219,7 +218,7 @@ struct SettingsView: View {
                         .fill(viewModel.calendarConnected ? Color.green : Color.red)
                         .frame(width: 8, height: 8)
                     Text(viewModel.calendarConnected ? "מחובר" : "לא מחובר")
-                        .font(SederTheme.ploni(16))
+                        .font(SederTheme.ploni(17))
                         .foregroundStyle(SederTheme.textPrimary)
                 }
 
@@ -262,24 +261,6 @@ struct SettingsView: View {
 
     private var dangerSection: some View {
         SettingsSection(title: "אזור מסוכן") {
-            #if DEBUG
-            Button {
-                SentrySDK.capture(error: NSError(domain: "test", code: 0, userInfo: [NSLocalizedDescriptionKey: "Sentry test error from iOS"]))
-            } label: {
-                HStack {
-                    HStack(spacing: 8) {
-                        Image(systemName: "ant")
-                        Text("Test Sentry")
-                            .font(SederTheme.ploni(16))
-                    }
-                    .foregroundStyle(.orange)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            }
-            Divider().padding(.horizontal, 16)
-            #endif
             Button {
                 showDeleteConfirm = true
             } label: {
@@ -287,7 +268,7 @@ struct SettingsView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "trash")
                         Text("מחיקת חשבון")
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(17))
                     }
                     .foregroundStyle(.red)
 
@@ -307,7 +288,7 @@ struct SettingsView: View {
                 Spacer()
                 Label {
                     Text("התנתקות")
-                        .font(SederTheme.ploni(16, weight: .medium))
+                        .font(SederTheme.ploni(17, weight: .medium))
                 } icon: {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                 }
@@ -334,14 +315,14 @@ struct SettingsView: View {
                         .scaledToFill()
                 } placeholder: {
                     Text(String(user.displayName.prefix(1)))
-                        .font(SederTheme.ploni(24, weight: .semibold))
+                        .font(SederTheme.ploni(25, weight: .semibold))
                         .foregroundStyle(SederTheme.brandGreen)
                 }
                 .frame(width: 56, height: 56)
                 .clipShape(Circle())
             } else {
                 Text(String(user.displayName.prefix(1)))
-                    .font(SederTheme.ploni(24, weight: .semibold))
+                    .font(SederTheme.ploni(25, weight: .semibold))
                     .foregroundStyle(SederTheme.brandGreen)
                     .frame(width: 56, height: 56)
                     .background(SederTheme.brandGreen.opacity(0.1))
@@ -349,10 +330,10 @@ struct SettingsView: View {
             }
 
             Text(user.displayName)
-                .font(SederTheme.ploni(18, weight: .semibold))
+                .font(SederTheme.ploni(19, weight: .semibold))
                 .foregroundStyle(SederTheme.textPrimary)
             Text(user.email)
-                .font(SederTheme.ploni(14))
+                .font(SederTheme.ploni(15))
                 .foregroundStyle(SederTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -376,7 +357,7 @@ struct SettingsView: View {
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
                 Text(label)
-                    .font(SederTheme.ploni(16))
+                    .font(SederTheme.ploni(17))
                     .foregroundStyle(SederTheme.textPrimary)
             }
 
@@ -398,7 +379,7 @@ struct SettingsView: View {
             } label: {
                 HStack(spacing: 4) {
                     Text(options.first(where: { $0.0 == selection.wrappedValue })?.1 ?? "")
-                        .font(SederTheme.ploni(16))
+                        .font(SederTheme.ploni(17))
                         .foregroundStyle(SederTheme.textSecondary)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 10))
@@ -420,7 +401,7 @@ struct SettingsView: View {
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
                 Text("שפה")
-                    .font(SederTheme.ploni(16))
+                    .font(SederTheme.ploni(17))
                     .foregroundStyle(SederTheme.textPrimary)
             }
 
@@ -450,7 +431,7 @@ struct SettingsView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(viewModel.language == "he" ? "עברית" : "English")
-                            .font(SederTheme.ploni(16))
+                            .font(SederTheme.ploni(17))
                             .foregroundStyle(SederTheme.textSecondary)
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.system(size: 10))
@@ -460,7 +441,7 @@ struct SettingsView: View {
 
                 if viewModel.language == "en" {
                     Text("בקרוב")
-                        .font(SederTheme.ploni(12, weight: .medium))
+                        .font(SederTheme.ploni(13, weight: .medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
@@ -481,7 +462,7 @@ struct SettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.caption.weight(.medium))
+                .font(SederTheme.ploni(13, weight: .medium))
                 .foregroundStyle(SederTheme.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -540,14 +521,14 @@ struct NotificationsSettingsSection: View {
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
                 Text(label)
-                    .font(SederTheme.ploni(16))
+                    .font(SederTheme.ploni(17))
                     .foregroundStyle(SederTheme.textPrimary)
             }
             Spacer()
             Stepper("\(value.wrappedValue)", value: value, in: range)
                 .labelsHidden()
             Text("\(value.wrappedValue)")
-                .font(SederTheme.ploni(16))
+                .font(SederTheme.ploni(17))
                 .foregroundStyle(SederTheme.textSecondary)
                 .frame(width: 24)
                 .environment(\.layoutDirection, .leftToRight)
@@ -582,7 +563,7 @@ struct NotificationsSettingsSection: View {
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
                 Text(label)
-                    .font(SederTheme.ploni(16))
+                    .font(SederTheme.ploni(17))
                     .foregroundStyle(SederTheme.textPrimary)
             }
             Spacer()
@@ -612,7 +593,7 @@ struct SettingsRow: View {
                         .font(.body)
                         .foregroundStyle(SederTheme.textSecondary)
                     Text(label)
-                        .font(.subheadline)
+                        .font(SederTheme.ploni(16))
                         .foregroundStyle(SederTheme.textPrimary)
                 }
                 Spacer()
