@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db/client";
+import { siteConfig } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const MAX_BACKUPS = 3;
+const MAX_BACKUPS = 5;
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -14,6 +17,19 @@ export async function GET(req: NextRequest) {
 
   if (!projectId || !apiKey) {
     return NextResponse.json({ success: false, error: "Missing Neon config" }, { status: 500 });
+  }
+
+  // Check if auto-backup is enabled (manual triggers bypass this check)
+  const isManual = req.headers.get("x-manual-trigger") === "true";
+  if (!isManual) {
+    const [config] = await db
+      .select({ value: siteConfig.value })
+      .from(siteConfig)
+      .where(eq(siteConfig.key, "auto_backup_enabled"));
+
+    if (!config || config.value !== "true") {
+      return NextResponse.json({ success: true, skipped: true, reason: "Auto-backup disabled" });
+    }
   }
 
   const neonHeaders = {

@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
-import { feedback, user } from "@/db/schema";
+import { feedback, user, siteConfig } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 
@@ -63,6 +63,7 @@ export async function triggerBackup() {
   const res = await fetch(`${baseUrl}/api/cron/backup`, {
     headers: {
       Authorization: `Bearer ${process.env.CRON_SECRET || ""}`,
+      "x-manual-trigger": "true",
     },
   });
 
@@ -71,6 +72,26 @@ export async function triggerBackup() {
   }
 
   return await res.json();
+}
+
+export async function getAutoBackupEnabled(): Promise<boolean> {
+  await requireAdmin();
+  const [config] = await db
+    .select({ value: siteConfig.value })
+    .from(siteConfig)
+    .where(eq(siteConfig.key, "auto_backup_enabled"));
+  return config?.value === "true";
+}
+
+export async function setAutoBackupEnabled(enabled: boolean) {
+  await requireAdmin();
+  await db
+    .insert(siteConfig)
+    .values({ key: "auto_backup_enabled", value: String(enabled), updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: siteConfig.key,
+      set: { value: String(enabled), updatedAt: new Date() },
+    });
 }
 
 

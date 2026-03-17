@@ -246,3 +246,10 @@ export const feedback = pgTable("feedback", {
 
 export type Feedback = typeof feedback.$inferSelect;
 export type NewFeedback = typeof feedback.$inferInsert;
+
+// Site-wide config (admin settings, feature flags)
+export const siteConfig = pgTable("site_config", {
+  key: varchar("key", { length: 50 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

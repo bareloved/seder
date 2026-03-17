@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth } from "./actions";
+import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth, getAutoBackupEnabled, setAutoBackupEnabled } from "./actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -109,11 +109,13 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
   const [backupResult, setBackupResult] = React.useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
   const [sentryHealth, setSentryHealth] = React.useState<{ errorCount24h: number; status: string } | null>(null);
+  const [autoBackup, setAutoBackup] = React.useState<boolean | null>(null);
 
   React.useEffect(() => { setMounted(true); }, []);
 
   React.useEffect(() => {
     fetchSentryHealth().then(setSentryHealth).catch(() => setSentryHealth(null));
+    getAutoBackupEnabled().then(setAutoBackup).catch(() => setAutoBackup(false));
   }, []);
 
   const filteredFeedback = statusFilter === "all"
@@ -362,14 +364,37 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
             {/* DB Backup */}
             <div>
               <h2 className="text-sm font-medium text-slate-500 mb-3">גיבוי מסד נתונים</h2>
-              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4">
+              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 space-y-4">
+                {/* Auto backup toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Database className="w-5 h-5 text-slate-400" />
                     <div>
-                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Neon DB Backup</p>
-                      <p className="text-xs text-slate-400">יוצר branch חדש ב-Neon כגיבוי</p>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">גיבוי יומי אוטומטי</p>
+                      <p className="text-xs text-slate-400">כל יום בשעה 03:00 UTC · שומר 5 גיבויים אחרונים</p>
                     </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const newVal = !autoBackup;
+                      setAutoBackup(newVal);
+                      await setAutoBackupEnabled(newVal);
+                    }}
+                    disabled={autoBackup === null}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      autoBackup ? "bg-green-500" : "bg-slate-300 dark:bg-slate-600"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      autoBackup ? "start-[1.375rem]" : "start-0.5"
+                    }`} />
+                  </button>
+                </div>
+
+                {/* Manual backup */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-border">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">גיבוי ידני</p>
                   </div>
                   <div className="flex items-center gap-3">
                     {backupResult && (
