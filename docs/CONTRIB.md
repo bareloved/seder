@@ -94,7 +94,7 @@ Built and run via Xcode. No pnpm scripts — open `Seder.xcodeproj` and use Xcod
 | `GEMINI_API_KEY` | No | Gemini API key for AI features |
 | `RESEND_API_KEY` | No | Resend API key for transactional emails |
 | `EMAIL_FROM` | No | Sender email address |
-| `FEEDBACK_EMAIL` | No | Email address where user feedback is sent |
+| `FEEDBACK_EMAIL` | No | Email address for admin feedback reply sender (feedback stored in DB) |
 | `CRON_SECRET` | No | Secret for cron endpoints (push notifications, DB backup) |
 | `NEXT_PUBLIC_SENTRY_DSN` | No | Sentry DSN for error tracking |
 | `SENTRY_ORG` | No | Sentry organization slug |
@@ -121,9 +121,16 @@ The web app exposes a REST API at `/api/v1/` consumed by the iOS app:
 | Settings | `/api/v1/settings`, `account`, `export` | User settings and data export |
 | Devices | `/api/v1/devices`, `[token]` | Push notification device tokens |
 | Nudges | `/api/v1/nudges` | Smart nudge suggestions |
-| Feedback | `/api/v1/feedback` | In-app user feedback |
+| Feedback | `/api/v1/feedback` | In-app user feedback (saves to `feedback` table) |
 
 All v1 endpoints require Bearer token authentication via Better Auth session tokens.
+
+### Admin Dashboard
+
+The `/admin` page is restricted to the hardcoded admin email. It uses server actions (not API routes) for:
+- Feedback management: set status, reply (sends email), delete
+- Backup: manual trigger, auto-backup toggle (reads/writes `site_config` table)
+- Sentry health: fetches unresolved issue count from Sentry API
 
 ### Non-v1 API Routes
 

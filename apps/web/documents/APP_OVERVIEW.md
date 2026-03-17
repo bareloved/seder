@@ -36,6 +36,8 @@ User Settings | User preferences and onboarding state | userId, language, timezo
 Session / Account | Auth/session + OAuth tokens for Google Calendar | session: token, expiresAt, userId; account: providerId, accessToken/refreshToken, userId, scope
 Verification | OTP tokens for password reset | id, identifier, value, expiresAt
 Device | Push notification device tokens | id, token, userId, platform
+Feedback | User feedback entries for admin review | id, message, category (general/bug/feature), platform (web/ios), status (unread/read/in_progress/done/replied), adminReply, repliedAt, userId
+Site Config | Admin key-value settings | key, value, updatedAt (e.g., auto_backup_enabled)
 Status & VAT Types (UI) | UI enums that map to DB fields | DisplayStatus, VatType in `app/income/types.ts`
 KPI / Aggregates | Derived metrics per month or filtered view | totalGross, totalPaid/unpaid, outstanding, readyToInvoice, previousMonthPaid, trend
 
@@ -53,6 +55,7 @@ Route / Screen | Purpose | Notes
 /analytics | Charts and reporting | KPIs, income over time, income by category, needs attention table
 /clients | Client directory | Client management with contact info, defaults, analytics, and merge tool
 /settings | User settings | Tabs: account, preferences, calendar, data, danger zone; feedback button
+/admin | Admin dashboard | Owner-only; overview KPIs (total users, new this week, active this month, unread feedback), feedback management (status, reply, delete), user list with detail sheet, Sentry health indicator, auto-backup toggle, manual backup trigger, quick links to external services
 /api/auth/[...all] | Auth handler | Better Auth Next.js route with rate limiting
 
 ### iOS App
@@ -102,14 +105,14 @@ Settings | User settings | Account, notifications, preferences, feedback, guided
 - Auto-sync cron job every 6 hours.
 
 **User Experience**
-- Onboarding tour: spotlight-based guided tour for first-time users with help button to restart (web). Overlay-based guided tour on iOS.
+- Onboarding tour: web has 7 steps (highlight-only spotlight/modal, no user actions required); iOS has 6 steps (card-based overlay). Help button to restart on both platforms.
 - Landing page: marketing page for guests with hero, features, how it works, testimonials, and CTA.
 - Split-screen sign-in page with brand panel (desktop).
 - Password reset via OTP email flow.
 - Email verification with amber banner for unverified users.
 - Welcome email sent after verification (email) or sign-up (Google OAuth).
 - Mobile support: responsive design, touch tooltips, floating action button, mobile bottom navigation.
-- In-app feedback: feedback modal (web) and feedback sheet (iOS) that emails the team.
+- In-app feedback: feedback modal (web) and feedback sheet (iOS, accessible from GreenNavBar on all tabs) that stores to DB. Admin reviews, replies, and manages feedback from /admin dashboard.
 
 **Settings & Account**
 - Comprehensive settings page with tabs: account, preferences, calendar, data, danger zone.
@@ -122,7 +125,7 @@ Settings | User settings | Account, notifications, preferences, feedback, guided
 - Sentry error tracking (web + iOS) with userId tagging.
 - Vercel Analytics for page view tracking.
 - Rate limiting on auth endpoints (10 req/60s per IP via Upstash).
-- Automated daily database backups via Neon branch API.
+- Automated daily database backups via Neon branch API with rotation (max 5 branches) and admin toggle (auto_backup_enabled in site_config).
 - iOS privacy manifest for App Store compliance.
 - Hebrew error pages (404, error boundary, global error).
 
@@ -146,7 +149,7 @@ Settings | User settings | Account, notifications, preferences, feedback, guided
   - Pages fetch data on the server, then hydrate client components for optimistic updates and filtering.
   - Calendar import uses stored Google tokens to fetch events and insert draft entries (conflict-checked on calendarEventId per user).
   - iOS app consumes REST API via URLSession with Bearer token auth stored in Keychain.
-- Key app directories: `income/`, `analytics/`, `categories/`, `clients/`, `settings/`, `sign-in/`, `(marketing)/`.
+- Key app directories: `income/`, `analytics/`, `categories/`, `clients/`, `settings/`, `admin/`, `sign-in/`, `(marketing)/`.
 
 --------------------------------------------------
 7. Future Direction / Out of Scope (for now)

@@ -13,7 +13,8 @@ Seder helps gig-based earners track income, invoices, and payments across client
 - Client directory with contact info, default rates, and analytics
 - Smart nudges for overdue invoices and follow-ups
 - Onboarding tour for first-time users (web + iOS)
-- In-app feedback system
+- In-app feedback system (stored in DB, managed via admin dashboard)
+- Admin dashboard with KPIs, feedback management, user details, Sentry health, and backup controls
 - Email verification and welcome emails
 - Push notifications for overdue reminders (iOS)
 

@@ -80,11 +80,13 @@ Neon PostgreSQL (RLS enabled)
 
 | Endpoint | Schedule | Description |
 |----------|----------|-------------|
-| `/api/cron/backup` | Daily 3:00 UTC | Create Neon backup branch |
+| `/api/cron/backup` | Daily 3:00 UTC | Create Neon backup branch (with rotation and auto-backup toggle) |
 | `/api/cron/overdue-notifications` | Daily | Send push notifications for overdue invoices |
 | `/api/calendar/auto-sync` | Every 6 hours | Sync Google Calendar events for all users |
 
 All cron endpoints require `CRON_SECRET` Bearer token auth (configured in Vercel cron settings).
+
+The backup cron checks the `auto_backup_enabled` flag in the `site_config` table before running. Manual triggers from the admin dashboard bypass this check (via `x-manual-trigger: true` header).
 
 ### Push Notifications
 
@@ -133,10 +135,11 @@ Tokens are stored in Keychain via `KeychainService`. To clear:
 - Verify `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are correct
 - Only auth paths are limited -- other API routes should pass through
 
-### Emails not sending (verification, welcome, feedback)
+### Emails not sending (verification, welcome, feedback reply)
 - Verify `RESEND_API_KEY` and `EMAIL_FROM` are set
 - Check Resend dashboard for delivery status and bounces
-- `FEEDBACK_EMAIL` controls where user feedback is sent
+- Feedback is stored in the `feedback` DB table; admin replies from `/admin` send an email to the user
+- Email templates use RTL layout with Arial Hebrew font for Hebrew content
 - Email logic is in `lib/email.ts`
 
 ### Onboarding tour not showing
@@ -164,7 +167,9 @@ vercel rollback
 ### Automated Backups
 - Daily backup branch created at 3:00 UTC via Vercel cron (`/api/cron/backup`)
 - Backup branches named `backup-YYYY-MM-DD`
-- Retention: manually delete branches older than 7 days (or automate cleanup)
+- **Rotation**: Automatically keeps a maximum of 5 backup branches; oldest are deleted before creating a new one
+- **Auto-backup toggle**: Controlled by `auto_backup_enabled` key in the `site_config` DB table. Toggle from the admin dashboard (`/admin`). When disabled, the cron job skips without error.
+- **Manual backup**: Can be triggered from the admin dashboard at any time (bypasses the auto-backup toggle)
 
 ### Restore Procedure
 1. Go to Neon console > Project > Branches
@@ -177,6 +182,18 @@ vercel rollback
 ### Manual Backup / Restore
 
 Manual backup and restore are done through the Neon console or API. There are no local scripts for this -- use the Neon dashboard to create branches manually or restore from existing backup branches.
+
+## Admin Dashboard
+
+- **URL**: `/admin` (web only, not an API -- uses server components and server actions)
+- **Access**: Restricted to the hardcoded admin email (`bareloved@gmail.com`) checked on the server side
+- **Features**:
+  - Overview KPIs: total users, new users this week, active users this month, unread feedback count
+  - Feedback management: view all feedback with category/platform filters, set status (unread/read/in_progress/done/replied), reply (sends email to user), delete
+  - User list: all users with entry counts, expandable detail sheet (last active, Google connected, onboarding status, category/client counts, mobile registered)
+  - Sentry health indicator: fetches unresolved issues from Sentry API (24h window), shows green/amber/red status
+  - Backup controls: manual backup trigger, auto-backup enable/disable toggle (persisted in `site_config` table)
+  - Quick links: Sentry, Vercel Analytics, Neon Console, Upstash, Google Cloud
 
 ## Security
 

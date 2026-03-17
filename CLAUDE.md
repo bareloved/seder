@@ -85,8 +85,8 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - **Error Tracking**: Sentry (`@sentry/nextjs` for web, `sentry-cocoa` for iOS)
 - **Analytics**: Vercel Analytics
 - **Rate Limiting**: Upstash Redis (sliding window on auth endpoints)
-- **DB Backups**: Automated daily via Neon branch API (cron)
-- **Email**: Resend (verification, password reset, welcome, feedback)
+- **DB Backups**: Automated daily via Neon branch API (cron), with rotation (max 5 branches) and admin toggle
+- **Email**: Resend (verification, password reset, welcome, feedback reply) with RTL/Arial Hebrew templates
 
 ## What Goes Where
 
@@ -123,12 +123,16 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
   - `status-mapper.ts` - Re-exports status mapping from `@seder/shared`
   - `components/` - Feature-specific React components
 - `app/(marketing)/` - Landing page components (hero, features, testimonials, CTA)
+- `app/admin/` - Admin dashboard (owner-only, hardcoded email check)
+  - `page.tsx` - Server-side data fetching (users, feedback, KPIs)
+  - `AdminPageClient.tsx` - Client UI (KPI cards, feedback management, user list, user detail sheet, Sentry health, backup trigger, quick links)
+  - `actions.ts` - Server actions (feedback status/reply/delete, backup trigger, Sentry health fetch, auto-backup toggle)
 - `app/api/v1/` - REST API routes (consumed by iOS app)
   - `_lib/` - Middleware (auth, errors, response helpers)
   - `income/`, `analytics/`, `categories/`, `clients/`, `calendar/`, `settings/`, `devices/`, `nudges/`, `feedback/`
 - `app/api/auth/` - Better Auth handler (`[...all]`)
 - `app/api/calendar/` - Calendar auto-sync and sync-now endpoints
-- `app/api/cron/` - Cron jobs: `backup/` (daily DB backup), `overdue-notifications/` (push notifications)
+- `app/api/cron/` - Cron jobs: `backup/` (daily DB backup with rotation and auto-backup toggle), `overdue-notifications/` (push notifications)
 - `app/api/google/` - Google OAuth helpers: `calendars/`, `disconnect/`
 - `app/api/settings/` - Calendar settings endpoint
 - `app/privacy/`, `app/terms/` - Legal pages
@@ -143,9 +147,9 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
   - `Analytics/` - AnalyticsView with Components/ (KPI grid, charts, category breakdown, VAT summary)
   - `Categories/` - CategoriesView, CategoryFormSheet
   - `Clients/` - ClientsView, ClientFormSheet
-  - `Settings/` - SettingsView, ChangePasswordView, ChangeEmailView, ExportDataSheet, FeedbackSheet, AppIconPickerView
+  - `Settings/` - SettingsView, ChangePasswordView, ChangeEmailView, ExportDataSheet, FeedbackSheet, AppIconPickerView (feedback button moved to GreenNavBar on all tabs)
   - `Calendar/` - CalendarImportView, EventPreviewView, RulesManagerView
-  - `Components/` - Shared: CurrencyText, MonthPicker, StatusBadge, ErrorView, GreenNavBar, TourOverlay
+  - `Components/` - Shared: CurrencyText, MonthPicker, StatusBadge, ErrorView, GreenNavBar (includes feedback button on all tabs), TourOverlay (6-step card-based onboarding)
   - `MainTabView.swift` - Tab bar navigation
 - `Lib/` - Classification engine (Swift port of shared logic)
 - `Theme.swift` - Colors, fonts, SF Symbol icon mappings
@@ -177,16 +181,16 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - `app/settings/` - User account settings (tabs: account, preferences, calendar, data, danger zone)
 - `app/sign-in/` - Authentication page (split-screen design)
 - `components/ui/` - Shared shadcn-style UI components (Radix wrappers)
-- `components/onboarding/` - Guided tour system (OnboardingTour, SpotlightOverlay, TourTooltip, HelpButton)
+- `components/onboarding/` - Guided tour system: 7 highlight-only steps (welcome modal, spotlight steps for add/calendar/nav/analytics/clients, completion modal). Components: OnboardingTour, SpotlightOverlay, TourTooltip, HelpButton
 - `components/EmailVerificationBanner.tsx` - Amber banner for unverified email users
-- `components/FeedbackModal.tsx` - In-app user feedback dialog
+- `components/FeedbackModal.tsx` - In-app user feedback dialog (saves to `feedback` DB table with category selection)
 - `components/SentryUserTag.tsx` - Client-side Sentry user tagging
 - `db/schema.ts` - Drizzle schema definitions (source of truth for data model)
 - `db/client.ts` - Lazy-loading Drizzle client instance
 - `lib/auth.ts` - Better Auth configuration
 - `lib/googleCalendar.ts` - Google Calendar API integration
 - `lib/classificationRules.ts` - Re-exports shared classification + localStorage wrappers
-- `lib/email.ts` - Email sending (verification, password reset, welcome, feedback)
+- `lib/email.ts` - Email sending (verification, password reset, welcome, feedback reply) with RTL templates using Arial Hebrew font
 - `lib/ratelimit.ts` - Upstash rate limiting for auth endpoints
 - `lib/sentry.ts` - Sentry userId tagging helpers
 - `lib/googleTokens.ts` - Google OAuth token refresh helpers
@@ -206,6 +210,15 @@ pnpm sync:check-ios      # Check iOS Swift models against the contract
 - `userId` for multi-tenant isolation
 
 **Categories** - User-customizable with name, color, icon, displayOrder
+
+**Feedback** - User feedback stored in DB (not emailed directly):
+- `message`, `category` (general/bug/feature), `platform` (web/ios)
+- `status`: unread → read → in_progress → done/replied
+- `adminReply`, `repliedAt` for admin responses (reply sends email to user)
+- `userId` for linking to user
+
+**Site Config** - Key-value admin settings table:
+- `auto_backup_enabled` - Controls whether the daily backup cron runs
 
 ### Multi-Tenant Security
 
@@ -251,7 +264,7 @@ Optional (web app):
 GEMINI_API_KEY=xxx         # AI features
 RESEND_API_KEY=xxx         # Transactional emails
 EMAIL_FROM=xxx             # Sender email
-FEEDBACK_EMAIL=xxx         # Where user feedback is sent
+FEEDBACK_EMAIL=xxx         # Sender address for admin feedback replies
 CRON_SECRET=xxx            # Cron endpoint auth (push notifications, DB backup)
 NEXT_PUBLIC_SENTRY_DSN=xxx # Sentry error tracking
 SENTRY_ORG=xxx             # Sentry org slug
