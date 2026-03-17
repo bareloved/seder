@@ -226,3 +226,22 @@ export const dismissedNudges = pgTable("dismissed_nudges", {
 }));
 
 export type DismissedNudge = typeof dismissedNudges.$inferSelect;
+
+// Feedback table - user feedback stored for admin dashboard
+export const feedback = pgTable("feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  platform: varchar("platform", { length: 10 }).default("web").notNull(),
+  status: varchar("status", { length: 10 }).$type<"unread" | "read" | "replied">().default("unread").notNull(),
+  adminReply: text("admin_reply"),
+  repliedAt: timestamp("replied_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("feedback_user_idx").on(table.userId),
+  statusIdx: index("feedback_status_idx").on(table.status),
+  createdAtIdx: index("feedback_created_at_idx").on(table.createdAt),
+}));
+
+export type Feedback = typeof feedback.$inferSelect;
+export type NewFeedback = typeof feedback.$inferInsert;

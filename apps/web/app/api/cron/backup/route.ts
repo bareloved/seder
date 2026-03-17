@@ -1,23 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const CRON_SECRET = process.env.CRON_SECRET;
+const MAX_BACKUPS = 3;
 
 export async function GET(req: NextRequest) {
-  // Match existing cron auth pattern (see /api/calendar/auto-sync)
   const authHeader = req.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const projectId = process.env.NEON_PROJECT_ID;
+  const apiKey = process.env.NEON_API_KEY;
+
+  if (!projectId || !apiKey) {
+    return NextResponse.json({ success: false, error: "Missing Neon config" }, { status: 500 });
+  }
+
+  const neonHeaders = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+
   try {
-    const res = await fetch(
-      `https://console.neon.tech/api/v2/projects/${process.env.NEON_PROJECT_ID}/branches`,
+    // List existing branches and find backup branches
+    const listRes = await fetch(
+      `https://console.neon.tech/api/v2/projects/${projectId}/branches`,
+      { headers: neonHeaders }
+    );
+
+    if (!listRes.ok) {
+      throw new Error(`Failed to list branches: ${listRes.status}`);
+    }
+
+    const { branches } = await listRes.json();
+    const backupBranches = branches
+      .filter((b: { name: string }) => b.name.startsWith("backup-"))
+      .sort((a: { created_at: string }, b: { created_at: string }) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+    // Delete oldest backups if we're at or over the limit
+    const toDelete = backupBranches.slice(0, Math.max(0, backupBranches.length - MAX_BACKUPS + 1));
+    for (const branch of toDelete) {
+      await fetch(
+        `https://console.neon.tech/api/v2/projects/${projectId}/branches/${branch.id}`,
+        { method: "DELETE", headers: neonHeaders }
+      );
+    }
+
+    // Create new backup branch
+    const createRes = await fetch(
+      `https://console.neon.tech/api/v2/projects/${projectId}/branches`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEON_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: neonHeaders,
         body: JSON.stringify({
           branch: {
             name: `backup-${new Date().toISOString().split("T")[0]}`,
@@ -26,13 +62,14 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    if (!res.ok) {
-      throw new Error(`Neon API error: ${res.status}`);
+    if (!createRes.ok) {
+      throw new Error(`Neon API error: ${createRes.status}`);
     }
 
     return NextResponse.json({
       success: true,
       date: new Date().toISOString(),
+      deleted: toDelete.length,
     });
   } catch (error) {
     console.error("Backup failed:", error);

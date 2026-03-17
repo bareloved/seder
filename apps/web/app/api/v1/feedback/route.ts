@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "../_lib/middleware";
 import { apiSuccess, apiError } from "../_lib/response";
 import { ValidationError } from "../_lib/errors";
-import { sendEmail } from "@/lib/email";
+import { db } from "@/db/client";
+import { feedback } from "@/db/schema";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,34 +20,10 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("ההודעה ארוכה מדי (עד 5000 תווים)");
     }
 
-    // Escape HTML to prevent XSS in email
-    const safeMessage = message
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-
-    const safePlatform = String(platform || "web")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-    await sendEmail({
-      to:
-        process.env.FEEDBACK_EMAIL ||
-        process.env.EMAIL_FROM ||
-        "noreply@sedder.app",
-      subject: `משוב מ-Seder (${safePlatform})`,
-      html: `
-        <div dir="rtl" style="font-family: sans-serif; padding: 24px;">
-          <h3>משוב חדש</h3>
-          <p><strong>משתמש:</strong> ${userId}</p>
-          <p><strong>פלטפורמה:</strong> ${safePlatform}</p>
-          <p><strong>הודעה:</strong></p>
-          <p style="white-space: pre-wrap; background: #f5f5f5; padding: 16px; border-radius: 8px;">${safeMessage}</p>
-        </div>
-      `,
-      text: `משוב חדש\nמשתמש: ${userId}\nפלטפורמה: ${safePlatform}\nהודעה: ${message}`,
+    await db.insert(feedback).values({
+      userId,
+      message: message.trim(),
+      platform: String(platform || "web"),
     });
 
     return apiSuccess({ sent: true });
