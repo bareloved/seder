@@ -187,41 +187,45 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 
 ## 15. Feedback API Endpoint
 
-**Files:** `app/api/v1/feedback/route.ts`
-
-**Env var:** `FEEDBACK_EMAIL`
+**Files:** `app/api/v1/feedback/route.ts`, `db/schema.ts` (feedback table)
 
 **Test:**
-- [ ] POST to `/api/v1/feedback` with `{ message, platform }` → email sent to FEEDBACK_EMAIL
-- [ ] Unauthenticated request → 401
-- [ ] Empty message → validation error
-- [ ] Message > 5000 chars → validation error
-- [ ] HTML in message is escaped (no XSS in email)
+- [x] POST to `/api/v1/feedback` with `{ message, platform, category }` → stored in database
+- [x] Unauthenticated request → 401
+- [x] Empty message → validation error
+- [x] Message > 5000 chars → validation error
+
+**Notes (2026-03-17):** Replaced email-based feedback with database storage. Added `feedback` table with category field (general/bug/feature). Feedback now viewable in admin dashboard at `/admin`.
 
 ---
 
 ## 16. Feedback UI (Web)
 
-**Files:** `components/FeedbackModal.tsx`, `components/ui/textarea.tsx`, `app/settings/page.tsx`
+**Files:** `components/FeedbackModal.tsx`, `app/settings/page.tsx`, `app/admin/AdminPageClient.tsx`
 
 **Test:**
-- [ ] Settings page → feedback button (MessageSquare icon) in header
-- [ ] Click → modal opens with textarea, Hebrew placeholder
-- [ ] Submit → toast success notification
-- [ ] Empty message → submit button disabled
+- [x] Settings page → feedback button in header
+- [x] Click → modal opens with textarea, Hebrew placeholder
+- [x] Submit → toast success notification
+- [x] Empty message → submit button disabled
+- [x] Admin dashboard shows feedback with reply, status actions (בטיפול/טופל/לא נקרא/מחק)
+
+**Notes (2026-03-17):** Built admin dashboard at `/admin` with feedback management — expandable rows, reply via email, status tracking, category badges, delete.
 
 ---
 
 ## 17. Feedback UI (iOS)
 
-**Files:** `Views/Settings/FeedbackSheet.swift`, `Views/Settings/SettingsView.swift`
+**Files:** `Views/Settings/FeedbackSheet.swift`, `Views/Components/GreenNavBar.swift`
 
 **Test:**
-- [ ] Settings → "שליחת משוב" row → opens feedback sheet
-- [ ] Hebrew placeholder text "ספרו לנו מה אתם חושבים..."
-- [ ] Submit → success alert
-- [ ] Empty message → button disabled
-- [ ] Error → Hebrew error message shown
+- [x] Feedback button (bubble icon) visible in navbar on all tabs
+- [x] Click → feedback sheet opens with category picker and textarea
+- [x] Hebrew placeholder text "ספרו לנו מה אתם חושבים..."
+- [x] Empty message → button disabled
+- [x] Category picker: general/bug/feature
+
+**Notes (2026-03-17):** Moved feedback from buried settings row to navbar bubble icon on all tabs. Redesigned sheet with RTL layout, themed styling, category picker, and character count.
 
 ---
 
@@ -232,8 +236,10 @@ Seeds 3 categories on every new user: קטגוריה 1 (emerald), קטגוריה
 Declares: no tracking, email/name collection, UserDefaults API usage.
 
 **Test:**
-- [ ] Open in Xcode → Privacy manifest visible in target
+- [x] Open in Xcode → Privacy manifest visible in target
 - [ ] App Store Connect / TestFlight upload doesn't flag privacy issues
+
+**Notes (2026-03-17):** Verified in Xcode — 4 items: tracking disabled, empty tracking domains, 2 nutrition labels, 1 API type (UserDefaults).
 
 ---
 
@@ -246,10 +252,12 @@ Declares: no tracking, email/name collection, UserDefaults API usage.
 **Schedule:** Daily at 3:00 AM UTC
 
 **Test:**
-- [ ] Set Neon env vars
-- [ ] Call `GET /api/cron/backup` with `Authorization: Bearer <CRON_SECRET>` → creates Neon branch named `backup-YYYY-MM-DD`
-- [ ] Check Neon dashboard → backup branch exists
+- [x] Set Neon env vars
+- [x] Call backup endpoint → creates Neon branch named `backup-YYYY-MM-DD`
+- [x] Check Neon dashboard → backup branch exists
 - [ ] Deploy to Vercel → cron runs automatically
+
+**Notes (2026-03-17):** Tested via admin dashboard backup button. Updated endpoint to rotate old backups — keeps max 3 branches to stay within Neon free tier limits.
 
 ---
 
