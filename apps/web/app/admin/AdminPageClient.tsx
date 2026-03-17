@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { markFeedbackAsRead, markFeedbackAsUnread, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth } from "./actions";
+import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth } from "./actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -9,7 +9,8 @@ import {
   MessageSquare, Users, Send, Check, ChevronDown, ChevronUp,
   Mail, LayoutDashboard, ExternalLink, Database, Loader2,
   UserPlus, Activity, Bell, Sun, Moon, Calendar, Smartphone,
-  FolderOpen, Tag, X, CheckCircle2, Trash2, EyeOff, CircleCheck,
+  FolderOpen, Tag, X, CheckCircle2, Trash2, EyeOff, Reply,
+  Wrench, CircleCheckBig,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -99,10 +100,11 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<"overview" | "feedback" | "users">("overview");
-  const [statusFilter, setStatusFilter] = React.useState<"all" | "unread" | "read" | "replied">("all");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "unread" | "read" | "in_progress" | "done" | "replied">("all");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [replyText, setReplyText] = React.useState("");
   const [isReplying, setIsReplying] = React.useState(false);
+  const [showReplyFor, setShowReplyFor] = React.useState<string | null>(null);
   const [isBackingUp, setIsBackingUp] = React.useState(false);
   const [backupResult, setBackupResult] = React.useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
@@ -128,12 +130,14 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
     if (expandedId === item.id) {
       setExpandedId(null);
       setReplyText("");
+      setShowReplyFor(null);
       return;
     }
     setExpandedId(item.id);
     setReplyText("");
+    setShowReplyFor(null);
     if (item.status === "unread") {
-      await markFeedbackAsRead(item.id);
+      await setFeedbackStatus(item.id, "read");
       router.refresh();
     }
   };
@@ -189,9 +193,11 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
     const styles: Record<string, string> = {
       unread: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
       read: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+      in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      done: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
       replied: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     };
-    const labels: Record<string, string> = { unread: "חדש", read: "נקרא", replied: "נענה" };
+    const labels: Record<string, string> = { unread: "חדש", read: "נקרא", in_progress: "בטיפול", done: "טופל", replied: "נענה" };
     return (
       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${styles[status] || styles.read}`}>
         {labels[status] || status}
@@ -392,7 +398,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
         {activeTab === "feedback" && (
           <div className="space-y-3">
             <div className="flex gap-2 mb-4">
-              {(["all", "unread", "read", "replied"] as const).map((f) => (
+              {(["all", "unread", "in_progress", "done", "replied"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setStatusFilter(f)}
@@ -402,7 +408,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                       : "bg-white dark:bg-card text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-border hover:bg-slate-50"
                   }`}
                 >
-                  {{ all: "הכל", unread: "חדש", read: "נקרא", replied: "נענה" }[f]}
+                  {{ all: "הכל", unread: "חדש", in_progress: "בטיפול", done: "טופל", replied: "נענה" }[f]}
                   {f === "unread" && unreadCount > 0 && ` (${unreadCount})`}
                 </button>
               ))}
@@ -470,35 +476,75 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                         </div>
                       )}
 
-                      {/* Reply */}
-                      <div className="flex gap-2">
-                        <textarea
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          placeholder={item.status === "replied" ? "שלחו תגובה נוספת..." : "כתבו תגובה..."}
-                          className="flex-1 text-sm border border-slate-200 dark:border-border rounded-lg p-2.5 resize-none bg-white dark:bg-background text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
-                          rows={2}
-                          dir="rtl"
-                        />
-                        <Button
-                          onClick={() => handleReply(item.id)}
-                          disabled={!replyText.trim() || isReplying}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white self-end"
-                        >
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {/* Reply (toggled) */}
+                      {showReplyFor === item.id ? (
+                        <div className="flex gap-2">
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="כתבו תגובה..."
+                            className="flex-1 text-sm border border-slate-200 dark:border-border rounded-lg p-2.5 resize-none bg-white dark:bg-background text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                            rows={2}
+                            dir="rtl"
+                            autoFocus
+                          />
+                          <div className="flex flex-col gap-1 self-end">
+                            <Button
+                              onClick={() => handleReply(item.id)}
+                              disabled={!replyText.trim() || isReplying}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => { setShowReplyFor(null); setReplyText(""); }}
+                              size="sm"
+                              variant="ghost"
+                              className="text-slate-400 hover:text-slate-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-3 pt-1 flex-wrap">
+                        {showReplyFor !== item.id && (
+                          <button
+                            onClick={() => { setShowReplyFor(item.id); setReplyText(""); }}
+                            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 transition-colors"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                            השב
+                          </button>
+                        )}
+                        {item.status !== "in_progress" && (
+                          <button
+                            onClick={async () => { await setFeedbackStatus(item.id, "in_progress"); router.refresh(); }}
+                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                          >
+                            <Wrench className="w-3.5 h-3.5" />
+                            בטיפול
+                          </button>
+                        )}
+                        {item.status !== "done" && (
+                          <button
+                            onClick={async () => { await setFeedbackStatus(item.id, "done"); router.refresh(); }}
+                            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 transition-colors"
+                          >
+                            <CircleCheckBig className="w-3.5 h-3.5" />
+                            טופל
+                          </button>
+                        )}
                         {item.status !== "unread" && (
                           <button
-                            onClick={async () => { await markFeedbackAsUnread(item.id); router.refresh(); }}
+                            onClick={async () => { await setFeedbackStatus(item.id, "unread"); router.refresh(); }}
                             className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                           >
                             <EyeOff className="w-3.5 h-3.5" />
-                            סמן כלא נקרא
+                            לא נקרא
                           </button>
                         )}
                         <button

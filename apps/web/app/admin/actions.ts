@@ -73,32 +73,17 @@ export async function triggerBackup() {
   return await res.json();
 }
 
-export async function markFeedbackAsRead(feedbackId: string) {
-  await requireAdmin();
-  await db
-    .update(feedback)
-    .set({ status: "read" })
-    .where(eq(feedback.id, feedbackId));
-}
-
-export async function markFeedbackAsUnread(feedbackId: string) {
-  await requireAdmin();
-  await db
-    .update(feedback)
-    .set({ status: "unread" })
-    .where(eq(feedback.id, feedbackId));
-}
 
 export async function deleteFeedback(feedbackId: string) {
   await requireAdmin();
   await db.delete(feedback).where(eq(feedback.id, feedbackId));
 }
 
-export async function markFeedbackAsDone(feedbackId: string) {
+export async function setFeedbackStatus(feedbackId: string, status: "unread" | "read" | "in_progress" | "done" | "replied") {
   await requireAdmin();
   await db
     .update(feedback)
-    .set({ status: "read" })
+    .set({ status })
     .where(eq(feedback.id, feedbackId));
 }
 

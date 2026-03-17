@@ -234,7 +234,7 @@ export const feedback = pgTable("feedback", {
   message: text("message").notNull(),
   category: varchar("category", { length: 20 }).default("general").notNull(),
   platform: varchar("platform", { length: 10 }).default("web").notNull(),
-  status: varchar("status", { length: 10 }).$type<"unread" | "read" | "replied">().default("unread").notNull(),
+  status: varchar("status", { length: 15 }).$type<"unread" | "read" | "in_progress" | "done" | "replied">().default("unread").notNull(),
   adminReply: text("admin_reply"),
   repliedAt: timestamp("replied_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
