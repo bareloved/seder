@@ -26,6 +26,7 @@ struct IncomeListView: View {
     @State private var clientsVM = ClientsViewModel()
     @StateObject private var nudgeVM = NudgeViewModel()
     @State private var highlightedEntryId: String?
+    @State private var showFeedback = false
 
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
@@ -112,6 +113,7 @@ struct IncomeListView: View {
             GreenNavBar(
                 title: "הכנסות",
                 onSettingsTap: { showSettings = true },
+                onFeedbackTap: { showFeedback = true },
                 avatarURL: auth.user?.image
             ) {
                 Button(action: { showAddSheet = true }) {
@@ -328,6 +330,9 @@ struct IncomeListView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environmentObject(auth)
+        }
+        .sheet(isPresented: $showFeedback) {
+            FeedbackSheet()
         }
         .task {
             await viewModel.loadEntries()

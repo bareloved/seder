@@ -5,6 +5,7 @@ struct ClientsView: View {
     @EnvironmentObject var auth: AuthViewModel
     @State private var showFormSheet = false
     @State private var showSettings = false
+    @State private var showFeedback = false
     @State private var editingClient: Client?
     @State private var selectedClient: Client?
 
@@ -13,6 +14,7 @@ struct ClientsView: View {
             GreenNavBar(
                 title: "לקוחות",
                 onSettingsTap: { showSettings = true },
+                onFeedbackTap: { showFeedback = true },
                 avatarURL: auth.user?.image
             ) {
                 Button {
@@ -60,6 +62,9 @@ struct ClientsView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showFeedback) {
+            FeedbackSheet()
         }
         .refreshable { await viewModel.loadClients() }
     }

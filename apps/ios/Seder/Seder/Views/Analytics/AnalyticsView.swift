@@ -8,6 +8,7 @@ struct AnalyticsView: View {
     @State private var showMonthPicker = false
     @State private var showYearPicker = false
     @State private var showSettings = false
+    @State private var showFeedback = false
 
     private let months = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
                           "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
@@ -17,6 +18,7 @@ struct AnalyticsView: View {
             GreenNavBar(
                 title: "דוחות",
                 onSettingsTap: { showSettings = true },
+                onFeedbackTap: { showFeedback = true },
                 avatarURL: auth.user?.image
             )
 
@@ -128,6 +130,9 @@ struct AnalyticsView: View {
         .ignoresSafeArea(edges: .top)
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .sheet(isPresented: $showFeedback) {
+            FeedbackSheet()
         }
         .task { await viewModel.loadAll() }
         .onChange(of: viewModel.selectedMonth) {

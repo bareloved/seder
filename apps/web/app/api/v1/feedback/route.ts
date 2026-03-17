@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const userId = await requireAuth();
     const body = await request.json();
 
-    const { message, platform } = body;
+    const { message, platform, category } = body;
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       throw new ValidationError("נא להזין הודעה");
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     await db.insert(feedback).values({
       userId,
       message: message.trim(),
+      category: String(category || "general"),
       platform: String(platform || "web"),
     });
 

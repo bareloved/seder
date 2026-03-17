@@ -42,6 +42,7 @@ export default async function AdminPage() {
       .select({
         id: feedback.id,
         message: feedback.message,
+        category: feedback.category,
         platform: feedback.platform,
         status: feedback.status,
         adminReply: feedback.adminReply,

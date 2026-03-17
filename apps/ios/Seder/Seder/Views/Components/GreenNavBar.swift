@@ -3,17 +3,20 @@ import SwiftUI
 struct GreenNavBar<LeadingContent: View>: View {
     let title: String
     var onSettingsTap: () -> Void
+    var onFeedbackTap: (() -> Void)?
     var avatarURL: String?
     @ViewBuilder var leadingContent: () -> LeadingContent
 
     init(
         title: String,
         onSettingsTap: @escaping () -> Void,
+        onFeedbackTap: (() -> Void)? = nil,
         avatarURL: String? = nil,
         @ViewBuilder leadingContent: @escaping () -> LeadingContent = { EmptyView() }
     ) {
         self.title = title
         self.onSettingsTap = onSettingsTap
+        self.onFeedbackTap = onFeedbackTap
         self.avatarURL = avatarURL
         self.leadingContent = leadingContent
     }
@@ -31,7 +34,16 @@ struct GreenNavBar<LeadingContent: View>: View {
 
                 Spacer()
 
-                // Physical left (trailing in RTL): avatar/settings
+                // Physical left (trailing in RTL): feedback + avatar/settings
+                HStack(spacing: 12) {
+                if let onFeedbackTap {
+                    Button(action: onFeedbackTap) {
+                        Image(systemName: "bubble.left.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                }
+
                 Button(action: onSettingsTap) {
                     if let urlString = avatarURL, let url = URL(string: urlString) {
                         AsyncImage(url: url) { image in
@@ -50,6 +62,7 @@ struct GreenNavBar<LeadingContent: View>: View {
                             .font(.system(size: 28))
                             .foregroundStyle(.white.opacity(0.9))
                     }
+                }
                 }
             }
         }

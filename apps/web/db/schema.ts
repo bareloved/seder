@@ -232,6 +232,7 @@ export const feedback = pgTable("feedback", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   message: text("message").notNull(),
+  category: varchar("category", { length: 20 }).default("general").notNull(),
   platform: varchar("platform", { length: 10 }).default("web").notNull(),
   status: varchar("status", { length: 10 }).$type<"unread" | "read" | "replied">().default("unread").notNull(),
   adminReply: text("admin_reply"),
