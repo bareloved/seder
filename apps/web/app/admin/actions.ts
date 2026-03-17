@@ -81,6 +81,27 @@ export async function markFeedbackAsRead(feedbackId: string) {
     .where(eq(feedback.id, feedbackId));
 }
 
+export async function markFeedbackAsUnread(feedbackId: string) {
+  await requireAdmin();
+  await db
+    .update(feedback)
+    .set({ status: "unread" })
+    .where(eq(feedback.id, feedbackId));
+}
+
+export async function deleteFeedback(feedbackId: string) {
+  await requireAdmin();
+  await db.delete(feedback).where(eq(feedback.id, feedbackId));
+}
+
+export async function markFeedbackAsDone(feedbackId: string) {
+  await requireAdmin();
+  await db
+    .update(feedback)
+    .set({ status: "read" })
+    .where(eq(feedback.id, feedbackId));
+}
+
 export async function replyToFeedback(feedbackId: string, reply: string) {
   await requireAdmin();
 

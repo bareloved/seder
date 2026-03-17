@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { markFeedbackAsRead, replyToFeedback, triggerBackup, fetchSentryHealth } from "./actions";
+import { markFeedbackAsRead, markFeedbackAsUnread, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth } from "./actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -9,7 +9,7 @@ import {
   MessageSquare, Users, Send, Check, ChevronDown, ChevronUp,
   Mail, LayoutDashboard, ExternalLink, Database, Loader2,
   UserPlus, Activity, Bell, Sun, Moon, Calendar, Smartphone,
-  FolderOpen, Tag, X, CheckCircle2,
+  FolderOpen, Tag, X, CheckCircle2, Trash2, EyeOff, CircleCheck,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -469,26 +469,52 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                           </p>
                         </div>
                       )}
-                      {item.status !== "replied" && (
-                        <div className="flex gap-2">
-                          <textarea
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="כתבו תגובה..."
-                            className="flex-1 text-sm border border-slate-200 dark:border-border rounded-lg p-2.5 resize-none bg-white dark:bg-background text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
-                            rows={2}
-                            dir="rtl"
-                          />
-                          <Button
-                            onClick={() => handleReply(item.id)}
-                            disabled={!replyText.trim() || isReplying}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white self-end"
+
+                      {/* Reply */}
+                      <div className="flex gap-2">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder={item.status === "replied" ? "שלחו תגובה נוספת..." : "כתבו תגובה..."}
+                          className="flex-1 text-sm border border-slate-200 dark:border-border rounded-lg p-2.5 resize-none bg-white dark:bg-background text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                          rows={2}
+                          dir="rtl"
+                        />
+                        <Button
+                          onClick={() => handleReply(item.id)}
+                          disabled={!replyText.trim() || isReplying}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white self-end"
+                        >
+                          <Send className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-1">
+                        {item.status !== "unread" && (
+                          <button
+                            onClick={async () => { await markFeedbackAsUnread(item.id); router.refresh(); }}
+                            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                           >
-                            <Send className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
+                            <EyeOff className="w-3.5 h-3.5" />
+                            סמן כלא נקרא
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (confirm("למחוק את המשוב?")) {
+                              await deleteFeedback(item.id);
+                              setExpandedId(null);
+                              router.refresh();
+                            }
+                          }}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          מחק
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
