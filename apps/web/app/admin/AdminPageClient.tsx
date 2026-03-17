@@ -510,11 +510,11 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                       ) : null}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-3 pt-1 flex-wrap">
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
                         {showReplyFor !== item.id && (
                           <button
                             onClick={() => { setShowReplyFor(item.id); setReplyText(""); }}
-                            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 transition-colors"
                           >
                             <Reply className="w-3.5 h-3.5" />
                             השב
@@ -523,7 +523,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                         {item.status !== "in_progress" && (
                           <button
                             onClick={async () => { await setFeedbackStatus(item.id, "in_progress"); router.refresh(); }}
-                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
                           >
                             <Wrench className="w-3.5 h-3.5" />
                             בטיפול
@@ -532,7 +532,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                         {item.status !== "done" && (
                           <button
                             onClick={async () => { await setFeedbackStatus(item.id, "done"); router.refresh(); }}
-                            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30 transition-colors"
                           >
                             <CircleCheckBig className="w-3.5 h-3.5" />
                             טופל
@@ -541,7 +541,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                         {item.status !== "unread" && (
                           <button
                             onClick={async () => { await setFeedbackStatus(item.id, "unread"); router.refresh(); }}
-                            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors"
                           >
                             <EyeOff className="w-3.5 h-3.5" />
                             לא נקרא
@@ -555,7 +555,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                               router.refresh();
                             }
                           }}
-                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           מחק
