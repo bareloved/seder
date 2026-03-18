@@ -8,13 +8,21 @@ import SwiftUI
 
 struct IncomeEntryRow: View {
     let entry: IncomeEntry
-    var onMarkSent: (() -> Void)?
-    var onMarkPaid: (() -> Void)?
-    var onDelete: (() -> Void)?
+    var isSelectionMode: Bool = false
+    var isSelected: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Date box — first = physical RIGHT in RTL
+            // Selection checkbox — first = physical RIGHT in RTL
+            if isSelectionMode {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(isSelected ? SederTheme.brandGreen : SederTheme.textTertiary)
+                    .frame(width: 28, height: 44)
+                    .transition(.scale.combined(with: .opacity))
+            }
+
+            // Date box — physical RIGHT in RTL
             VStack(spacing: 1) {
                 Text("\(dayNumber)")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -84,29 +92,6 @@ struct IncomeEntryRow: View {
                     }
 
                     Spacer()
-
-                    // Menu button — last = physical LEFT
-                    Menu {
-                        if entry.invoiceStatus == .draft {
-                            Button { onMarkSent?() } label: {
-                                Label("סמן כנשלח", systemImage: "paperplane")
-                            }
-                        }
-                        if entry.paymentStatus != .paid {
-                            Button { onMarkPaid?() } label: {
-                                Label("סמן כשולם", systemImage: "checkmark.circle")
-                            }
-                        }
-                        Divider()
-                        Button(role: .destructive) { onDelete?() } label: {
-                            Label("מחיקה", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(SederTheme.textTertiary)
-                            .frame(width: 32, height: 32)
-                    }
                 }
             }
         }

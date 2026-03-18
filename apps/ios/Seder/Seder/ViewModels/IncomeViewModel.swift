@@ -163,4 +163,66 @@ class IncomeViewModel: ObservableObject {
             errorMessage = "שגיאה בעדכון סטטוס"
         }
     }
+
+    // MARK: - Batch Operations
+
+    func batchDelete(_ ids: Set<String>) async -> Bool {
+        let backup = entries
+        entries.removeAll { ids.contains($0.id) }
+        refreshCurrentMonthStatus()
+        do {
+            let request = BatchIncomeRequest(action: "delete", ids: Array(ids))
+            let _: BatchResult = try await api.request(
+                endpoint: "/api/v1/income/batch",
+                method: "POST",
+                body: request
+            )
+            return true
+        } catch {
+            entries = backup
+            refreshCurrentMonthStatus()
+            errorMessage = "שגיאה במחיקה"
+            return false
+        }
+    }
+
+    func batchMarkSent(_ ids: Set<String>) async -> Bool {
+        do {
+            let request = BatchIncomeRequest(
+                action: "update",
+                ids: Array(ids),
+                updates: BatchUpdates(invoiceStatus: "sent")
+            )
+            let _: BatchResult = try await api.request(
+                endpoint: "/api/v1/income/batch",
+                method: "POST",
+                body: request
+            )
+            await loadEntries()
+            return true
+        } catch {
+            errorMessage = "שגיאה בעדכון סטטוס"
+            return false
+        }
+    }
+
+    func batchMarkPaid(_ ids: Set<String>) async -> Bool {
+        do {
+            let request = BatchIncomeRequest(
+                action: "update",
+                ids: Array(ids),
+                updates: BatchUpdates(paymentStatus: "paid")
+            )
+            let _: BatchResult = try await api.request(
+                endpoint: "/api/v1/income/batch",
+                method: "POST",
+                body: request
+            )
+            await loadEntries()
+            return true
+        } catch {
+            errorMessage = "שגיאה בעדכון סטטוס"
+            return false
+        }
+    }
 }
