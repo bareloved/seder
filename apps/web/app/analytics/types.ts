@@ -1,44 +1,66 @@
-import type { IncomeEntry } from "../income/types";
+import type { IncomeAggregates } from "../income/data";
 
-export type DateRangePreset = "this-month" | "last-3-months" | "specific-year" | "custom" | "specific-month";
-export type MetricType = "amount" | "count";
+export type { IncomeAggregates };
 
-export interface DateRange {
-  start: Date;
-  end: Date;
-}
+export type AnalyticsPeriod = "monthly" | "yearly";
 
-export interface AnalyticsKPI {
-  totalIncome: number;
+export interface EnhancedMonthTrend {
+  month: number;
+  year: number;
+  status: "all-paid" | "has-unpaid" | "empty";
+  totalGross: number;
+  totalPaid: number;
   jobsCount: number;
-  unpaidAmount: number;
 }
 
-export interface TimeSeriesDataPoint {
-  date: string; // ISO date string or label like "Week 1"
-  amount: number;
-  count: number;
-}
-
-export interface CategoryDataPoint {
+export interface CategoryBreakdownItem {
+  categoryId: string | null;
   categoryName: string;
+  categoryColor: string;
   amount: number;
   count: number;
+  percentage: number;
+  monthlyAmounts?: number[];
 }
 
-export interface NeedsAttentionJob {
+export interface ClientBreakdownItem {
+  clientName: string;
+  amount: number;
+  count: number;
+  percentage: number;
+  monthlyAmounts?: number[];
+}
+
+export interface AttentionBucket {
+  count: number;
+  amount: number;
+}
+
+export interface AttentionSummary {
+  drafts: AttentionBucket;
+  sent: AttentionBucket;
+  overdue: AttentionBucket;
+}
+
+export interface AttentionItem {
   id: string;
   clientName: string;
   description: string;
-  amount: number;
-  status: string; // Hebrew status label
-  date: string; // ISO date string
+  date: string;
+  amountGross: number;
+  status: "draft" | "sent" | "overdue";
+  invoiceStatus: string;
+  paymentStatus: string;
 }
 
-export interface AnalyticsData {
-  kpi: AnalyticsKPI;
-  timeSeriesData: TimeSeriesDataPoint[];
-  categoryData: CategoryDataPoint[];
-  needsAttentionJobs: NeedsAttentionJob[];
-  entries: IncomeEntry[]; // Raw entries for filtering
+export interface AttentionResponse {
+  summary: AttentionSummary;
+  items: AttentionItem[];
 }
+
+export type AnalyticsSection =
+  | "incomeChart"
+  | "invoiceTracking"
+  | "categoryBreakdown"
+  | "clientBreakdown"
+  | "vatSummary";

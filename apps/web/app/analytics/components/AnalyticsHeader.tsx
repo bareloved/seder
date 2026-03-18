@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import type { DateRangePreset, MetricType } from "../types";
-import { MONTH_NAMES } from "../utils";
+import type { AnalyticsPeriod } from "../types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,32 +11,41 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
+const MONTH_NAMES: Record<number, string> = {
+  1: "ינואר",
+  2: "פברואר",
+  3: "מרץ",
+  4: "אפריל",
+  5: "מאי",
+  6: "יוני",
+  7: "יולי",
+  8: "אוגוסט",
+  9: "ספטמבר",
+  10: "אוקטובר",
+  11: "נובמבר",
+  12: "דצמבר",
+};
+
 interface AnalyticsHeaderProps {
-  dateRangePreset: DateRangePreset;
-  onDateRangeChange: (preset: DateRangePreset) => void;
-  metricType: MetricType;
-  onMetricTypeChange: (metric: MetricType) => void;
-  selectedMonth?: number;
-  selectedYear?: number;
-  onMonthChange?: (month: number) => void;
-  onYearChange?: (year: number) => void;
+  period: AnalyticsPeriod;
+  onPeriodChange: (period: AnalyticsPeriod) => void;
+  selectedMonth: number;
+  selectedYear: number;
+  onMonthChange: (month: number) => void;
+  onYearChange: (year: number) => void;
 }
 
 export function AnalyticsHeader({
-  dateRangePreset,
-  onDateRangeChange,
-  metricType,
-  onMetricTypeChange,
-  selectedMonth = new Date().getMonth() + 1,
-  selectedYear = new Date().getFullYear(),
-  onMonthChange = () => {},
-  onYearChange = () => {},
+  period,
+  onPeriodChange,
+  selectedMonth,
+  selectedYear,
+  onMonthChange,
+  onYearChange,
 }: AnalyticsHeaderProps) {
   const currentYear = new Date().getFullYear();
-  // Show 7 years: 3 years before and 3 years after current year
-  const years = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i);
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-  // Month navigation handlers
   const handlePreviousMonth = () => {
     if (selectedMonth === 1) {
       onYearChange(selectedYear - 1);
@@ -58,64 +66,31 @@ export function AnalyticsHeader({
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-      {/* Date Range Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">תקופה:</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-[140px] h-9 justify-between font-normal text-sm border-slate-200 dark:border-border"
-            >
-              <span className="truncate">
-                {dateRangePreset === "this-month" && "החודש"}
-                {dateRangePreset === "last-3-months" && "3 חודשים אחרונים"}
-                {dateRangePreset === "specific-year" && "שנה"}
-                {dateRangePreset === "specific-month" && "חודש ספציפי"}
-                {dateRangePreset === "custom" && "תקופה מותאמת"}
-              </span>
-              <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[160px]">
-            <DropdownMenuItem onClick={() => onDateRangeChange("this-month")}>
-              החודש
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDateRangeChange("last-3-months")}>
-              3 חודשים אחרונים
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDateRangeChange("specific-year")}>
-              שנה
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDateRangeChange("specific-month")}>
-              חודש ספציפי
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Month/Year Navigation — unified container matching income page */}
+      <div className="flex items-center gap-2">
+        {/* Month picker in single bordered container */}
+        <div className="flex items-center bg-white dark:bg-card rounded-md border border-slate-200 dark:border-border p-0.5 h-9">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
+            onClick={period === "yearly" ? () => onYearChange(selectedYear - 1) : handlePreviousMonth}
+          >
+            <ChevronRight className="h-4 w-4 text-slate-500" />
+          </Button>
 
-        {/* Month/Year Selectors - Visible only when specific-month is selected */}
-        {dateRangePreset === "specific-month" && (
-          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePreviousMonth}
-              className="h-9 w-9 border-slate-200 dark:border-border"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-
-            <DropdownMenu>
+          {/* Month Selector (hidden in yearly mode) */}
+          {period === "monthly" && (
+            <DropdownMenu dir="rtl">
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="w-[100px] h-9 text-sm justify-between px-3 font-medium border-slate-200 dark:border-border"
+                  variant="ghost"
+                  className="h-8 min-w-[80px] md:min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-1 md:px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <span>{MONTH_NAMES[selectedMonth]}</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="min-w-[150px]" align="start">
                 {Object.entries(MONTH_NAMES).map(([value, name]) => {
                   const monthNum = parseInt(value);
                   return (
@@ -123,135 +98,80 @@ export function AnalyticsHeader({
                       key={value}
                       onClick={() => onMonthChange(monthNum)}
                       className={cn(
-                        "flex-row-reverse justify-between",
-                        selectedMonth === monthNum && "bg-accent"
+                        "flex items-center justify-between gap-4 cursor-pointer",
+                        selectedMonth === monthNum && "bg-slate-50 dark:bg-card font-medium"
                       )}
                     >
-                      {name}
+                      <span>{name}</span>
                     </DropdownMenuItem>
                   );
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNextMonth}
-              className="h-9 w-9 border-slate-200 dark:border-border"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-border"
-                >
-                  {selectedYear}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[80px] min-w-0">
-                {years.map((year) => (
-                  <DropdownMenuItem
-                    key={year}
-                    onClick={() => onYearChange(year)}
-                    className={cn(
-                      "justify-center font-numbers font-medium",
-                      selectedYear === year && "bg-accent"
-                    )}
-                  >
-                    {year}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-
-        {/* Year Selector - Visible only when specific-year is selected */}
-        {dateRangePreset === "specific-year" && (
-          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onYearChange(selectedYear - 1)}
-              className="h-9 w-9 border-slate-200 dark:border-border"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[80px] h-9 text-sm justify-between px-3 font-medium font-numbers border-slate-200 dark:border-border"
-                >
-                  {selectedYear}
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[80px] min-w-0">
-                {years.map((year) => (
-                  <DropdownMenuItem
-                    key={year}
-                    onClick={() => onYearChange(year)}
-                    className={cn(
-                      "justify-center font-numbers font-medium",
-                      selectedYear === year && "bg-accent"
-                    )}
-                  >
-                    {year}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onYearChange(selectedYear + 1)}
-              className="h-9 w-9 border-slate-200 dark:border-border"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Metric Toggle */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">מדד:</span>
-        <div className="inline-flex rounded-lg border border-slate-200 dark:border-border overflow-hidden" role="group">
           <Button
-            variant={metricType === "amount" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onMetricTypeChange("amount")}
-            className={cn(
-              "rounded-none h-9 px-4",
-              metricType === "amount"
-                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-muted/50"
-            )}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
+            onClick={period === "yearly" ? () => onYearChange(selectedYear + 1) : handleNextMonth}
           >
-            סכום
-          </Button>
-          <Button
-            variant={metricType === "count" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onMetricTypeChange("count")}
-            className={cn(
-              "rounded-none h-9 px-4",
-              metricType === "count"
-                ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-muted/50"
-            )}
-          >
-            כמות
+            <ChevronLeft className="h-4 w-4 text-slate-500" />
           </Button>
         </div>
+
+        {/* Year Selector */}
+        <DropdownMenu dir="rtl">
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9 px-2.5 justify-center bg-white dark:bg-card border-slate-200 dark:border-border text-slate-700 dark:text-slate-300 font-normal">
+              {selectedYear}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="min-w-0" align="center">
+            {years.map((year) => (
+              <DropdownMenuItem
+                key={year}
+                onClick={() => onYearChange(year)}
+                className={cn(
+                  "justify-center text-center px-4 cursor-pointer",
+                  selectedYear === year && "bg-slate-50 dark:bg-card font-medium"
+                )}
+              >
+                {year}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Period Toggle */}
+      <div className="inline-flex rounded-lg border border-slate-200 dark:border-border overflow-hidden" role="group">
+        <Button
+          variant={period === "monthly" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => onPeriodChange("monthly")}
+          className={cn(
+            "rounded-none h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm",
+            period === "monthly"
+              ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+              : "hover:bg-slate-50 dark:hover:bg-muted/50"
+          )}
+        >
+          חודשי
+        </Button>
+        <Button
+          variant={period === "yearly" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => onPeriodChange("yearly")}
+          className={cn(
+            "rounded-none h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm",
+            period === "yearly"
+              ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+              : "hover:bg-slate-50 dark:hover:bg-muted/50"
+          )}
+        >
+          שנתי
+        </Button>
       </div>
     </div>
   );
