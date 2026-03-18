@@ -339,30 +339,16 @@ struct IncomeListView: View {
                         } else {
                             LazyVStack(spacing: 4) {
                                 ForEach(filteredEntries) { entry in
-                                    IncomeEntryRow(
-                                        entry: entry,
-                                        isSelectionMode: isSelectionMode,
-                                        isSelected: selectedEntryIds.contains(entry.id),
-                                        onMarkSent: {
-                                            Task {
-                                                await viewModel.markSent(entry.id)
-                                                await nudgeVM.fetchNudges()
-                                            }
-                                        },
-                                        onMarkPaid: {
-                                            Task {
-                                                await viewModel.markPaid(entry.id)
-                                                await nudgeVM.fetchNudges()
-                                            }
-                                        },
-                                        onDelete: {
-                                            Task {
-                                                await viewModel.deleteEntry(entry.id)
-                                                selectedEntryIds.remove(entry.id)
-                                                await nudgeVM.fetchNudges()
-                                            }
-                                        }
-                                    )
+                                    SwipeableRow(
+                                        leadingActions: swipeLeadingActions(for: entry),
+                                        trailingActions: swipeTrailingActions(for: entry)
+                                    ) {
+                                        IncomeEntryRow(
+                                            entry: entry,
+                                            isSelectionMode: isSelectionMode,
+                                            isSelected: selectedEntryIds.contains(entry.id)
+                                        )
+                                    }
                                     .id(entry.id)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
@@ -454,6 +440,39 @@ struct IncomeListView: View {
             Button("ביטול", role: .cancel) {}
         }
         .ignoresSafeArea(edges: .top)
+    }
+
+    // MARK: - Swipe Actions
+
+    private func swipeLeadingActions(for entry: IncomeEntry) -> [SwipeAction] {
+        var actions: [SwipeAction] = []
+        if entry.paymentStatus != .paid {
+            actions.append(SwipeAction(label: "שולם", icon: "checkmark.circle", color: SederTheme.paidColor) {
+                Task {
+                    await viewModel.markPaid(entry.id)
+                    await nudgeVM.fetchNudges()
+                }
+            })
+        }
+        if entry.invoiceStatus == .draft {
+            actions.append(SwipeAction(label: "נשלח", icon: "paperplane", color: SederTheme.sentColor) {
+                Task {
+                    await viewModel.markSent(entry.id)
+                    await nudgeVM.fetchNudges()
+                }
+            })
+        }
+        return actions
+    }
+
+    private func swipeTrailingActions(for entry: IncomeEntry) -> [SwipeAction] {
+        [SwipeAction(label: "מחק", icon: "trash", color: .red) {
+            Task {
+                await viewModel.deleteEntry(entry.id)
+                selectedEntryIds.remove(entry.id)
+                await nudgeVM.fetchNudges()
+            }
+        }]
     }
 
     // MARK: - Selection Helpers
