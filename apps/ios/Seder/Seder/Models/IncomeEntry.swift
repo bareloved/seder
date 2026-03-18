@@ -89,3 +89,21 @@ nonisolated struct UpdateIncomeRequest: Encodable, Sendable {
     var categoryId: String?
     var notes: String?
 }
+
+// MARK: - Batch Operations
+
+nonisolated struct BatchIncomeRequest: Encodable, Sendable {
+    let action: String
+    let ids: [String]
+    var updates: BatchUpdates?
+}
+
+nonisolated struct BatchUpdates: Encodable, Sendable {
+    var invoiceStatus: String?
+    var paymentStatus: String?
+}
+
+nonisolated struct BatchResult: Decodable, Sendable {
+    var deletedCount: Int?
+    var updatedCount: Int?
+}

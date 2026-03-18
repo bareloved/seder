@@ -29,6 +29,12 @@ struct IncomeListView: View {
     @State private var showFeedback = false
     @State private var isInitialLoad = true
 
+    // Multi-select
+    @State private var isSelectionMode = false
+    @State private var selectedEntryIds: Set<String> = []
+    @State private var isBatchLoading = false
+    @State private var showBatchDeleteConfirm = false
+
     private var totalGross: Double {
         viewModel.entries.reduce(0) { $0 + $1.grossAmount }
     }
@@ -174,6 +180,7 @@ struct IncomeListView: View {
             isInitialLoad = false
         }
         .onChange(of: viewModel.selectedMonth) {
+            exitSelectionMode()
             Task {
                 await viewModel.loadEntries()
                 await viewModel.loadAllMonthStatuses()
@@ -334,6 +341,8 @@ struct IncomeListView: View {
                                 ForEach(filteredEntries) { entry in
                                     IncomeEntryRow(
                                         entry: entry,
+                                        isSelectionMode: isSelectionMode,
+                                        isSelected: selectedEntryIds.contains(entry.id),
                                         onMarkSent: {
                                             Task {
                                                 await viewModel.markSent(entry.id)
@@ -349,6 +358,7 @@ struct IncomeListView: View {
                                         onDelete: {
                                             Task {
                                                 await viewModel.deleteEntry(entry.id)
+                                                selectedEntryIds.remove(entry.id)
                                                 await nudgeVM.fetchNudges()
                                             }
                                         }
@@ -360,12 +370,32 @@ struct IncomeListView: View {
                                             .animation(.easeOut(duration: 0.6), value: highlightedEntryId)
                                             .allowsHitTesting(false)
                                     )
-                                    .onTapGesture { editingEntry = entry }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if isSelectionMode {
+                                            withAnimation(.easeInOut(duration: 0.15)) {
+                                                toggleSelection(entry.id)
+                                            }
+                                        } else {
+                                            editingEntry = entry
+                                        }
+                                    }
+                                    .simultaneousGesture(
+                                        LongPressGesture(minimumDuration: 0.5)
+                                            .onEnded { _ in
+                                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                                generator.impactOccurred()
+                                                withAnimation(.easeInOut(duration: 0.2)) {
+                                                    isSelectionMode = true
+                                                    selectedEntryIds = [entry.id]
+                                                }
+                                            }
+                                    )
                                 }
                             }
                         }
 
-                        Spacer().frame(height: 80)
+                        Spacer().frame(height: isSelectionMode ? 140 : 80)
                     }
                     .frame(width: UIScreen.main.bounds.width - 24)
                     .frame(maxWidth: .infinity)
@@ -389,8 +419,86 @@ struct IncomeListView: View {
                 }
                 .background(SederTheme.pageBg)
             }
+
+            // Batch action bar
+            if isSelectionMode && !selectedEntryIds.isEmpty {
+                BatchActionBar(
+                    selectedCount: selectedEntryIds.count,
+                    isLoading: isBatchLoading,
+                    onMarkPaid: {
+                        Task { await performBatchMarkPaid() }
+                    },
+                    onMarkSent: {
+                        Task { await performBatchMarkSent() }
+                    },
+                    onDelete: {
+                        showBatchDeleteConfirm = true
+                    },
+                    onClose: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            exitSelectionMode()
+                        }
+                    }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .confirmationDialog(
+            "למחוק \(selectedEntryIds.count) רשומות?",
+            isPresented: $showBatchDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("מחק", role: .destructive) {
+                Task { await performBatchDelete() }
+            }
+            Button("ביטול", role: .cancel) {}
         }
         .ignoresSafeArea(edges: .top)
+    }
+
+    // MARK: - Selection Helpers
+
+    private func exitSelectionMode() {
+        isSelectionMode = false
+        selectedEntryIds.removeAll()
+    }
+
+    private func toggleSelection(_ id: String) {
+        if selectedEntryIds.contains(id) {
+            selectedEntryIds.remove(id)
+        } else {
+            selectedEntryIds.insert(id)
+        }
+    }
+
+    private func performBatchDelete() async {
+        isBatchLoading = true
+        let success = await viewModel.batchDelete(selectedEntryIds)
+        isBatchLoading = false
+        if success {
+            withAnimation(.easeInOut(duration: 0.2)) { exitSelectionMode() }
+            await nudgeVM.fetchNudges()
+        }
+    }
+
+    private func performBatchMarkPaid() async {
+        isBatchLoading = true
+        let success = await viewModel.batchMarkPaid(selectedEntryIds)
+        isBatchLoading = false
+        if success {
+            withAnimation(.easeInOut(duration: 0.2)) { exitSelectionMode() }
+            await nudgeVM.fetchNudges()
+        }
+    }
+
+    private func performBatchMarkSent() async {
+        isBatchLoading = true
+        let success = await viewModel.batchMarkSent(selectedEntryIds)
+        isBatchLoading = false
+        if success {
+            withAnimation(.easeInOut(duration: 0.2)) { exitSelectionMode() }
+            await nudgeVM.fetchNudges()
+        }
     }
 
     private var currentMonthName: String {
