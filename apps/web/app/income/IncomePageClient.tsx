@@ -820,22 +820,9 @@ export default function IncomePageClient({
 
       <Navbar user={user} />
 
-      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-3 sm:py-8 space-y-1 sm:space-y-2">
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 pt-1.5 sm:pt-3 pb-3 sm:pb-8 space-y-1 sm:space-y-2">
 
-        {/* Smart Nudges */}
-        <NudgeBanner nudges={nudges} />
-
-        {/* KPI Section */}
-        <section>
-          <KPICards
-            kpis={kpis}
-            selectedMonth={month}
-            onFilterClick={setActiveFilter}
-            activeFilter={activeFilter}
-          />
-        </section>
-
-        {/* Toolbar / Filters Area - Floating Card */}
+        {/* Toolbar / Filters Area - Floating Card (above KPIs like iOS) */}
         <section className="p-2 rounded-xl bg-white dark:bg-card shadow-sm border border-slate-200/40 dark:border-slate-700/40">
           <IncomeFilters
             searchQuery={searchQuery}
@@ -865,6 +852,19 @@ export default function IncomePageClient({
             onSort={onSort}
           />
         </section>
+
+        {/* KPI Section */}
+        <section>
+          <KPICards
+            kpis={kpis}
+            selectedMonth={month}
+            onFilterClick={setActiveFilter}
+            activeFilter={activeFilter}
+          />
+        </section>
+
+        {/* Smart Nudges (below KPIs like iOS) */}
+        <NudgeBanner nudges={nudges} />
 
         {/* Content Area */}
         <section className="subtle-cards" data-tour="income-table">
