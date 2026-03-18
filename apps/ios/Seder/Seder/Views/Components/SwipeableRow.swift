@@ -18,6 +18,7 @@ struct SwipeableRow<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     @State private var offset: CGFloat = 0
+    @State private var dragStart: CGFloat = 0
     @State private var settling = false
 
     private let buttonWidth: CGFloat = 72
@@ -62,10 +63,15 @@ struct SwipeableRow<Content: View>: View {
             DragGesture(minimumDistance: 20)
                 .onChanged { value in
                     guard !settling else { return }
-                    let drag = value.translation.width
-                    // Negative = physical left, positive = physical right
-                    // Swipe left (neg) → reveal right buttons, swipe right (pos) → reveal left buttons
-                    offset = min(max(drag, -rightWidth), leftWidth)
+                    if value.translation.width == 0 { return }
+
+                    // Capture starting offset on first drag event
+                    if abs(value.translation.width) < 25 {
+                        dragStart = offset
+                    }
+
+                    let newOffset = dragStart + value.translation.width
+                    offset = min(max(newOffset, -rightWidth), leftWidth)
                 }
                 .onEnded { value in
                     settling = true
@@ -73,16 +79,18 @@ struct SwipeableRow<Content: View>: View {
                     let velocity = value.predictedEndTranslation.width - drag
 
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                        if drag < -40 || velocity < -200, !leadingActions.isEmpty {
-                            // Swiped left → show right side (mark paid/sent)
+                        // If was open and dragging back toward center, just close
+                        if dragStart != 0 && abs(offset) < abs(dragStart) {
+                            offset = 0
+                        } else if drag < -40 || velocity < -200, !leadingActions.isEmpty {
                             offset = -rightWidth
                         } else if drag > 40 || velocity > 200, !trailingActions.isEmpty {
-                            // Swiped right → show left side (delete)
                             offset = leftWidth
                         } else {
                             offset = 0
                         }
                     }
+                    dragStart = 0
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                         settling = false
                     }
