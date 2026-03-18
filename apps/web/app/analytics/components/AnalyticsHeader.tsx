@@ -66,40 +66,43 @@ export function AnalyticsHeader({
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-      {/* Month/Year Navigation */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <div className="flex items-center gap-0.5">
+      {/* Month/Year Navigation — unified container matching income page */}
+      <div className="flex items-center gap-2">
+        {/* Month picker in single bordered container */}
+        <div className="flex items-center bg-white dark:bg-card rounded-md border border-slate-200 dark:border-border p-0.5 h-9">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
             onClick={period === "yearly" ? () => onYearChange(selectedYear - 1) : handlePreviousMonth}
-            className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-card border-slate-200 dark:border-border"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 text-slate-500" />
           </Button>
 
           {/* Month Selector (hidden in yearly mode) */}
           {period === "monthly" && (
-            <DropdownMenu>
+            <DropdownMenu dir="rtl">
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="w-[80px] sm:w-[110px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-card border-slate-200 dark:border-border justify-between px-3 font-semibold"
+                  variant="ghost"
+                  className="h-8 min-w-[80px] md:min-w-[120px] justify-center gap-2 text-slate-700 dark:text-slate-300 font-normal px-1 md:px-2 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <span>{MONTH_NAMES[selectedMonth]}</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="min-w-[150px]" align="start">
                 {Object.entries(MONTH_NAMES).map(([value, name]) => {
                   const monthNum = parseInt(value);
                   return (
                     <DropdownMenuItem
                       key={value}
                       onClick={() => onMonthChange(monthNum)}
-                      className="flex-row-reverse"
+                      className={cn(
+                        "flex items-center justify-between gap-4 cursor-pointer",
+                        selectedMonth === monthNum && "bg-slate-50 dark:bg-card font-medium"
+                      )}
                     >
-                      {name}
+                      <span>{name}</span>
                     </DropdownMenuItem>
                   );
                 })}
@@ -108,32 +111,31 @@ export function AnalyticsHeader({
           )}
 
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="h-8 w-8 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-sm"
             onClick={period === "yearly" ? () => onYearChange(selectedYear + 1) : handleNextMonth}
-            className="h-8 w-8 sm:h-9 sm:w-9 bg-white dark:bg-card border-slate-200 dark:border-border"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 text-slate-500" />
           </Button>
         </div>
 
         {/* Year Selector */}
-        <DropdownMenu>
+        <DropdownMenu dir="rtl">
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-[70px] sm:w-[90px] h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-card border-slate-200 dark:border-border justify-between px-3 font-semibold font-numbers"
-            >
+            <Button variant="outline" className="h-9 px-2.5 justify-center bg-white dark:bg-card border-slate-200 dark:border-border text-slate-700 dark:text-slate-300 font-normal">
               {selectedYear}
-              <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-16 px-0 min-w-0">
+          <DropdownMenuContent className="min-w-0" align="center">
             {years.map((year) => (
               <DropdownMenuItem
                 key={year}
                 onClick={() => onYearChange(year)}
-                className="justify-center font-numbers font-medium px-2"
+                className={cn(
+                  "justify-center text-center px-4 cursor-pointer",
+                  selectedYear === year && "bg-slate-50 dark:bg-card font-medium"
+                )}
               >
                 {year}
               </DropdownMenuItem>
