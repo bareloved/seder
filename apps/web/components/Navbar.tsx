@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { User, ClipboardList, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { User, ClipboardList, Settings, LogOut, Sun, Moon, MessageCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { FeedbackModal } from "@/components/FeedbackModal";
 
 interface NavbarProps {
     user?: {
@@ -101,8 +102,20 @@ export function Navbar({ user }: NavbarProps) {
                     </nav>
                 </div>
 
-                {/* Left Side: Theme Toggle & User Profile */}
+                {/* Left Side: Feedback, Theme Toggle & User Profile */}
                 <div className="flex items-center gap-2 md:gap-4 pl-2">
+                    {/* Feedback Button */}
+                    <FeedbackModal
+                        trigger={
+                            <button
+                                className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                                aria-label="שלח משוב"
+                            >
+                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                            </button>
+                        }
+                    />
+
                     {/* Theme Toggle */}
                     <button
                         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

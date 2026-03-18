@@ -72,16 +72,12 @@
   }
 
   html {
-    overflow-y: scroll;
+    scrollbar-gutter: stable;
     font-size: 120%;
   }
 
   body {
     @apply bg-background text-foreground;
-    overflow-y: auto !important;
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-    width: 100% !important;
   }
 
   /* Paper-like background texture */
