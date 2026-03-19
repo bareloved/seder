@@ -1,4 +1,9 @@
 import { LoginForm } from "@/components/login-form"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+
+export const dynamic = "force-dynamic"
 
 function BrandPanel() {
   return (
@@ -81,7 +86,12 @@ function BrandPanel() {
   )
 }
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (session?.user) {
+    redirect("/income")
+  }
+
   return (
     <div className="min-h-svh grid lg:grid-cols-2" dir="rtl">
       {/* Form side */}
