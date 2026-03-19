@@ -69,7 +69,7 @@ const QUICK_LINKS: { name: string; url: string; icon: string; description?: stri
   { name: "Neon Console", url: "https://console.neon.tech/app/projects/damp-salad-64131166", icon: "🗄️" },
   { name: "Upstash Dashboard", url: "https://console.upstash.com", icon: "⚡" },
   { name: "Google Cloud", url: "https://console.cloud.google.com/apis/dashboard?authuser=1&project=income-tracker-479716", icon: "☁️" },
-  { name: "Drizzle Studio", url: "https://local.drizzle.studio", icon: "🗃️", description: "הריצו pnpm db:studio מתיקיית apps/web כדי להפעיל" },
+  { name: "Drizzle Studio", url: "https://local.drizzle.studio", icon: "🗃️", description: "Run pnpm db:studio from apps/web to start" },
 ];
 
 function DetailRow({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: React.ReactNode; color?: string }) {
