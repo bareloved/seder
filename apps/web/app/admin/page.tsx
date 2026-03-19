@@ -177,6 +177,11 @@ export default async function AdminPage() {
       }))}
       userDetails={userDetails}
       stats={stats}
+      user={{
+        name: authSession.user.name,
+        email: authSession.user.email,
+        image: authSession.user.image ?? null,
+      }}
     />
   );
 }

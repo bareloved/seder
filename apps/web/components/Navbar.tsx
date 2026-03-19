@@ -23,9 +23,10 @@ interface NavbarProps {
         email?: string;
         image?: string | null;
     };
+    hideNav?: boolean;
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, hideNav }: NavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { theme, setTheme } = useTheme();
@@ -64,6 +65,7 @@ export function Navbar({ user }: NavbarProps) {
                     </div>
 
                     {/* Navigation Links */}
+                    {!hideNav && (
                     <nav className="hidden md:flex items-center gap-14" data-tour="navigation">
                         {navItems.map((item) => {
                             const isActive = pathname.startsWith(item.href);
@@ -100,6 +102,7 @@ export function Navbar({ user }: NavbarProps) {
                             );
                         })}
                     </nav>
+                    )}
                 </div>
 
                 {/* Left Side: Feedback, Theme Toggle & User Profile */}
