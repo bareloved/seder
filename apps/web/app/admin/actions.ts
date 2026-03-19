@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
-import { feedback, user, siteConfig } from "@/db/schema";
+import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 
@@ -94,6 +94,40 @@ export async function setAutoBackupEnabled(enabled: boolean) {
     });
 }
 
+
+// ===== USER MANAGEMENT =====
+
+export async function verifyUserEmail(userId: string) {
+  await requireAdmin();
+  await db
+    .update(user)
+    .set({ emailVerified: true })
+    .where(eq(user.id, userId));
+}
+
+export async function deleteUser(userId: string) {
+  await requireAdmin();
+
+  // Prevent self-deletion
+  const adminSession = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (adminSession?.user.id === userId) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Delete from tables without cascade (order matters for FK constraints)
+  await db.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
+  await db.delete(categories).where(eq(categories.userId, userId));
+  await db.delete(clients).where(eq(clients.userId, userId));
+  await db.delete(userSettings).where(eq(userSettings.userId, userId));
+  await db.delete(session).where(eq(session.userId, userId));
+  await db.delete(account).where(eq(account.userId, userId));
+  // Tables with onDelete cascade (feedback, deviceTokens, dismissedNudges) will auto-delete
+  await db.delete(user).where(eq(user.id, userId));
+}
+
+// ===== FEEDBACK MANAGEMENT =====
 
 export async function deleteFeedback(feedbackId: string) {
   await requireAdmin();

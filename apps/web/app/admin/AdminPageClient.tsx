@@ -1,18 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth, getAutoBackupEnabled, setAutoBackupEnabled } from "./actions";
+import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth, getAutoBackupEnabled, setAutoBackupEnabled, verifyUserEmail, deleteUser } from "./actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import {
   MessageSquare, Users, Send, Check, ChevronDown, ChevronUp,
   Mail, LayoutDashboard, ExternalLink, Database, Loader2,
-  UserPlus, Activity, Bell, Sun, Moon, Calendar, Smartphone,
+  UserPlus, Activity, Bell, Calendar, Smartphone,
   FolderOpen, Tag, X, CheckCircle2, Trash2, EyeOff, Reply,
   Wrench, CircleCheckBig,
 } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Navbar } from "@/components/Navbar";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 interface FeedbackItem {
   id: string;
@@ -59,14 +60,16 @@ interface AdminPageClientProps {
   users: UserItem[];
   userDetails: Record<string, UserDetail>;
   stats: Stats;
+  user: { name: string | null; email: string; image: string | null };
 }
 
-const QUICK_LINKS = [
+const QUICK_LINKS: { name: string; url: string; icon: string; description?: string }[] = [
   { name: "Sentry", url: "https://sentry.io/organizations/barel-oved/issues/", icon: "🐛" },
   { name: "Vercel Analytics", url: "https://vercel.com/barels-projects-e3362d85/sedder/observability", icon: "📊" },
   { name: "Neon Console", url: "https://console.neon.tech/app/projects/damp-salad-64131166", icon: "🗄️" },
   { name: "Upstash Dashboard", url: "https://console.upstash.com", icon: "⚡" },
   { name: "Google Cloud", url: "https://console.cloud.google.com/apis/dashboard?authuser=1&project=income-tracker-479716", icon: "☁️" },
+  { name: "Drizzle Studio", url: "https://local.drizzle.studio", icon: "🗃️", description: "הריצו pnpm db:studio מתיקיית apps/web כדי להפעיל" },
 ];
 
 function DetailRow({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: React.ReactNode; color?: string }) {
@@ -95,10 +98,8 @@ function StatusDot({ status }: { status: boolean }) {
   );
 }
 
-export default function AdminPageClient({ feedback, users, userDetails, stats }: AdminPageClientProps) {
+export default function AdminPageClient({ feedback, users, userDetails, stats, user }: AdminPageClientProps) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<"overview" | "feedback" | "users">("overview");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "unread" | "read" | "in_progress" | "done" | "replied">("all");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
@@ -110,8 +111,6 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
   const [sentryHealth, setSentryHealth] = React.useState<{ errorCount24h: number; status: string } | null>(null);
   const [autoBackup, setAutoBackup] = React.useState<boolean | null>(null);
-
-  React.useEffect(() => { setMounted(true); }, []);
 
   React.useEffect(() => {
     fetchSentryHealth().then(setSentryHealth).catch(() => setSentryHealth(null));
@@ -240,50 +239,45 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background" dir="rtl">
-      {/* Header */}
-      <div className="bg-white dark:bg-card border-b border-slate-200 dark:border-border sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">ניהול</h1>
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="החלף ערכת נושא"
-          >
-            {mounted && (theme === "dark" ? <Sun className="w-4 h-4 text-slate-400" /> : <Moon className="w-4 h-4 text-slate-400" />)}
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-background pb-24 md:pb-20" dir="rtl">
+      <Navbar user={user} hideNav />
 
+      <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 pt-1.5 sm:pt-3 pb-3 sm:pb-8 space-y-2">
         {/* Tabs */}
-        <div className="max-w-5xl mx-auto px-4 flex gap-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? "border-green-600 text-green-700 dark:text-green-400"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-                {tab.badge && tab.badge > 0 ? (
-                  <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                    {tab.badge}
-                  </span>
-                ) : tab.count !== undefined ? (
-                  <span className="text-xs text-slate-400">({tab.count})</span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        <section className="p-1.5 rounded-xl bg-white dark:bg-card shadow-sm border border-slate-200/40 dark:border-slate-700/40">
+          <div className="flex gap-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === tab.id
+                      ? "bg-brand-primary text-white"
+                      : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                  {tab.badge && tab.badge > 0 ? (
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
+                      activeTab === tab.id
+                        ? "bg-white/20 text-white"
+                        : "bg-amber-500 text-white"
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  ) : tab.count !== undefined ? (
+                    <span className={`text-xs ${activeTab === tab.id ? "text-white/70" : "text-slate-400"}`}>({tab.count})</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+        <section>
         {/* ===== OVERVIEW TAB ===== */}
         {activeTab === "overview" && (
           <div className="space-y-6">
@@ -297,7 +291,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
               ].map((kpi) => {
                 const Icon = kpi.icon;
                 return (
-                  <div key={kpi.label} className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4">
+                  <div key={kpi.label} className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40 p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Icon className={`w-4 h-4 ${kpi.color}`} />
                       <span className="text-xs text-slate-500">{kpi.label}</span>
@@ -317,7 +311,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                     href="https://sentry.io/organizations/barel-oved/issues/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`rounded-lg border p-4 transition-colors hover:opacity-80 ${healthColor(sentryHealth.status).bg} ${healthColor(sentryHealth.status).border}`}
+                    className={`rounded-xl shadow-sm border p-4 transition-colors hover:opacity-80 ${healthColor(sentryHealth.status).bg} ${healthColor(sentryHealth.status).border}`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -331,7 +325,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                     </p>
                   </a>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 dark:border-border p-4 animate-pulse">
+                  <div className="rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40 p-4 animate-pulse">
                     <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20 mb-2" />
                     <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-16" />
                   </div>
@@ -349,13 +343,16 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors group"
+                    className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40 p-4 hover:border-green-300 dark:hover:border-green-700 transition-colors group"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xl">{link.icon}</span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-green-500 transition-colors" />
                     </div>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{link.name}</p>
+                    {link.description && (
+                      <p className="text-xs text-slate-400 mt-1">{link.description}</p>
+                    )}
                   </a>
                 ))}
               </div>
@@ -364,7 +361,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
             {/* DB Backup */}
             <div>
               <h2 className="text-sm font-medium text-slate-500 mb-3">גיבוי מסד נתונים</h2>
-              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 space-y-4">
+              <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40 p-4 space-y-4">
                 {/* Auto backup toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -429,8 +426,8 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                   onClick={() => setStatusFilter(f)}
                   className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${
                     statusFilter === f
-                      ? "bg-green-600 text-white"
-                      : "bg-white dark:bg-card text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-border hover:bg-slate-50"
+                      ? "bg-brand-primary text-white"
+                      : "bg-white dark:bg-card text-slate-600 dark:text-slate-400 border border-slate-200/40 dark:border-slate-700/40 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
                   {{ all: "הכל", unread: "חדש", in_progress: "בטיפול", done: "טופל", replied: "נענה" }[f]}
@@ -448,10 +445,10 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
               filteredFeedback.map((item) => (
                 <div
                   key={item.id}
-                  className={`bg-white dark:bg-card rounded-lg border transition-colors ${
+                  className={`bg-white dark:bg-card rounded-xl shadow-sm border transition-colors ${
                     item.status === "unread"
                       ? "border-amber-200 dark:border-amber-800"
-                      : "border-slate-200 dark:border-border"
+                      : "border-slate-200/40 dark:border-slate-700/40"
                   }`}
                 >
                   <button
@@ -599,7 +596,7 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
           <div className="space-y-1">
             <p className="text-sm text-slate-500 mb-4">{users.length} משתמשים</p>
 
-            <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border overflow-hidden">
+            <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-slate-200/40 dark:border-slate-700/40 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-border bg-slate-50 dark:bg-slate-800/50">
@@ -645,7 +642,8 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
             </div>
           </div>
         )}
-      </div>
+        </section>
+      </main>
 
       {/* User Detail Sheet */}
       <Sheet open={!!selectedUserId} onOpenChange={(open) => !open && setSelectedUserId(null)}>
@@ -730,6 +728,37 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
                 </div>
               )}
 
+              {/* Actions */}
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-border space-y-2">
+                <h3 className="text-sm font-medium text-slate-500 mb-3">פעולות</h3>
+                {!selectedUser.emailVerified && (
+                  <button
+                    onClick={async () => {
+                      await verifyUserEmail(selectedUser.id);
+                      router.refresh();
+                      setSelectedUserId(null);
+                    }}
+                    className="w-full flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    אמת אימייל
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (confirm(`למחוק את המשתמש ${selectedUser.name} (${selectedUser.email})? כל הנתונים שלו יימחקו לצמיתות.`)) {
+                      await deleteUser(selectedUser.id);
+                      setSelectedUserId(null);
+                      router.refresh();
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  מחק משתמש
+                </button>
+              </div>
+
               {/* Signup info */}
               <div className="mt-6 pt-4 border-t border-slate-100 dark:border-border">
                 <p className="text-xs text-slate-400">
@@ -740,6 +769,8 @@ export default function AdminPageClient({ feedback, users, userDetails, stats }:
           )}
         </SheetContent>
       </Sheet>
+
+      <MobileBottomNav />
     </div>
   );
 }
