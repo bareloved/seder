@@ -129,20 +129,25 @@ struct SignUpView: View {
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                TextField("", text: $email, prompt: Text("your@email.com").foregroundStyle(Color(.systemGray3)))
-                                    .textFieldStyle(.plain)
-                                    .textContentType(.emailAddress)
-                                    .keyboardType(.emailAddress)
-                                    .autocapitalization(.none)
-                                    .foregroundStyle(SederTheme.textPrimary)
-                                    .tint(SederTheme.textPrimary)
-                                    .environment(\.layoutDirection, .leftToRight)
-                                    .padding(12)
-                                    .frame(height: 44)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
+                                ZStack(alignment: .trailing) {
+                                    if email.isEmpty {
+                                        Text("your@email.com")
+                                            .foregroundStyle(Color(.systemGray3))
+                                            .padding(.trailing, 12)
+                                    }
+                                    TextField("", text: $email)
+                                        .textFieldStyle(.plain)
+                                        .textContentType(.emailAddress)
+                                        .keyboardType(.emailAddress)
+                                        .autocapitalization(.none)
+                                        .environment(\.layoutDirection, .leftToRight)
+                                        .padding(12)
+                                }
+                                .frame(height: 44)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                )
                             }
 
                             // Password
