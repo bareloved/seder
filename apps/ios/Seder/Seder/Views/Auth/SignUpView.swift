@@ -107,11 +107,11 @@ struct SignUpView: View {
                     if showEmailForm {
                         VStack(spacing: 16) {
                             // Name
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("שם מלא")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 TextField("", text: $name, prompt: Text("השם שלכם").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.name)
@@ -124,11 +124,11 @@ struct SignUpView: View {
                             }
 
                             // Email
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("אימייל")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.emailAddress)
@@ -144,11 +144,11 @@ struct SignUpView: View {
                             }
 
                             // Password
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("סיסמה")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 HStack(spacing: 0) {
                                     if showPassword {
                                         TextField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))

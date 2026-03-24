@@ -122,11 +122,11 @@ struct SignInView: View {
                     if showEmailForm {
                         VStack(spacing: 16) {
                             // Email
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("אימייל")
                                     .font(SederTheme.ploni(16, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.emailAddress)
@@ -142,11 +142,11 @@ struct SignInView: View {
                             }
 
                             // Password
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("סיסמה")
                                     .font(SederTheme.ploni(16, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 HStack(spacing: 0) {
                                     if showPassword {
                                         TextField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
