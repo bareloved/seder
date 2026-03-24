@@ -46,25 +46,25 @@ struct SignUpView: View {
                             if auth.isAuthenticated { dismiss() }
                         }
                     } label: {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             GoogleLogo()
-                                .frame(width: 20, height: 20)
+                                .frame(width: 24, height: 24)
                             Text("המשיכו עם Google")
-                                .font(SederTheme.ploni(16, weight: .medium))
+                                .font(SederTheme.ploni(18, weight: .medium))
                                 .foregroundStyle(SederTheme.textPrimary)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 48)
+                        .frame(height: 56)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 10)
                             .fill(Color(.systemBackground))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 10)
                             .stroke(SederTheme.cardBorder, lineWidth: 1)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                     .disabled(auth.isLoading)
 
                     Text("מומלץ - מאפשר ייבוא אירועים מ-Google Calendar")
