@@ -196,12 +196,12 @@ struct SignUpView: View {
 
                     // Toggle to sign in
                     HStack(spacing: 4) {
-                        Button("התחברות") { dismiss() }
-                            .font(SederTheme.ploni(15, weight: .medium))
-                            .foregroundStyle(SederTheme.brandGreen)
                         Text("כבר יש לכם חשבון?")
                             .font(SederTheme.ploni(15))
                             .foregroundStyle(SederTheme.textSecondary)
+                        Button("התחברות") { dismiss() }
+                            .font(SederTheme.ploni(15, weight: .medium))
+                            .foregroundStyle(SederTheme.brandGreen)
                     }
                     .padding(.top, 24)
 
