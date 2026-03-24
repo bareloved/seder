@@ -6,6 +6,7 @@ struct SignInView: View {
     @State private var password = ""
     @State private var showSignUp = false
     @State private var showEmailForm = false
+    @State private var showPassword = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -119,13 +120,14 @@ struct SignInView: View {
 
                     // Email form (collapsible)
                     if showEmailForm {
-                        VStack(alignment: .trailing, spacing: 16) {
+                        VStack(spacing: 16) {
                             // Email
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("אימייל")
                                     .font(SederTheme.ploni(16, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                TextField("your@email.com", text: $email)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
@@ -140,20 +142,37 @@ struct SignInView: View {
                             }
 
                             // Password
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("סיסמה")
                                     .font(SederTheme.ploni(16, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                SecureField("••••••••", text: $password)
-                                    .textFieldStyle(.plain)
-                                    .textContentType(.password)
-                                    .environment(\.layoutDirection, .leftToRight)
-                                    .padding(12)
-                                    .frame(height: 44)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                HStack(spacing: 0) {
+                                    if showPassword {
+                                        TextField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
+                                            .textFieldStyle(.plain)
+                                            .textContentType(.password)
+                                    } else {
+                                        SecureField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
+                                            .textFieldStyle(.plain)
+                                            .textContentType(.password)
+                                    }
+                                    Button {
+                                        showPassword.toggle()
+                                    } label: {
+                                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(Color(.systemGray2))
+                                    }
+                                    .padding(.trailing, 4)
+                                }
+                                .environment(\.layoutDirection, .leftToRight)
+                                .padding(12)
+                                .frame(height: 44)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                )
                             }
 
                             // Sign in button

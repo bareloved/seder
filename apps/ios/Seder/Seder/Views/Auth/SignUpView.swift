@@ -7,6 +7,7 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showEmailForm = false
+    @State private var showPassword = false
 
     var body: some View {
         NavigationStack {
@@ -104,13 +105,14 @@ struct SignUpView: View {
 
                     // Email form (collapsible)
                     if showEmailForm {
-                        VStack(alignment: .trailing, spacing: 16) {
+                        VStack(spacing: 16) {
                             // Name
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("שם מלא")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                TextField("השם שלכם", text: $name)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                TextField("", text: $name, prompt: Text("השם שלכם").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.name)
                                     .padding(12)
@@ -122,11 +124,12 @@ struct SignUpView: View {
                             }
 
                             // Email
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("אימייל")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                TextField("your@email.com", text: $email)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
@@ -141,20 +144,37 @@ struct SignUpView: View {
                             }
 
                             // Password
-                            VStack(alignment: .trailing, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("סיסמה")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
-                                SecureField("••••••••", text: $password)
-                                    .textFieldStyle(.plain)
-                                    .textContentType(.newPassword)
-                                    .environment(\.layoutDirection, .leftToRight)
-                                    .padding(12)
-                                    .frame(height: 44)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                    )
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                HStack(spacing: 0) {
+                                    if showPassword {
+                                        TextField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
+                                            .textFieldStyle(.plain)
+                                            .textContentType(.newPassword)
+                                    } else {
+                                        SecureField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
+                                            .textFieldStyle(.plain)
+                                            .textContentType(.newPassword)
+                                    }
+                                    Button {
+                                        showPassword.toggle()
+                                    } label: {
+                                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(Color(.systemGray2))
+                                    }
+                                    .padding(.trailing, 4)
+                                }
+                                .environment(\.layoutDirection, .leftToRight)
+                                .padding(12)
+                                .frame(height: 44)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                )
 
                                 if !password.isEmpty {
                                     PasswordCheck(label: "לפחות 8 תווים", passed: password.count >= 8)
