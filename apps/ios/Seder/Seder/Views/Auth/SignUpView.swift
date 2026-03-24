@@ -129,20 +129,14 @@ struct SignUpView: View {
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                ZStack(alignment: .trailing) {
-                                    if email.isEmpty {
-                                        Text("your@email.com")
-                                            .foregroundStyle(Color(.systemGray3))
-                                            .padding(.trailing, 12)
-                                    }
-                                    TextField("", text: $email)
-                                        .textFieldStyle(.plain)
-                                        .textContentType(.emailAddress)
-                                        .keyboardType(.emailAddress)
-                                        .autocapitalization(.none)
-                                        .environment(\.layoutDirection, .leftToRight)
-                                        .padding(12)
-                                }
+                                TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(.gray.opacity(0.5)))
+                                    .textFieldStyle(.plain)
+                                    .textContentType(.emailAddress)
+                                    .keyboardType(.emailAddress)
+                                    .autocapitalization(.none)
+                                    .accentColor(.primary)
+                                    .environment(\.layoutDirection, .leftToRight)
+                                    .padding(12)
                                 .frame(height: 44)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
