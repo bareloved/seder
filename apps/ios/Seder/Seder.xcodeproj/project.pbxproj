@@ -8,15 +8,30 @@
 
 /* Begin PBXBuildFile section */
 		8D1594FB2F682097006D61C2 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 8D1594FA2F682097006D61C2 /* Sentry */; };
+		8D2433132F72F3BA001C4D06 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 8D2433122F72F3BA001C4D06 /* GoogleSignIn */; };
+		8D2433152F72F3BA001C4D06 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 8D2433142F72F3BA001C4D06 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		8D358BE92F5B5FD600078CB6 /* Seder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Seder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8D2433172F72F3FF001C4D06 /* Exceptions for "Seder" folder in "Seder" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8D358BE82F5B5FD600078CB6 /* Seder */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8D358BEB2F5B5FD600078CB6 /* Seder */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8D2433172F72F3FF001C4D06 /* Exceptions for "Seder" folder in "Seder" target */,
+			);
 			path = Seder;
 			sourceTree = "<group>";
 		};
@@ -27,7 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D2433152F72F3BA001C4D06 /* GoogleSignInSwift in Frameworks */,
 				8D1594FB2F682097006D61C2 /* Sentry in Frameworks */,
+				8D2433132F72F3BA001C4D06 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +88,8 @@
 			name = Seder;
 			packageProductDependencies = (
 				8D1594FA2F682097006D61C2 /* Sentry */,
+				8D2433122F72F3BA001C4D06 /* GoogleSignIn */,
+				8D2433142F72F3BA001C4D06 /* GoogleSignInSwift */,
 			);
 			productName = Seder;
 			productReference = 8D358BE92F5B5FD600078CB6 /* Seder.app */;
@@ -103,6 +122,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8D1594F92F682097006D61C2 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				8D2433112F72F3BA001C4D06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8D358BEA2F5B5FD600078CB6 /* Products */;
@@ -268,6 +288,7 @@
 				DEVELOPMENT_TEAM = HYKF8YXY8W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Seder/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -305,6 +326,7 @@
 				DEVELOPMENT_TEAM = HYKF8YXY8W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Seder/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -362,6 +384,14 @@
 				minimumVersion = 9.7.0;
 			};
 		};
+		8D2433112F72F3BA001C4D06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -369,6 +399,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8D1594F92F682097006D61C2 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
+		};
+		8D2433122F72F3BA001C4D06 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8D2433112F72F3BA001C4D06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		8D2433142F72F3BA001C4D06 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8D2433112F72F3BA001C4D06 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
