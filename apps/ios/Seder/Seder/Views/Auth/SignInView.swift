@@ -187,15 +187,15 @@ struct SignInView: View {
 
                     // Toggle to sign up
                     HStack(spacing: 4) {
+                        Text("אין לכם חשבון עדיין?")
+                            .font(SederTheme.ploni(16))
+                            .foregroundStyle(SederTheme.textSecondary)
+
                         Button("הרשמה") {
                             showSignUp = true
                         }
                         .font(SederTheme.ploni(16, weight: .medium))
                         .foregroundStyle(SederTheme.brandGreen)
-
-                        Text("אין לכם חשבון עדיין?")
-                            .font(SederTheme.ploni(16))
-                            .foregroundStyle(SederTheme.textSecondary)
                     }
                     .padding(.top, 24)
 
