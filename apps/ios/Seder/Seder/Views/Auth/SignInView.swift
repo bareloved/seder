@@ -5,6 +5,7 @@ struct SignInView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showSignUp = false
+    @State private var showEmailForm = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,7 +36,7 @@ struct SignInView: View {
                         .foregroundStyle(SederTheme.textPrimary)
                         .padding(.bottom, 8)
 
-                    Text("התחברו כדי לנהל את ההכנסות שלכם")
+                    Text("התחברו כדי להמשיך לסדר")
                         .font(.subheadline)
                         .foregroundStyle(SederTheme.textSecondary)
                         .padding(.bottom, 24)
@@ -56,98 +57,19 @@ struct SignInView: View {
                             .padding(.bottom, 16)
                     }
 
-                    // Form fields
-                    VStack(alignment: .trailing, spacing: 16) {
-                        // Email
-                        VStack(alignment: .trailing, spacing: 6) {
-                            Text("אימייל")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.textSecondary)
-                            TextField("your@email.com", text: $email)
-                                .textFieldStyle(.plain)
-                                .textContentType(.emailAddress)
-                                .keyboardType(.emailAddress)
-                                .autocapitalization(.none)
-                                .environment(\.layoutDirection, .leftToRight)
-                                .padding(12)
-                                .frame(height: 44)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                )
-                        }
-
-                        // Password
-                        VStack(alignment: .trailing, spacing: 6) {
-                            Text("סיסמה")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(SederTheme.textSecondary)
-                            SecureField("••••••••", text: $password)
-                                .textFieldStyle(.plain)
-                                .textContentType(.password)
-                                .environment(\.layoutDirection, .leftToRight)
-                                .padding(12)
-                                .frame(height: 44)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                                )
-                        }
-
-                        // Sign in button
-                        Button {
-                            Task { await auth.signIn(email: email, password: password) }
-                        } label: {
-                            if auth.isLoading {
-                                ProgressView()
-                                    .tint(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                            } else {
-                                Text("התחברות")
-                                    .font(.body.weight(.medium))
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                            }
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(email.isEmpty || password.isEmpty || auth.isLoading
-                                      ? SederTheme.brandGreen.opacity(0.5)
-                                      : SederTheme.brandGreen)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .disabled(email.isEmpty || password.isEmpty || auth.isLoading)
-                    }
-
-                    // Divider
-                    HStack(spacing: 12) {
-                        Rectangle()
-                            .fill(SederTheme.cardBorder)
-                            .frame(height: 1)
-                        Text("או")
-                            .font(.subheadline)
-                            .foregroundStyle(SederTheme.textTertiary)
-                        Rectangle()
-                            .fill(SederTheme.cardBorder)
-                            .frame(height: 1)
-                    }
-                    .padding(.vertical, 20)
-
-                    // Google sign-in button
+                    // Google sign-in button (primary CTA)
                     Button {
                         Task { await auth.signInWithGoogle() }
                     } label: {
                         HStack(spacing: 8) {
                             GoogleLogo()
                                 .frame(width: 20, height: 20)
-                            Text("התחברות עם Google")
+                            Text("המשיכו עם Google")
                                 .font(.body.weight(.medium))
                                 .foregroundStyle(SederTheme.textPrimary)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 44)
+                        .frame(height: 48)
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 8)
@@ -159,6 +81,108 @@ struct SignInView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .disabled(auth.isLoading)
+
+                    Text("מומלץ - מאפשר ייבוא אירועים מ-Google Calendar")
+                        .font(.caption)
+                        .foregroundStyle(SederTheme.textTertiary)
+                        .padding(.top, 10)
+
+                    // Collapsible divider
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .fill(SederTheme.cardBorder)
+                            .frame(height: 1)
+
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showEmailForm.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("או התחברות עם אימייל")
+                                    .font(.subheadline)
+                                    .foregroundStyle(SederTheme.textTertiary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2)
+                                    .foregroundStyle(SederTheme.textTertiary)
+                                    .rotationEffect(.degrees(showEmailForm ? 180 : 0))
+                            }
+                            .padding(.horizontal, 12)
+                        }
+
+                        Rectangle()
+                            .fill(SederTheme.cardBorder)
+                            .frame(height: 1)
+                    }
+                    .padding(.vertical, 24)
+
+                    // Email form (collapsible)
+                    if showEmailForm {
+                        VStack(alignment: .trailing, spacing: 16) {
+                            // Email
+                            VStack(alignment: .trailing, spacing: 6) {
+                                Text("אימייל")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(SederTheme.textSecondary)
+                                TextField("your@email.com", text: $email)
+                                    .textFieldStyle(.plain)
+                                    .textContentType(.emailAddress)
+                                    .keyboardType(.emailAddress)
+                                    .autocapitalization(.none)
+                                    .environment(\.layoutDirection, .leftToRight)
+                                    .padding(12)
+                                    .frame(height: 44)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                    )
+                            }
+
+                            // Password
+                            VStack(alignment: .trailing, spacing: 6) {
+                                Text("סיסמה")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(SederTheme.textSecondary)
+                                SecureField("••••••••", text: $password)
+                                    .textFieldStyle(.plain)
+                                    .textContentType(.password)
+                                    .environment(\.layoutDirection, .leftToRight)
+                                    .padding(12)
+                                    .frame(height: 44)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                    )
+                            }
+
+                            // Sign in button
+                            Button {
+                                Task { await auth.signIn(email: email, password: password) }
+                            } label: {
+                                if auth.isLoading {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                } else {
+                                    Text("התחברות")
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                }
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(email.isEmpty || password.isEmpty || auth.isLoading
+                                          ? SederTheme.brandGreen.opacity(0.5)
+                                          : SederTheme.brandGreen)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .disabled(email.isEmpty || password.isEmpty || auth.isLoading)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
 
                     // Toggle to sign up
                     HStack(spacing: 4) {
@@ -172,7 +196,14 @@ struct SignInView: View {
                             .font(.subheadline)
                             .foregroundStyle(SederTheme.textSecondary)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 24)
+
+                    // Legal text
+                    Text("בהמשך, אתם מסכימים לתנאי השימוש ומדיניות הפרטיות")
+                        .font(.caption)
+                        .foregroundStyle(SederTheme.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 32)
                 }
                 .padding(.horizontal, 24)
             }
