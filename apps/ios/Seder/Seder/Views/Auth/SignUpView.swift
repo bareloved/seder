@@ -111,6 +111,7 @@ struct SignUpView: View {
                                 Text("שם מלא")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 TextField("", text: $name, prompt: Text("השם שלכם").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.name)
@@ -127,6 +128,7 @@ struct SignUpView: View {
                                 Text("אימייל")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(Color(.systemGray3)))
                                     .textFieldStyle(.plain)
                                     .textContentType(.emailAddress)
@@ -146,6 +148,7 @@ struct SignUpView: View {
                                 Text("סיסמה")
                                     .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 HStack(spacing: 0) {
                                     if showPassword {
                                         TextField("", text: $password, prompt: Text("••••••••").foregroundColor(Color(.systemGray3)))
