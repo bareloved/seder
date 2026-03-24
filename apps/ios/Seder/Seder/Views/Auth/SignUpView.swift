@@ -85,14 +85,15 @@ struct SignUpView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text("או הרשמה עם אימייל")
-                                    .font(SederTheme.ploni(15))
+                                    .font(SederTheme.ploni(14))
                                     .foregroundStyle(SederTheme.textTertiary)
+                                    .fixedSize()
                                 Image(systemName: "chevron.down")
                                     .font(.system(size: 10))
                                     .foregroundStyle(SederTheme.textTertiary)
                                     .rotationEffect(.degrees(showEmailForm ? 180 : 0))
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 8)
                         }
 
                         Rectangle()
