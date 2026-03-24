@@ -62,7 +62,7 @@ struct SignUpView: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                            .stroke(Color(.systemGray4).opacity(0.6), lineWidth: 1)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .disabled(auth.isLoading)
