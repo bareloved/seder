@@ -128,8 +128,10 @@ class AuthViewModel: ObservableObject {
             await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
+        } catch let error as NSError where error.domain == "com.google.GIDSignIn" && error.code == -5 {
+            // User cancelled — not an error, just dismiss silently
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "שגיאה בהתחברות עם Google"
         }
     }
 
