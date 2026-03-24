@@ -15,18 +15,18 @@ struct SignUpView: View {
                     Spacer().frame(height: 40)
 
                     Text("יצירת חשבון")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(SederTheme.ploni(24, weight: .bold))
                         .foregroundStyle(SederTheme.textPrimary)
                         .padding(.bottom, 8)
 
                     Text("צרו חשבון כדי להתחיל לעקוב אחרי ההכנסות")
-                        .font(.subheadline)
+                        .font(SederTheme.ploni(15))
                         .foregroundStyle(SederTheme.textSecondary)
                         .padding(.bottom, 24)
 
                     if let error = auth.errorMessage {
                         Text(error)
-                            .font(.subheadline)
+                            .font(SederTheme.ploni(15))
                             .foregroundStyle(.red)
                             .padding(12)
                             .frame(maxWidth: .infinity)
@@ -50,7 +50,7 @@ struct SignUpView: View {
                             GoogleLogo()
                                 .frame(width: 20, height: 20)
                             Text("המשיכו עם Google")
-                                .font(.body.weight(.medium))
+                                .font(SederTheme.ploni(16, weight: .medium))
                                 .foregroundStyle(SederTheme.textPrimary)
                         }
                         .frame(maxWidth: .infinity)
@@ -68,7 +68,7 @@ struct SignUpView: View {
                     .disabled(auth.isLoading)
 
                     Text("מומלץ - מאפשר ייבוא אירועים מ-Google Calendar")
-                        .font(.caption)
+                        .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textTertiary)
                         .padding(.top, 10)
 
@@ -85,10 +85,10 @@ struct SignUpView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text("או הרשמה עם אימייל")
-                                    .font(.subheadline)
+                                    .font(SederTheme.ploni(15))
                                     .foregroundStyle(SederTheme.textTertiary)
                                 Image(systemName: "chevron.down")
-                                    .font(.caption2)
+                                    .font(.system(size: 10))
                                     .foregroundStyle(SederTheme.textTertiary)
                                     .rotationEffect(.degrees(showEmailForm ? 180 : 0))
                             }
@@ -107,7 +107,7 @@ struct SignUpView: View {
                             // Name
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text("שם מלא")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                 TextField("השם שלכם", text: $name)
                                     .textFieldStyle(.plain)
@@ -123,7 +123,7 @@ struct SignUpView: View {
                             // Email
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text("אימייל")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                 TextField("your@email.com", text: $email)
                                     .textFieldStyle(.plain)
@@ -142,7 +142,7 @@ struct SignUpView: View {
                             // Password
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text("סיסמה")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                 SecureField("••••••••", text: $password)
                                     .textFieldStyle(.plain)
@@ -175,7 +175,7 @@ struct SignUpView: View {
                                         .frame(height: 44)
                                 } else {
                                     Text("יצירת חשבון")
-                                        .font(.body.weight(.medium))
+                                        .font(SederTheme.ploni(16, weight: .medium))
                                         .foregroundStyle(.white)
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 44)
@@ -196,17 +196,17 @@ struct SignUpView: View {
                     // Toggle to sign in
                     HStack(spacing: 4) {
                         Button("התחברות") { dismiss() }
-                            .font(.subheadline.weight(.medium))
+                            .font(SederTheme.ploni(15, weight: .medium))
                             .foregroundStyle(SederTheme.brandGreen)
                         Text("כבר יש לכם חשבון?")
-                            .font(.subheadline)
+                            .font(SederTheme.ploni(15))
                             .foregroundStyle(SederTheme.textSecondary)
                     }
                     .padding(.top, 24)
 
                     // Legal text
                     Text("בהמשך, אתם מסכימים לתנאי השימוש ומדיניות הפרטיות")
-                        .font(.caption)
+                        .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textTertiary)
                         .multilineTextAlignment(.center)
                         .padding(.top, 32)
@@ -231,10 +231,10 @@ struct PasswordCheck: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.caption)
+                .font(SederTheme.ploni(12))
                 .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.textTertiary)
             Image(systemName: passed ? "checkmark.circle.fill" : "circle")
-                .font(.caption)
+                .font(SederTheme.ploni(12))
                 .foregroundStyle(passed ? SederTheme.paidColor : SederTheme.textTertiary)
         }
     }

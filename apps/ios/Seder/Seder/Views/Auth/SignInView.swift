@@ -16,7 +16,7 @@ struct SignInView: View {
                     // Logo (matches web: green rounded box + "סדר" text)
                     HStack(spacing: 8) {
                         Text("סדר")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(SederTheme.ploni(28, weight: .bold))
                             .foregroundStyle(SederTheme.textPrimary)
 
                         RoundedRectangle(cornerRadius: 8)
@@ -32,19 +32,19 @@ struct SignInView: View {
 
                     // Welcome heading
                     Text("ברוכים הבאים")
-                        .font(.system(size: 24, weight: .bold))
+                        .font(SederTheme.ploni(24, weight: .bold))
                         .foregroundStyle(SederTheme.textPrimary)
                         .padding(.bottom, 8)
 
                     Text("התחברו כדי להמשיך לסדר")
-                        .font(.subheadline)
+                        .font(SederTheme.ploni(15))
                         .foregroundStyle(SederTheme.textSecondary)
                         .padding(.bottom, 24)
 
                     // Error
                     if let error = auth.errorMessage {
                         Text(error)
-                            .font(.subheadline)
+                            .font(SederTheme.ploni(15))
                             .foregroundStyle(.red)
                             .padding(12)
                             .frame(maxWidth: .infinity)
@@ -65,7 +65,7 @@ struct SignInView: View {
                             GoogleLogo()
                                 .frame(width: 20, height: 20)
                             Text("המשיכו עם Google")
-                                .font(.body.weight(.medium))
+                                .font(SederTheme.ploni(16, weight: .medium))
                                 .foregroundStyle(SederTheme.textPrimary)
                         }
                         .frame(maxWidth: .infinity)
@@ -83,7 +83,7 @@ struct SignInView: View {
                     .disabled(auth.isLoading)
 
                     Text("מומלץ - מאפשר ייבוא אירועים מ-Google Calendar")
-                        .font(.caption)
+                        .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textTertiary)
                         .padding(.top, 10)
 
@@ -100,10 +100,10 @@ struct SignInView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text("או התחברות עם אימייל")
-                                    .font(.subheadline)
+                                    .font(SederTheme.ploni(15))
                                     .foregroundStyle(SederTheme.textTertiary)
                                 Image(systemName: "chevron.down")
-                                    .font(.caption2)
+                                    .font(.system(size: 10))
                                     .foregroundStyle(SederTheme.textTertiary)
                                     .rotationEffect(.degrees(showEmailForm ? 180 : 0))
                             }
@@ -122,7 +122,7 @@ struct SignInView: View {
                             // Email
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text("אימייל")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                 TextField("your@email.com", text: $email)
                                     .textFieldStyle(.plain)
@@ -141,7 +141,7 @@ struct SignInView: View {
                             // Password
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text("סיסמה")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(SederTheme.ploni(15, weight: .medium))
                                     .foregroundStyle(SederTheme.textSecondary)
                                 SecureField("••••••••", text: $password)
                                     .textFieldStyle(.plain)
@@ -166,7 +166,7 @@ struct SignInView: View {
                                         .frame(height: 44)
                                 } else {
                                     Text("התחברות")
-                                        .font(.body.weight(.medium))
+                                        .font(SederTheme.ploni(16, weight: .medium))
                                         .foregroundStyle(.white)
                                         .frame(maxWidth: .infinity)
                                         .frame(height: 44)
@@ -189,18 +189,18 @@ struct SignInView: View {
                         Button("הרשמה") {
                             showSignUp = true
                         }
-                        .font(.subheadline.weight(.medium))
+                        .font(SederTheme.ploni(15, weight: .medium))
                         .foregroundStyle(SederTheme.brandGreen)
 
                         Text("אין לכם חשבון עדיין?")
-                            .font(.subheadline)
+                            .font(SederTheme.ploni(15))
                             .foregroundStyle(SederTheme.textSecondary)
                     }
                     .padding(.top, 24)
 
                     // Legal text
                     Text("בהמשך, אתם מסכימים לתנאי השימוש ומדיניות הפרטיות")
-                        .font(.caption)
+                        .font(SederTheme.ploni(12))
                         .foregroundStyle(SederTheme.textTertiary)
                         .multilineTextAlignment(.center)
                         .padding(.top, 32)
