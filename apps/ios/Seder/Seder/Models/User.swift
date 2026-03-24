@@ -37,3 +37,19 @@ nonisolated struct SignUpRequest: Encodable, Sendable {
     let password: String
     let name: String
 }
+
+nonisolated struct GoogleSignInRequest: Encodable, Sendable {
+    let provider: String
+    let idToken: IDTokenPayload
+    let callbackURL: String
+
+    init(idToken: String) {
+        self.provider = "google"
+        self.idToken = IDTokenPayload(token: idToken)
+        self.callbackURL = "/dashboard"
+    }
+}
+
+nonisolated struct IDTokenPayload: Encodable, Sendable {
+    let token: String
+}

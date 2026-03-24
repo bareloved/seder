@@ -102,6 +102,37 @@ class AuthViewModel: ObservableObject {
         }
     }
 
+    func signInWithGoogle() async {
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let idToken = try await GoogleSignInService.shared.signIn()
+            let response: SignInResponse = try await api.directRequest(
+                endpoint: "/api/auth/sign-in/social",
+                method: "POST",
+                body: GoogleSignInRequest(idToken: idToken)
+            )
+            let token = response.session?.token ?? response.token
+            guard let token else {
+                errorMessage = "לא התקבל טוקן מהשרת"
+                return
+            }
+            api.token = token
+            user = response.user
+            isAuthenticated = true
+            if let user = response.user {
+                SentryService.setUser(id: user.id)
+            }
+            await loadAvatarImage()
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func signOut() {
         api.token = nil
         user = nil

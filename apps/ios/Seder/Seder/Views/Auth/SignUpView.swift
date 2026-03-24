@@ -126,6 +126,48 @@ struct SignUpView: View {
                         .disabled(name.isEmpty || email.isEmpty || password.count < 8 || auth.isLoading)
                     }
 
+                    // Divider
+                    HStack(spacing: 12) {
+                        Rectangle()
+                            .fill(SederTheme.cardBorder)
+                            .frame(height: 1)
+                        Text("או")
+                            .font(.subheadline)
+                            .foregroundStyle(SederTheme.textTertiary)
+                        Rectangle()
+                            .fill(SederTheme.cardBorder)
+                            .frame(height: 1)
+                    }
+                    .padding(.vertical, 20)
+
+                    // Google sign-up button
+                    Button {
+                        Task {
+                            await auth.signInWithGoogle()
+                            if auth.isAuthenticated { dismiss() }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            GoogleLogo()
+                                .frame(width: 20, height: 20)
+                            Text("הרשמה עם Google")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(SederTheme.textPrimary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(.systemBackground))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(SederTheme.cardBorder, lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .disabled(auth.isLoading)
+
                     HStack(spacing: 4) {
                         Button("התחברות") { dismiss() }
                             .font(.subheadline.weight(.medium))
