@@ -272,6 +272,7 @@ SENTRY_PROJECT=xxx         # Sentry project slug
 SENTRY_AUTH_TOKEN=xxx      # Sentry source map uploads
 UPSTASH_REDIS_REST_URL=xxx # Rate limiting
 UPSTASH_REDIS_REST_TOKEN=xxx # Rate limiting
+GOOGLE_IOS_CLIENT_ID=xxx   # iOS app Google Sign-In
 NEON_PROJECT_ID=xxx        # Automated DB backups
 NEON_API_KEY=xxx           # Automated DB backups
 ```

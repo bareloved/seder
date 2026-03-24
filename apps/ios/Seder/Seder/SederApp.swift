@@ -1,4 +1,5 @@
 import CoreText
+import GoogleSignIn
 import SwiftUI
 
 class AppDelegate: NSObject, UIApplicationDelegate {
@@ -57,6 +58,9 @@ struct SederApp: App {
                 }
             }
             .tint(SederTheme.brandGreen)
+            .onOpenURL { url in
+                GIDSignIn.sharedInstance.handle(url)
+            }
         }
     }
 }
