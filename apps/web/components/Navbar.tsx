@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { User, ClipboardList, Settings, LogOut, Sun, Moon, MessageCircle } from "lucide-react";
+import { User, Settings, LogOut, Sun, Moon, MessageCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
@@ -60,9 +60,15 @@ export function Navbar({ user, hideNav }: NavbarProps) {
                 {/* Right Side: Logo & Navigation */}
                 <div className="flex items-center gap-14">
                     {/* Logo Icon */}
-                    <div className="flex items-center justify-center">
-                        <ClipboardList className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                    </div>
+                    <Link href="/income" className="flex items-center justify-center">
+                        <svg viewBox="120 240 784 560" className="w-7 h-7 md:w-9 md:h-9" aria-label="סדר">
+                            <g transform="translate(512, 500) rotate(-8)">
+                                <rect x="-320" y="78" width="640" height="120" rx="60" fill="white" opacity="0.85"/>
+                                <rect x="-270" y="-60" width="540" height="120" rx="60" fill="white" opacity="0.92"/>
+                                <rect x="-210" y="-198" width="420" height="120" rx="60" fill="white"/>
+                            </g>
+                        </svg>
+                    </Link>
 
                     {/* Navigation Links */}
                     {!hideNav && (
