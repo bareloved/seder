@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { LandingHeader } from "./(marketing)/components/LandingHeader";
 import { LandingHero } from "./(marketing)/components/LandingHero";
 import { FeatureShowcase } from "./(marketing)/components/FeatureShowcase";
+import { FeatureList } from "./(marketing)/components/FeatureList";
 import { HowItWorks } from "./(marketing)/components/HowItWorks";
 import { Testimonials } from "./(marketing)/components/Testimonials";
 import { CTASection } from "./(marketing)/components/CTASection";
@@ -33,6 +34,7 @@ export default async function Home() {
       <LandingHeader />
       <LandingHero />
       <FeatureShowcase />
+      <FeatureList />
       <HowItWorks />
       <Testimonials />
       <CTASection />
