@@ -279,7 +279,8 @@ NEON_API_KEY=xxx           # Automated DB backups
 
 ## Project Documentation
 
-- `apps/web/documents/APP_OVERVIEW.md` - High-level app overview (screens, features, domain model)
+- `APP_OVERVIEW.md` - High-level app overview (screens, features, domain model)
+- `SEDER_CHANGELOG.md` - Development changelog with session-by-session changes
 - `docs/CONTRIB.md` - Development workflow, scripts reference, environment setup
 - `docs/RUNBOOK.md` - Deployment, monitoring, common issues, rollback procedures
 - `docs/CROSS_PLATFORM_GUIDE.md` - Cross-platform development guide (web + iOS)
