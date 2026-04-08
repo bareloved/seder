@@ -48,6 +48,11 @@ function isDismissed(
 ): boolean {
   return dismissed.some((d) => {
     if (d.nudgeType !== nudgeType) return false;
+
+    // Push-dedup-only rows (created by markNudgePushed, never dismissed by user)
+    // should not hide nudges from the in-app view
+    if (d.lastPushedAt && !d.snoozeUntil) return false;
+
     if (entryId && d.entryId === entryId) {
       if (d.snoozeUntil && d.snoozeUntil < now) return false;
       return true;
