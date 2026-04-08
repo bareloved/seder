@@ -8,8 +8,7 @@ nonisolated struct UserSettings: Codable, Sendable {
     let defaultCurrency: String?
     let onboardingCompleted: Bool?
     let calendarSettings: CalendarSettingsData?
-    let nudgeInvoiceDays: StringOrInt?
-    let nudgePaymentDays: StringOrInt?
+    let nudgeWeeklyDay: Int?
     let nudgePushEnabled: NudgePushPreferences?
 }
 
@@ -46,22 +45,16 @@ nonisolated enum StringOrInt: Codable, Sendable {
 }
 
 nonisolated struct NudgePushPreferences: Codable, Sendable {
-    var uninvoiced: Bool
-    var batch_invoice: Bool
-    var overdue_payment: Bool
-    var way_overdue: Bool
-    var partial_stale: Bool
-    var unlogged_calendar: Bool
-    var month_end: Bool
+    var overdue: Bool
+    var weekly_uninvoiced: Bool
+    var calendar_sync: Bool
+    var unpaid_check: Bool
 
     static let defaults = NudgePushPreferences(
-        uninvoiced: true,
-        batch_invoice: true,
-        overdue_payment: true,
-        way_overdue: true,
-        partial_stale: true,
-        unlogged_calendar: false,
-        month_end: true
+        overdue: true,
+        weekly_uninvoiced: true,
+        calendar_sync: true,
+        unpaid_check: true
     )
 }
 
@@ -78,8 +71,7 @@ nonisolated struct CalendarSettingsData: Codable, Sendable {
 }
 
 nonisolated struct UpdateNudgeSettingsRequest: Encodable, Sendable {
-    let nudgeInvoiceDays: String
-    let nudgePaymentDays: String
+    let nudgeWeeklyDay: Int
     let nudgePushEnabled: NudgePushPreferences
 }
 
