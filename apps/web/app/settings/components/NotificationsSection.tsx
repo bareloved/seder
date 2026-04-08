@@ -4,33 +4,37 @@ import { useState, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { updateNudgeSettings } from "../actions";
 import type { NudgePushPreferences } from "@/lib/nudges/types";
-import { DEFAULT_NUDGE_PUSH_PREFS } from "@/lib/nudges/types";
 
 interface NotificationsSectionProps {
   initialSettings: {
-    nudgeInvoiceDays: number;
-    nudgePaymentDays: number;
+    nudgeWeeklyDay: number;
     nudgePushEnabled: NudgePushPreferences;
   };
 }
 
 const pushLabels: Record<keyof NudgePushPreferences, string> = {
-  uninvoiced: "עבודות ללא חשבונית",
-  batch_invoice: "תזכורת שבועית לחשבוניות",
-  overdue_payment: "תשלומים באיחור",
-  way_overdue: "תשלומים באיחור חמור",
-  partial_stale: "תשלום חלקי תקוע",
-  unlogged_calendar: "אירועי יומן לא מיובאים",
-  month_end: "תזכורת סוף חודש",
+  overdue: "חשבוניות שלא שולמו (30+ יום)",
+  weekly_uninvoiced: "תזכורת שבועית לחשבוניות",
+  calendar_sync: "סנכרון יומן (תחילת חודש)",
+  unpaid_check: "בדיקת תשלומים (סוף חודש)",
 };
 
+const dayNames = [
+  { value: "0", label: "ראשון" },
+  { value: "1", label: "שני" },
+  { value: "2", label: "שלישי" },
+  { value: "3", label: "רביעי" },
+  { value: "4", label: "חמישי" },
+  { value: "5", label: "שישי" },
+  { value: "6", label: "שבת" },
+];
+
 export function NotificationsSection({ initialSettings }: NotificationsSectionProps) {
-  const [invoiceDays, setInvoiceDays] = useState(initialSettings.nudgeInvoiceDays);
-  const [paymentDays, setPaymentDays] = useState(initialSettings.nudgePaymentDays);
+  const [weeklyDay, setWeeklyDay] = useState(initialSettings.nudgeWeeklyDay);
   const [pushPrefs, setPushPrefs] = useState<NudgePushPreferences>(
     initialSettings.nudgePushEnabled
   );
@@ -43,8 +47,7 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
   function handleSave() {
     startTransition(async () => {
       await updateNudgeSettings({
-        nudgeInvoiceDays: invoiceDays,
-        nudgePaymentDays: paymentDays,
+        nudgeWeeklyDay: weeklyDay,
         nudgePushEnabled: pushPrefs,
       });
     });
@@ -52,38 +55,6 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
 
   return (
     <div className="space-y-6" dir="rtl">
-      <Card>
-        <CardHeader>
-          <CardTitle>ספים לתזכורות</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>ימים עד תזכורת חשבונית</Label>
-            <Input
-              type="number"
-              min={1}
-              max={30}
-              value={invoiceDays}
-              onChange={(e) => setInvoiceDays(Number(e.target.value))}
-              className="w-20 text-center"
-              dir="ltr"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label>ימים עד תזכורת תשלום</Label>
-            <Input
-              type="number"
-              min={1}
-              max={60}
-              value={paymentDays}
-              onChange={(e) => setPaymentDays(Number(e.target.value))}
-              className="w-20 text-center"
-              dir="ltr"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>התראות Push</CardTitle>
@@ -98,6 +69,33 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
               />
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>יום תזכורת שבועית</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label>באיזה יום לשלוח תזכורת חשבוניות?</Label>
+            <Select
+              value={String(weeklyDay)}
+              onValueChange={(v) => setWeeklyDay(Number(v))}
+              dir="rtl"
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {dayNames.map((d) => (
+                  <SelectItem key={d.value} value={d.value}>
+                    {d.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 

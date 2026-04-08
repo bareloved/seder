@@ -1,15 +1,9 @@
 import { db } from "@/db/client";
 import { incomeEntries, dismissedNudges, userSettings } from "@/db/schema";
 import { eq, and, or, ne } from "drizzle-orm";
-import { DEFAULT_NUDGE_INVOICE_DAYS, DEFAULT_NUDGE_PAYMENT_DAYS, DEFAULT_NUDGE_PUSH_PREFS } from "./types";
+import { DEFAULT_NUDGE_PUSH_PREFS, DEFAULT_NUDGE_WEEKLY_DAY } from "./types";
 import type { NudgePushPreferences } from "./types";
 
-/**
- * Fetch entries that could generate nudges:
- * - drafts (potential uninvoiced nudges)
- * - sent + not fully paid (potential overdue/partial nudges)
- * Excludes cancelled and fully-paid entries.
- */
 export async function fetchNudgeableEntries(userId: string) {
   return db
     .select()
@@ -29,9 +23,6 @@ export async function fetchNudgeableEntries(userId: string) {
     );
 }
 
-/**
- * Fetch all active dismissed/snoozed nudges for a user.
- */
 export async function fetchDismissedNudges(userId: string) {
   return db
     .select()
@@ -39,14 +30,10 @@ export async function fetchDismissedNudges(userId: string) {
     .where(eq(dismissedNudges.userId, userId));
 }
 
-/**
- * Get user's nudge settings with defaults.
- */
 export async function getNudgeSettings(userId: string) {
   const [settings] = await db
     .select({
-      nudgeInvoiceDays: userSettings.nudgeInvoiceDays,
-      nudgePaymentDays: userSettings.nudgePaymentDays,
+      nudgeWeeklyDay: userSettings.nudgeWeeklyDay,
       nudgePushEnabled: userSettings.nudgePushEnabled,
     })
     .from(userSettings)
@@ -54,20 +41,11 @@ export async function getNudgeSettings(userId: string) {
     .limit(1);
 
   return {
-    nudgeInvoiceDays: settings?.nudgeInvoiceDays
-      ? Number(settings.nudgeInvoiceDays)
-      : DEFAULT_NUDGE_INVOICE_DAYS,
-    nudgePaymentDays: settings?.nudgePaymentDays
-      ? Number(settings.nudgePaymentDays)
-      : DEFAULT_NUDGE_PAYMENT_DAYS,
+    nudgeWeeklyDay: settings?.nudgeWeeklyDay ?? DEFAULT_NUDGE_WEEKLY_DAY,
     nudgePushEnabled: (settings?.nudgePushEnabled ?? DEFAULT_NUDGE_PUSH_PREFS) as NudgePushPreferences,
   };
 }
 
-/**
- * Dismiss or snooze a nudge.
- * Uses separate paths for per-entry vs aggregate nudges to match the correct unique index.
- */
 export async function dismissNudge(
   userId: string,
   nudgeType: string,
@@ -94,9 +72,6 @@ export async function dismissNudge(
   }
 }
 
-/**
- * Update lastPushedAt for a nudge (push dedup tracking).
- */
 export async function markNudgePushed(
   userId: string,
   nudgeType: string,

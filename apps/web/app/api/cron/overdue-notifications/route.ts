@@ -7,49 +7,13 @@ import { fetchNudgeableEntries, fetchDismissedNudges, getNudgeSettings, markNudg
 import { computeNudges } from "@/lib/nudges/compute";
 import type { NudgeType } from "@/lib/nudges/types";
 
-// Push thresholds: only push for high-priority nudges
-const PUSH_NUDGE_TYPES: NudgeType[] = [
-  "overdue_payment",
-  "way_overdue",
-  "uninvoiced",
-  "batch_invoice",
-  "month_end",
-];
-
-// Only push uninvoiced at 7+ days (higher than in-app 3-day threshold)
-const PUSH_UNINVOICED_MIN_DAYS = 7;
-
 const MAX_PUSH_PER_USER = 2;
 
-const nudgeMessages: Record<NudgeType, { title: string; bodyFn: (count: number) => string }> = {
-  way_overdue: {
-    title: "תשלומים באיחור חמור",
-    bodyFn: (c) => `יש לך ${c} חשבוניות שלא שולמו מעל 30 יום`,
-  },
-  overdue_payment: {
-    title: "ממתין לתשלום",
-    bodyFn: (c) => `יש לך ${c} חשבוניות שממתינות לתשלום`,
-  },
-  uninvoiced: {
-    title: "עבודות ללא חשבונית",
-    bodyFn: (c) => `יש לך ${c} עבודות בלי חשבונית כבר מעל שבוע`,
-  },
-  batch_invoice: {
-    title: "עבודות ממתינות לחשבונית",
-    bodyFn: (c) => `יש לך ${c} עבודות שממתינות לחשבונית השבוע`,
-  },
-  month_end: {
-    title: "סוף חודש מתקרב",
-    bodyFn: (c) => `יש ${c} עבודות בלי חשבונית לפני סוף החודש`,
-  },
-  partial_stale: {
-    title: "תשלום חלקי תקוע",
-    bodyFn: (c) => `יש לך ${c} תשלומים חלקיים תקועים`,
-  },
-  unlogged_calendar: {
-    title: "אירועים לא מיובאים",
-    bodyFn: (c) => `יש ${c} אירועים מהיומן שלא יובאו`,
-  },
+const DEDUP_MS: Record<NudgeType, number> = {
+  overdue: 7 * 24 * 60 * 60 * 1000,
+  weekly_uninvoiced: 7 * 24 * 60 * 60 * 1000,
+  calendar_sync: 28 * 24 * 60 * 60 * 1000,
+  unpaid_check: 28 * 24 * 60 * 60 * 1000,
 };
 
 export async function GET(request: NextRequest) {
@@ -59,63 +23,124 @@ export async function GET(request: NextRequest) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Get all users
-    const users = await db.select({ id: user.id }).from(user);
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const dayOfMonth = now.getDate();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const isFirstOfMonth = dayOfMonth === 1;
+    const isLastOfMonth = dayOfMonth === lastDayOfMonth;
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
+    const users = await db.select({ id: user.id }).from(user);
     let notificationsSent = 0;
 
     for (const u of users) {
       const settings = await getNudgeSettings(u.id);
-      const [entries, dismissed] = await Promise.all([
-        fetchNudgeableEntries(u.id),
-        fetchDismissedNudges(u.id),
-      ]);
+      let sent = 0;
 
-      const nudges = computeNudges(entries, dismissed, settings);
+      // --- 1. Overdue (daily) ---
+      if (settings.nudgePushEnabled.overdue) {
+        const [entries, dismissed] = await Promise.all([
+          fetchNudgeableEntries(u.id),
+          fetchDismissedNudges(u.id),
+        ]);
 
-      // Filter to push-eligible nudges
-      const pushable = nudges.filter((n) => {
-        if (!PUSH_NUDGE_TYPES.includes(n.nudgeType)) return false;
-        if (!settings.nudgePushEnabled[n.nudgeType]) return false;
-        // Uninvoiced only at 7+ days for push
-        if (n.nudgeType === "uninvoiced" && (n.daysSince ?? 0) < PUSH_UNINVOICED_MIN_DAYS) return false;
-        return true;
-      });
+        const nudges = computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
+        const overdueNudges = nudges.filter((n) => n.nudgeType === "overdue");
 
-      if (pushable.length === 0) continue;
+        for (const n of overdueNudges) {
+          if (sent >= MAX_PUSH_PER_USER) break;
 
-      // Group by nudge type and send max MAX_PUSH_PER_USER notifications
-      const byType = new Map<NudgeType, typeof pushable>();
-      for (const n of pushable) {
-        const arr = byType.get(n.nudgeType) || [];
-        arr.push(n);
-        byType.set(n.nudgeType, arr);
+          const alreadyPushed = dismissed.some(
+            (d) => d.nudgeType === "overdue" && d.entryId === n.entryId &&
+              d.lastPushedAt && now.getTime() - new Date(d.lastPushedAt).getTime() < DEDUP_MS.overdue
+          );
+          if (alreadyPushed) continue;
+
+          await sendPushToUser(u.id,
+            "יש לך חשבונית שלא שולמה מעל 30 יום",
+            `${n.clientName} - ${n.entryDescription} (₪${n.amountGross?.toLocaleString("he-IL")})`,
+            { type: "nudge", nudgeType: "overdue" }
+          );
+          await markNudgePushed(u.id, "overdue", n.entryId, null);
+          sent++;
+          notificationsSent++;
+        }
       }
 
-      let sent = 0;
-      for (const [type, typeNudges] of byType) {
-        if (sent >= MAX_PUSH_PER_USER) break;
+      // --- 2. Weekly uninvoiced (user's chosen day) ---
+      if (settings.nudgePushEnabled.weekly_uninvoiced && dayOfWeek === settings.nudgeWeeklyDay) {
+        if (sent < MAX_PUSH_PER_USER) {
+          const [entries, dismissed] = await Promise.all([
+            fetchNudgeableEntries(u.id),
+            fetchDismissedNudges(u.id),
+          ]);
 
-        // Check lastPushedAt dedup — skip if already pushed today
-        const alreadyPushed = dismissed.some(
-          (d) => d.nudgeType === type && d.lastPushedAt &&
-            new Date().getTime() - new Date(d.lastPushedAt).getTime() < 24 * 60 * 60 * 1000
-        );
-        if (alreadyPushed) continue;
+          const nudges = computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
+          const weeklyNudge = nudges.find((n) => n.nudgeType === "weekly_uninvoiced");
 
-        const msg = nudgeMessages[type];
-        await sendPushToUser(u.id, msg.title, msg.bodyFn(typeNudges.length), {
-          type: "nudge",
-          nudgeType: type,
-        });
+          if (weeklyNudge) {
+            const alreadyPushed = dismissed.some(
+              (d) => d.nudgeType === "weekly_uninvoiced" && d.periodKey === weeklyNudge.periodKey &&
+                d.lastPushedAt && now.getTime() - new Date(d.lastPushedAt).getTime() < DEDUP_MS.weekly_uninvoiced
+            );
 
-        // Mark as pushed for dedup
-        for (const n of typeNudges) {
-          await markNudgePushed(u.id, n.nudgeType, n.entryId, n.periodKey);
+            if (!alreadyPushed) {
+              await sendPushToUser(u.id,
+                "עבודות ממתינות לחשבונית",
+                weeklyNudge.description,
+                { type: "nudge", nudgeType: "weekly_uninvoiced" }
+              );
+              await markNudgePushed(u.id, "weekly_uninvoiced", null, weeklyNudge.periodKey);
+              sent++;
+              notificationsSent++;
+            }
+          }
         }
+      }
 
-        sent++;
-        notificationsSent++;
+      // --- 3. Calendar sync (1st of month) ---
+      if (settings.nudgePushEnabled.calendar_sync && isFirstOfMonth) {
+        if (sent < MAX_PUSH_PER_USER) {
+          const dismissed = await fetchDismissedNudges(u.id);
+          const alreadyPushed = dismissed.some(
+            (d) => d.nudgeType === "calendar_sync" && d.periodKey === monthKey &&
+              d.lastPushedAt && now.getTime() - new Date(d.lastPushedAt).getTime() < DEDUP_MS.calendar_sync
+          );
+
+          if (!alreadyPushed) {
+            await sendPushToUser(u.id,
+              "חודש חדש!",
+              "יש ביומן עבודות לסנכרן עם סדר?",
+              { type: "nudge", nudgeType: "calendar_sync" }
+            );
+            await markNudgePushed(u.id, "calendar_sync", null, monthKey);
+            sent++;
+            notificationsSent++;
+          }
+        }
+      }
+
+      // --- 4. Unpaid check (last day of month) ---
+      if (settings.nudgePushEnabled.unpaid_check && isLastOfMonth) {
+        if (sent < MAX_PUSH_PER_USER) {
+          const dismissed = await fetchDismissedNudges(u.id);
+          const alreadyPushed = dismissed.some(
+            (d) => d.nudgeType === "unpaid_check" && d.periodKey === monthKey &&
+              d.lastPushedAt && now.getTime() - new Date(d.lastPushedAt).getTime() < DEDUP_MS.unpaid_check
+          );
+
+          if (!alreadyPushed) {
+            await sendPushToUser(u.id,
+              "סוף חודש!",
+              "יש עבודות ששולמו כבר ולא סומנו?",
+              { type: "nudge", nudgeType: "unpaid_check" }
+            );
+            await markNudgePushed(u.id, "unpaid_check", null, monthKey);
+            sent++;
+            notificationsSent++;
+          }
+        }
       }
     }
 

@@ -1520,5 +1520,5 @@ export async function getNudgesForUser(userId: string): Promise<Nudge[]> {
     fetchDismissedNudges(userId),
     getNudgeSettings(userId),
   ]);
-  return computeNudges(entries, dismissed, settings);
+  return computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
 }

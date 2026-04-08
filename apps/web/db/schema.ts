@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
   json,
+  integer,
 } from "drizzle-orm/pg-core";
 
 // Invoice status enum values
@@ -174,16 +175,12 @@ export const userSettings = pgTable("user_settings", {
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   // Smart Nudges settings
-  nudgeInvoiceDays: numeric("nudge_invoice_days", { precision: 3, scale: 0 }).default("3"),
-  nudgePaymentDays: numeric("nudge_payment_days", { precision: 3, scale: 0 }).default("14"),
+  nudgeWeeklyDay: integer("nudge_weekly_day").default(5), // 0=Sun, 5=Fri
   nudgePushEnabled: json("nudge_push_enabled").$type<{
-    uninvoiced: boolean;
-    batch_invoice: boolean;
-    overdue_payment: boolean;
-    way_overdue: boolean;
-    partial_stale: boolean;
-    unlogged_calendar: boolean;
-    month_end: boolean;
+    overdue: boolean;
+    weekly_uninvoiced: boolean;
+    calendar_sync: boolean;
+    unpaid_check: boolean;
   }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
