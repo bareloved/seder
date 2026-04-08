@@ -2,6 +2,7 @@ import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
+import http2 from "node:http2";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
@@ -31,9 +32,67 @@ async function getApnsJwt(): Promise<string> {
     .setIssuedAt(now)
     .sign(key);
 
-  // APNs tokens are valid for 1 hour, refresh after 50 minutes
   cachedToken = { jwt, expiresAt: now + 3000 };
   return jwt;
+}
+
+function sendApnsHttp2(
+  deviceToken: string,
+  jwt: string,
+  payload: object
+): Promise<{ success: boolean; status: number }> {
+  return new Promise((resolve) => {
+    const client = http2.connect(APNS_HOST);
+
+    client.on("error", () => {
+      client.close();
+      resolve({ success: false, status: 0 });
+    });
+
+    const body = JSON.stringify(payload);
+    const req = client.request({
+      ":method": "POST",
+      ":path": `/3/device/${deviceToken}`,
+      authorization: `bearer ${jwt}`,
+      "apns-topic": APNS_BUNDLE_ID,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
+    });
+
+    let status = 0;
+    let responseBody = "";
+
+    req.on("response", (headers) => {
+      status = headers[":status"] as number;
+    });
+
+    req.on("data", (chunk: Buffer) => {
+      responseBody += chunk.toString();
+    });
+
+    req.on("end", async () => {
+      client.close();
+
+      if (status === 410) {
+        await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
+      }
+
+      if (status !== 200) {
+        console.error(`APNs error for token ${deviceToken.slice(0, 10)}...: status=${status} body=${responseBody}`);
+      }
+
+      resolve({ success: status === 200, status });
+    });
+
+    req.on("error", () => {
+      client.close();
+      resolve({ success: false, status: 0 });
+    });
+
+    req.end(body);
+  });
 }
 
 async function sendApnsPush(
@@ -51,24 +110,7 @@ async function sendApnsPush(
     ...payload.data,
   };
 
-  const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
-    method: "POST",
-    headers: {
-      authorization: `bearer ${jwt}`,
-      "apns-topic": APNS_BUNDLE_ID,
-      "apns-push-type": "alert",
-      "apns-priority": "10",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(apnsPayload),
-  });
-
-  if (!res.ok && res.status === 410) {
-    // Token is no longer valid — clean it up
-    await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
-  }
-
-  return { success: res.ok, status: res.status };
+  return sendApnsHttp2(deviceToken, jwt, apnsPayload);
 }
 
 export async function sendPushToUser(
