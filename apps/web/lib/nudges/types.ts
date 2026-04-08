@@ -1,50 +1,40 @@
 export const nudgeTypes = [
-  "uninvoiced",
-  "batch_invoice",
-  "overdue_payment",
-  "way_overdue",
-  "partial_stale",
-  "unlogged_calendar",
-  "month_end",
+  "overdue",
+  "weekly_uninvoiced",
+  "calendar_sync",
+  "unpaid_check",
 ] as const;
 
 export type NudgeType = (typeof nudgeTypes)[number];
 
 export interface Nudge {
-  id: string; // composite key for dedup: `${nudgeType}:${entryId || periodKey}`
+  id: string;
   nudgeType: NudgeType;
-  entryId: string | null; // null for aggregate nudges
-  periodKey: string | null; // e.g. '2026-W11', '2026-03' for aggregate nudges
-  priority: number; // lower = higher priority (1=overdue, 2=uninvoiced, 3=suggestion)
-  title: string; // Hebrew display title
-  description: string; // Hebrew description with amounts/dates
+  entryId: string | null;
+  periodKey: string | null;
+  priority: number;
+  title: string;
+  description: string;
   actionType: "mark_sent" | "mark_paid" | "import_calendar" | "view_entry";
-  entryDate?: string; // ISO date string of the related entry/period
-  entryDescription?: string; // entry description for context
+  entryDate?: string;
+  entryDescription?: string;
   clientName?: string;
   amountGross?: number;
-  daysSince?: number; // days since the triggering event
+  daysSince?: number;
 }
 
 export interface NudgePushPreferences {
-  uninvoiced: boolean;
-  batch_invoice: boolean;
-  overdue_payment: boolean;
-  way_overdue: boolean;
-  partial_stale: boolean;
-  unlogged_calendar: boolean;
-  month_end: boolean;
+  overdue: boolean;
+  weekly_uninvoiced: boolean;
+  calendar_sync: boolean;
+  unpaid_check: boolean;
 }
 
 export const DEFAULT_NUDGE_PUSH_PREFS: NudgePushPreferences = {
-  uninvoiced: true,
-  batch_invoice: true,
-  overdue_payment: true,
-  way_overdue: true,
-  partial_stale: true,
-  unlogged_calendar: false,
-  month_end: true,
+  overdue: true,
+  weekly_uninvoiced: true,
+  calendar_sync: true,
+  unpaid_check: true,
 };
 
-export const DEFAULT_NUDGE_INVOICE_DAYS = 3;
-export const DEFAULT_NUDGE_PAYMENT_DAYS = 14;
+export const DEFAULT_NUDGE_WEEKLY_DAY = 5; // Friday
