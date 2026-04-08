@@ -2,7 +2,6 @@ import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
-import http2 from "node:http2";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
@@ -36,64 +35,6 @@ async function getApnsJwt(): Promise<string> {
   return jwt;
 }
 
-function sendApnsHttp2(
-  deviceToken: string,
-  jwt: string,
-  payload: object
-): Promise<{ success: boolean; status: number }> {
-  return new Promise((resolve) => {
-    const client = http2.connect(APNS_HOST);
-
-    client.on("error", (err) => {
-      console.error(`[PUSH] HTTP/2 connection error: ${err.message}`);
-      client.close();
-      resolve({ success: false, status: 0 });
-    });
-
-    const body = JSON.stringify(payload);
-    const req = client.request({
-      ":method": "POST",
-      ":path": `/3/device/${deviceToken}`,
-      authorization: `bearer ${jwt}`,
-      "apns-topic": APNS_BUNDLE_ID,
-      "apns-push-type": "alert",
-      "apns-priority": "10",
-      "content-type": "application/json",
-      "content-length": Buffer.byteLength(body),
-    });
-
-    let status = 0;
-    let responseBody = "";
-
-    req.on("response", (headers) => {
-      status = headers[":status"] as number;
-    });
-
-    req.on("data", (chunk: Buffer) => {
-      responseBody += chunk.toString();
-    });
-
-    req.on("end", async () => {
-      client.close();
-      console.log(`[PUSH] APNs response: token=${deviceToken.slice(0, 10)}... status=${status} body=${responseBody || "(empty)"}`);
-
-      if (status === 410) {
-        await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
-      }
-
-      resolve({ success: status === 200, status });
-    });
-
-    req.on("error", (err) => {
-      console.error(`[PUSH] Request error: ${err.message}`);
-      client.close();
-      resolve({ success: false, status: 0 });
-    });
-
-    req.end(body);
-  });
-}
-
 async function sendApnsPush(
   deviceToken: string,
   payload: { title: string; body: string; data?: Record<string, unknown> }
@@ -104,12 +45,35 @@ async function sendApnsPush(
     aps: {
       alert: { title: payload.title, body: payload.body },
       sound: "default",
-      "content-available": 1,
     },
     ...payload.data,
   };
 
-  return sendApnsHttp2(deviceToken, jwt, apnsPayload);
+  try {
+    const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
+      method: "POST",
+      headers: {
+        authorization: `bearer ${jwt}`,
+        "apns-topic": APNS_BUNDLE_ID,
+        "apns-push-type": "alert",
+        "apns-priority": "10",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(apnsPayload),
+    });
+
+    const responseBody = await res.text();
+    console.log(`[PUSH] token=${deviceToken.slice(0, 10)}... status=${res.status} body=${responseBody || "(empty)"} host=${APNS_HOST}`);
+
+    if (!res.ok && res.status === 410) {
+      await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
+    }
+
+    return { success: res.ok, status: res.status };
+  } catch (err) {
+    console.error(`[PUSH] fetch error for token=${deviceToken.slice(0, 10)}...:`, err);
+    return { success: false, status: 0 };
+  }
 }
 
 export async function sendPushToUser(
@@ -123,9 +87,17 @@ export async function sendPushToUser(
     .from(deviceTokens)
     .where(eq(deviceTokens.userId, userId));
 
+  console.log(`[PUSH] Sending to user=${userId.slice(0, 8)}... tokens=${tokens.length}`);
+
   if (tokens.length === 0) return;
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     tokens.map((t) => sendApnsPush(t.token, { title, body, data }))
   );
+
+  for (const r of results) {
+    if (r.status === "rejected") {
+      console.error(`[PUSH] Promise rejected:`, r.reason);
+    }
+  }
 }
