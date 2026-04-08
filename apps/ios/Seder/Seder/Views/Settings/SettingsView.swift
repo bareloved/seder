@@ -489,71 +489,43 @@ struct NotificationsSettingsSection: View {
     var body: some View {
         SettingsSection(title: "תזכורות") {
             VStack(spacing: 0) {
-                thresholdRows
+                weeklyDayPicker
                 Divider().padding(.horizontal, 16)
-                pushToggleRows
+                pushToggle(label: "חשבוניות שלא שולמו (30+ יום)", icon: "exclamationmark.triangle", isOn: $viewModel.nudgePushPrefs.overdue)
+                Divider().padding(.horizontal, 16)
+                pushToggle(label: "תזכורת שבועית לחשבוניות", icon: "doc.on.doc", isOn: $viewModel.nudgePushPrefs.weekly_uninvoiced)
+                Divider().padding(.horizontal, 16)
+                pushToggle(label: "סנכרון יומן (תחילת חודש)", icon: "calendar", isOn: $viewModel.nudgePushPrefs.calendar_sync)
+                Divider().padding(.horizontal, 16)
+                pushToggle(label: "בדיקת תשלומים (סוף חודש)", icon: "creditcard", isOn: $viewModel.nudgePushPrefs.unpaid_check)
             }
         }
     }
 
-    private var thresholdRows: some View {
-        VStack(spacing: 0) {
-            thresholdRow(
-                icon: "doc.text",
-                label: "ימים עד תזכורת חשבונית",
-                value: $viewModel.nudgeInvoiceDays,
-                range: 1...30
-            )
-            Divider().padding(.horizontal, 16)
-            thresholdRow(
-                icon: "creditcard",
-                label: "ימים עד תזכורת תשלום",
-                value: $viewModel.nudgePaymentDays,
-                range: 1...60
-            )
-        }
-    }
-
-    private func thresholdRow(icon: String, label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        HStack {
+    private var weeklyDayPicker: some View {
+        let dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+        return HStack {
             HStack(spacing: 8) {
-                Image(systemName: icon)
+                Image(systemName: "calendar.badge.clock")
                     .font(.body)
                     .foregroundStyle(SederTheme.textSecondary)
-                Text(label)
-                    .font(SederTheme.ploni(17))
-                    .foregroundStyle(SederTheme.textPrimary)
+                Text("יום תזכורת שבועית")
+                    .font(.body)
             }
             Spacer()
-            Stepper("\(value.wrappedValue)", value: value, in: range)
-                .labelsHidden()
-            Text("\(value.wrappedValue)")
-                .font(SederTheme.ploni(17))
-                .foregroundStyle(SederTheme.textSecondary)
-                .frame(width: 24)
-                .environment(\.layoutDirection, .leftToRight)
+            Picker("", selection: $viewModel.nudgeWeeklyDay) {
+                ForEach(0..<7, id: \.self) { i in
+                    Text(dayNames[i]).tag(i)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(SederTheme.brandGreen)
+            .onChange(of: viewModel.nudgeWeeklyDay) {
+                Task { await viewModel.saveNudgeSettings() }
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .onChange(of: value.wrappedValue) {
-            Task { await viewModel.saveNudgeSettings() }
-        }
-    }
-
-    private var pushToggleRows: some View {
-        VStack(spacing: 0) {
-            pushToggle(label: "עבודות ללא חשבונית", icon: "doc.text", isOn: $viewModel.nudgePushPrefs.uninvoiced)
-            Divider().padding(.horizontal, 16)
-            pushToggle(label: "תזכורת שבועית לחשבוניות", icon: "doc.on.doc", isOn: $viewModel.nudgePushPrefs.batch_invoice)
-            Divider().padding(.horizontal, 16)
-            pushToggle(label: "תשלומים באיחור", icon: "exclamationmark.circle", isOn: $viewModel.nudgePushPrefs.overdue_payment)
-            Divider().padding(.horizontal, 16)
-            pushToggle(label: "תשלומים באיחור חמור", icon: "exclamationmark.triangle", isOn: $viewModel.nudgePushPrefs.way_overdue)
-            Divider().padding(.horizontal, 16)
-            pushToggle(label: "תשלום חלקי תקוע", icon: "creditcard", isOn: $viewModel.nudgePushPrefs.partial_stale)
-            Divider().padding(.horizontal, 16)
-            pushToggle(label: "תזכורת סוף חודש", icon: "clock", isOn: $viewModel.nudgePushPrefs.month_end)
-        }
+        .padding(.vertical, 10)
     }
 
     private func pushToggle(label: String, icon: String, isOn: Binding<Bool>) -> some View {

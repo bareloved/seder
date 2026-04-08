@@ -14,8 +14,7 @@ class SettingsViewModel: ObservableObject {
     @Published var language: String = "he"
 
     // Nudge settings
-    @Published var nudgeInvoiceDays: Int = 3
-    @Published var nudgePaymentDays: Int = 14
+    @Published var nudgeWeeklyDay: Int = 5
     @Published var nudgePushPrefs: NudgePushPreferences = .defaults
 
     // Calendar
@@ -39,8 +38,7 @@ class SettingsViewModel: ObservableObject {
                 currency = s.defaultCurrency ?? "ILS"
                 timezone = s.timezone ?? "Asia/Jerusalem"
                 language = s.language ?? "he"
-                nudgeInvoiceDays = s.nudgeInvoiceDays?.intValue ?? 3
-                nudgePaymentDays = s.nudgePaymentDays?.intValue ?? 14
+                nudgeWeeklyDay = s.nudgeWeeklyDay ?? 5
                 nudgePushPrefs = s.nudgePushEnabled ?? .defaults
             }
         } catch {
@@ -71,8 +69,7 @@ class SettingsViewModel: ObservableObject {
 
     func saveNudgeSettings() async {
         let body = UpdateNudgeSettingsRequest(
-            nudgeInvoiceDays: String(nudgeInvoiceDays),
-            nudgePaymentDays: String(nudgePaymentDays),
+            nudgeWeeklyDay: nudgeWeeklyDay,
             nudgePushEnabled: nudgePushPrefs
         )
         do {
