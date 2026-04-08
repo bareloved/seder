@@ -12,7 +12,6 @@ import { DangerSection } from "./components/DangerSection";
 import { NotificationsSection } from "./components/NotificationsSection";
 import { getNudgeSettingsAction } from "./actions";
 import type { NudgePushPreferences } from "@/lib/nudges/types";
-import { DEFAULT_NUDGE_PUSH_PREFS } from "@/lib/nudges/types";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
@@ -25,8 +24,7 @@ function SettingsContent() {
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = React.useState<SettingsTab>("account");
     const [nudgeSettings, setNudgeSettings] = React.useState<{
-        nudgeInvoiceDays: number;
-        nudgePaymentDays: number;
+        nudgeWeeklyDay: number;
         nudgePushEnabled: NudgePushPreferences;
     } | null>(null);
 

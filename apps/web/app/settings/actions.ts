@@ -64,8 +64,7 @@ export async function getNudgeSettingsAction() {
 }
 
 export async function updateNudgeSettings(data: {
-  nudgeInvoiceDays: number;
-  nudgePaymentDays: number;
+  nudgeWeeklyDay: number;
   nudgePushEnabled: NudgePushPreferences;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -74,8 +73,7 @@ export async function updateNudgeSettings(data: {
   await db
     .update(userSettings)
     .set({
-      nudgeInvoiceDays: String(data.nudgeInvoiceDays),
-      nudgePaymentDays: String(data.nudgePaymentDays),
+      nudgeWeeklyDay: data.nudgeWeeklyDay,
       nudgePushEnabled: data.nudgePushEnabled,
       updatedAt: new Date(),
     })
