@@ -2,14 +2,16 @@ import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
+import http2 from "node:http2";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
 const APNS_PRIVATE_KEY = process.env.APNS_PRIVATE_KEY!;
 const APNS_BUNDLE_ID = "com.bareloved.seder";
-const APNS_HOST = process.env.APNS_ENVIRONMENT === "development"
-  ? "https://api.sandbox.push.apple.com"
-  : "https://api.push.apple.com";
+const APNS_HOST =
+  process.env.APNS_ENVIRONMENT === "development"
+    ? "https://api.sandbox.push.apple.com"
+    : "https://api.push.apple.com";
 
 let cachedToken: { jwt: string; expiresAt: number } | null = null;
 
@@ -35,45 +37,54 @@ async function getApnsJwt(): Promise<string> {
   return jwt;
 }
 
-async function sendApnsPush(
+function sendViaHttp2(
+  client: http2.ClientHttp2Session,
   deviceToken: string,
-  payload: { title: string; body: string; data?: Record<string, unknown> }
+  jwt: string,
+  payload: object
 ): Promise<{ success: boolean; status: number }> {
-  const jwt = await getApnsJwt();
+  return new Promise((resolve) => {
+    const body = JSON.stringify(payload);
 
-  const apnsPayload = {
-    aps: {
-      alert: { title: payload.title, body: payload.body },
-      sound: "default",
-    },
-    ...payload.data,
-  };
-
-  try {
-    const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
-      method: "POST",
-      headers: {
-        authorization: `bearer ${jwt}`,
-        "apns-topic": APNS_BUNDLE_ID,
-        "apns-push-type": "alert",
-        "apns-priority": "10",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(apnsPayload),
+    const req = client.request({
+      ":method": "POST",
+      ":path": `/3/device/${deviceToken}`,
+      authorization: `bearer ${jwt}`,
+      "apns-topic": APNS_BUNDLE_ID,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
     });
 
-    const responseBody = await res.text();
-    console.log(`[PUSH] token=${deviceToken.slice(0, 10)}... status=${res.status} body=${responseBody || "(empty)"} host=${APNS_HOST}`);
+    let status = 0;
+    let responseBody = "";
 
-    if (!res.ok && res.status === 410) {
-      await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
-    }
+    req.on("response", (headers) => {
+      status = headers[":status"] as number;
+    });
 
-    return { success: res.ok, status: res.status };
-  } catch (err) {
-    console.error(`[PUSH] fetch error for token=${deviceToken.slice(0, 10)}...:`, err);
-    return { success: false, status: 0 };
-  }
+    req.on("data", (chunk: Buffer) => {
+      responseBody += chunk.toString();
+    });
+
+    req.on("end", () => {
+      console.log(
+        `[PUSH] token=${deviceToken.slice(0, 10)}... status=${status} body=${responseBody || "(empty)"}`
+      );
+      resolve({ success: status === 200, status });
+    });
+
+    req.on("error", (err) => {
+      console.error(
+        `[PUSH] request error for token=${deviceToken.slice(0, 10)}...:`,
+        err.message
+      );
+      resolve({ success: false, status: 0 });
+    });
+
+    req.end(body);
+  });
 }
 
 export async function sendPushToUser(
@@ -87,17 +98,54 @@ export async function sendPushToUser(
     .from(deviceTokens)
     .where(eq(deviceTokens.userId, userId));
 
-  console.log(`[PUSH] Sending to user=${userId.slice(0, 8)}... tokens=${tokens.length}`);
+  console.log(
+    `[PUSH] Sending to user=${userId.slice(0, 8)}... tokens=${tokens.length}`
+  );
 
   if (tokens.length === 0) return;
 
-  const results = await Promise.allSettled(
-    tokens.map((t) => sendApnsPush(t.token, { title, body, data }))
-  );
+  const jwt = await getApnsJwt();
 
-  for (const r of results) {
-    if (r.status === "rejected") {
-      console.error(`[PUSH] Promise rejected:`, r.reason);
+  const apnsPayload = {
+    aps: {
+      alert: { title, body },
+      sound: "default",
+      "content-available": 1,
+    },
+    ...data,
+  };
+
+  // Single HTTP/2 connection for all tokens — APNs supports multiplexing
+  const client = http2.connect(APNS_HOST);
+
+  client.on("error", (err) => {
+    console.error(`[PUSH] HTTP/2 connection error:`, err.message);
+  });
+
+  try {
+    const results = await Promise.allSettled(
+      tokens.map(async (t) => {
+        const result = await sendViaHttp2(client, t.token, jwt, apnsPayload);
+
+        if (result.status === 410) {
+          await db
+            .delete(deviceTokens)
+            .where(eq(deviceTokens.token, t.token));
+          console.log(
+            `[PUSH] Removed stale token=${t.token.slice(0, 10)}...`
+          );
+        }
+
+        return result;
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === "rejected") {
+        console.error(`[PUSH] Promise rejected:`, r.reason);
+      }
     }
+  } finally {
+    client.close();
   }
 }
