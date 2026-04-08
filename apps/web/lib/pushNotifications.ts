@@ -44,7 +44,8 @@ function sendApnsHttp2(
   return new Promise((resolve) => {
     const client = http2.connect(APNS_HOST);
 
-    client.on("error", () => {
+    client.on("error", (err) => {
+      console.error(`[PUSH] HTTP/2 connection error: ${err.message}`);
       client.close();
       resolve({ success: false, status: 0 });
     });
@@ -74,19 +75,17 @@ function sendApnsHttp2(
 
     req.on("end", async () => {
       client.close();
+      console.log(`[PUSH] APNs response: token=${deviceToken.slice(0, 10)}... status=${status} body=${responseBody || "(empty)"}`);
 
       if (status === 410) {
         await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
       }
 
-      if (status !== 200) {
-        console.error(`APNs error for token ${deviceToken.slice(0, 10)}...: status=${status} body=${responseBody}`);
-      }
-
       resolve({ success: status === 200, status });
     });
 
-    req.on("error", () => {
+    req.on("error", (err) => {
+      console.error(`[PUSH] Request error: ${err.message}`);
       client.close();
       resolve({ success: false, status: 0 });
     });
