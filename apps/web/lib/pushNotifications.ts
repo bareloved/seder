@@ -94,7 +94,14 @@ export async function sendPushToUser(
 
   if (tokens.length === 0) return;
 
-  const jwt = await getApnsJwt();
+  let jwt: string;
+  try {
+    jwt = await getApnsJwt();
+    console.log(`[PUSH] JWT generated, host=${APNS_HOST}`);
+  } catch (err) {
+    console.error(`[PUSH] JWT generation failed:`, err);
+    throw err;
+  }
 
   const apnsPayload = {
     aps: {
@@ -105,7 +112,14 @@ export async function sendPushToUser(
     ...data,
   };
 
-  const client = new Client(APNS_HOST, { allowH2: true });
+  let client: Client;
+  try {
+    client = new Client(APNS_HOST, { allowH2: true });
+    console.log(`[PUSH] Client created`);
+  } catch (err) {
+    console.error(`[PUSH] Client creation failed:`, err);
+    throw err;
+  }
 
   try {
     const results = await Promise.allSettled(
