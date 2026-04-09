@@ -13,7 +13,7 @@ import {
 } from "./email";
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET || "build-placeholder-not-used-at-runtime",
   trustedOrigins: [
     "https://sedder.app",
     "http://localhost:3000",
