@@ -2,9 +2,7 @@ import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const http2 = require("node:http2") as typeof import("node:http2");
+import type http2Type from "node:http2";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
@@ -14,6 +12,16 @@ const APNS_HOST =
   process.env.APNS_ENVIRONMENT === "development"
     ? "https://api.sandbox.push.apple.com"
     : "https://api.push.apple.com";
+
+// Lazy-loaded at runtime to avoid bundler issues
+let _http2: typeof http2Type | null = null;
+function getHttp2(): typeof http2Type {
+  if (!_http2) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    _http2 = require("node:http2") as typeof http2Type;
+  }
+  return _http2;
+}
 
 let cachedToken: { jwt: string; expiresAt: number } | null = null;
 
@@ -44,6 +52,8 @@ function sendViaHttp2(
   jwt: string,
   payload: object
 ): Promise<{ success: boolean; status: number }> {
+  const http2 = getHttp2();
+
   return new Promise((resolve) => {
     const client = http2.connect(APNS_HOST);
     const timeout = setTimeout(() => {
@@ -119,16 +129,8 @@ export async function sendPushToUser(
 
   if (tokens.length === 0) return;
 
-  console.log(`[PUSH] env check: KEY_ID=${APNS_KEY_ID ? "set" : "MISSING"} TEAM_ID=${APNS_TEAM_ID ? "set" : "MISSING"} PRIVATE_KEY=${APNS_PRIVATE_KEY ? `set(${APNS_PRIVATE_KEY.length}chars)` : "MISSING"} HOST=${APNS_HOST}`);
-
-  let jwt: string;
-  try {
-    jwt = await getApnsJwt();
-    console.log(`[PUSH] JWT generated OK`);
-  } catch (err) {
-    console.error(`[PUSH] JWT failed:`, err instanceof Error ? err.message : err);
-    throw err;
-  }
+  const jwt = await getApnsJwt();
+  console.log(`[PUSH] JWT ok, connecting to ${APNS_HOST}`);
 
   const apnsPayload = {
     aps: {
