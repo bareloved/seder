@@ -3,6 +3,9 @@ import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const http2 = require("http2") as typeof import("http2");
+
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
 const APNS_PRIVATE_KEY = process.env.APNS_PRIVATE_KEY!;
@@ -36,13 +39,7 @@ async function getApnsJwt(): Promise<string> {
   return jwt;
 }
 
-// Dynamic import avoids Vercel bundler crash on static `import http2 from "node:http2"`
-async function getHttp2() {
-  return await import("node:http2");
-}
-
 function sendViaHttp2(
-  http2: typeof import("node:http2"),
   deviceToken: string,
   jwt: string,
   payload: object
@@ -133,18 +130,9 @@ export async function sendPushToUser(
     ...data,
   };
 
-  let http2;
-  try {
-    http2 = await getHttp2();
-    console.log(`[PUSH] http2 module loaded`);
-  } catch (err) {
-    console.error(`[PUSH] http2 import failed:`, err);
-    throw err;
-  }
-
   const results = await Promise.allSettled(
     tokens.map(async (t) => {
-      const result = await sendViaHttp2(http2, t.token, jwt, apnsPayload);
+      const result = await sendViaHttp2(t.token, jwt, apnsPayload);
 
       if (result.status === 410) {
         await db.delete(deviceTokens).where(eq(deviceTokens.token, t.token));
