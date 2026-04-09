@@ -2,7 +2,6 @@ import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
-import { Client } from "undici";
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
@@ -38,15 +37,23 @@ async function getApnsJwt(): Promise<string> {
 }
 
 async function sendApnsPush(
-  client: Client,
   deviceToken: string,
-  jwt: string,
-  payload: object
+  payload: { title: string; body: string; data?: Record<string, unknown> }
 ): Promise<{ success: boolean; status: number }> {
+  const jwt = await getApnsJwt();
+
+  const apnsPayload = {
+    aps: {
+      alert: { title: payload.title, body: payload.body },
+      sound: "default",
+      "content-available": 1,
+    },
+    ...payload.data,
+  };
+
   try {
-    const { statusCode, body } = await client.request({
+    const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
       method: "POST",
-      path: `/3/device/${deviceToken}`,
       headers: {
         authorization: `bearer ${jwt}`,
         "apns-topic": APNS_BUNDLE_ID,
@@ -54,23 +61,23 @@ async function sendApnsPush(
         "apns-priority": "10",
         "content-type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(apnsPayload),
     });
 
-    const responseBody = await body.text();
+    const responseBody = await res.text();
     console.log(
-      `[PUSH] token=${deviceToken.slice(0, 10)}... status=${statusCode} body=${responseBody || "(empty)"}`
+      `[PUSH] token=${deviceToken.slice(0, 10)}... status=${res.status} body=${responseBody || "(empty)"} host=${APNS_HOST}`
     );
 
-    if (statusCode === 410) {
+    if (!res.ok && res.status === 410) {
       await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
       console.log(`[PUSH] Removed stale token=${deviceToken.slice(0, 10)}...`);
     }
 
-    return { success: statusCode === 200, status: statusCode };
+    return { success: res.ok, status: res.status };
   } catch (err) {
     console.error(
-      `[PUSH] request error for token=${deviceToken.slice(0, 10)}...:`,
+      `[PUSH] fetch error for token=${deviceToken.slice(0, 10)}...:`,
       err
     );
     return { success: false, status: 0 };
@@ -94,44 +101,13 @@ export async function sendPushToUser(
 
   if (tokens.length === 0) return;
 
-  let jwt: string;
-  try {
-    jwt = await getApnsJwt();
-    console.log(`[PUSH] JWT generated, host=${APNS_HOST}`);
-  } catch (err) {
-    console.error(`[PUSH] JWT generation failed:`, err);
-    throw err;
-  }
+  const results = await Promise.allSettled(
+    tokens.map((t) => sendApnsPush(t.token, { title, body, data }))
+  );
 
-  const apnsPayload = {
-    aps: {
-      alert: { title, body },
-      sound: "default",
-      "content-available": 1,
-    },
-    ...data,
-  };
-
-  let client: Client;
-  try {
-    client = new Client(APNS_HOST, { allowH2: true });
-    console.log(`[PUSH] Client created`);
-  } catch (err) {
-    console.error(`[PUSH] Client creation failed:`, err);
-    throw err;
-  }
-
-  try {
-    const results = await Promise.allSettled(
-      tokens.map((t) => sendApnsPush(client, t.token, jwt, apnsPayload))
-    );
-
-    for (const r of results) {
-      if (r.status === "rejected") {
-        console.error(`[PUSH] Promise rejected:`, r.reason);
-      }
+  for (const r of results) {
+    if (r.status === "rejected") {
+      console.error(`[PUSH] Promise rejected:`, r.reason);
     }
-  } finally {
-    await client.close();
   }
 }
