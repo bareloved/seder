@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const http2 = require("http2") as typeof import("http2");
+const http2 = require("node:http2") as typeof import("node:http2");
 
 const APNS_KEY_ID = process.env.APNS_KEY_ID!;
 const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;

@@ -2,7 +2,7 @@ const { withSentryConfig } = require("@sentry/nextjs");
 
 const nextConfig = {
   allowedDevOrigins: ['192.168.68.*'],
-  serverExternalPackages: ['http2'],
+  serverExternalPackages: ['node:http2'],
 };
 
 module.exports = withSentryConfig(nextConfig, {
