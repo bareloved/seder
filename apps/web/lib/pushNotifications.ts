@@ -36,52 +36,73 @@ async function getApnsJwt(): Promise<string> {
   return jwt;
 }
 
-async function sendApnsPush(
+// Dynamic import avoids Vercel bundler crash on static `import http2 from "node:http2"`
+async function getHttp2() {
+  return await import("node:http2");
+}
+
+function sendViaHttp2(
+  http2: typeof import("node:http2"),
   deviceToken: string,
-  payload: { title: string; body: string; data?: Record<string, unknown> }
+  jwt: string,
+  payload: object
 ): Promise<{ success: boolean; status: number }> {
-  const jwt = await getApnsJwt();
+  return new Promise((resolve) => {
+    const client = http2.connect(APNS_HOST);
+    const timeout = setTimeout(() => {
+      console.error(`[PUSH] timeout for token=${deviceToken.slice(0, 10)}...`);
+      client.close();
+      resolve({ success: false, status: 0 });
+    }, 10000);
 
-  const apnsPayload = {
-    aps: {
-      alert: { title: payload.title, body: payload.body },
-      sound: "default",
-      "content-available": 1,
-    },
-    ...payload.data,
-  };
-
-  try {
-    const res = await fetch(`${APNS_HOST}/3/device/${deviceToken}`, {
-      method: "POST",
-      headers: {
-        authorization: `bearer ${jwt}`,
-        "apns-topic": APNS_BUNDLE_ID,
-        "apns-push-type": "alert",
-        "apns-priority": "10",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(apnsPayload),
+    client.on("error", (err) => {
+      clearTimeout(timeout);
+      console.error(`[PUSH] connection error:`, err.message);
+      client.close();
+      resolve({ success: false, status: 0 });
     });
 
-    const responseBody = await res.text();
-    console.log(
-      `[PUSH] token=${deviceToken.slice(0, 10)}... status=${res.status} body=${responseBody || "(empty)"} host=${APNS_HOST}`
-    );
+    const body = JSON.stringify(payload);
+    const req = client.request({
+      ":method": "POST",
+      ":path": `/3/device/${deviceToken}`,
+      authorization: `bearer ${jwt}`,
+      "apns-topic": APNS_BUNDLE_ID,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
+    });
 
-    if (!res.ok && res.status === 410) {
-      await db.delete(deviceTokens).where(eq(deviceTokens.token, deviceToken));
-      console.log(`[PUSH] Removed stale token=${deviceToken.slice(0, 10)}...`);
-    }
+    let status = 0;
+    let responseBody = "";
 
-    return { success: res.ok, status: res.status };
-  } catch (err) {
-    console.error(
-      `[PUSH] fetch error for token=${deviceToken.slice(0, 10)}...:`,
-      err
-    );
-    return { success: false, status: 0 };
-  }
+    req.on("response", (headers) => {
+      status = headers[":status"] as number;
+    });
+
+    req.on("data", (chunk: Buffer) => {
+      responseBody += chunk.toString();
+    });
+
+    req.on("end", () => {
+      clearTimeout(timeout);
+      client.close();
+      console.log(
+        `[PUSH] token=${deviceToken.slice(0, 10)}... status=${status} body=${responseBody || "(empty)"}`
+      );
+      resolve({ success: status === 200, status });
+    });
+
+    req.on("error", (err) => {
+      clearTimeout(timeout);
+      console.error(`[PUSH] request error:`, err.message);
+      client.close();
+      resolve({ success: false, status: 0 });
+    });
+
+    req.end(body);
+  });
 }
 
 export async function sendPushToUser(
@@ -101,8 +122,37 @@ export async function sendPushToUser(
 
   if (tokens.length === 0) return;
 
+  const jwt = await getApnsJwt();
+
+  const apnsPayload = {
+    aps: {
+      alert: { title, body },
+      sound: "default",
+      "content-available": 1,
+    },
+    ...data,
+  };
+
+  let http2;
+  try {
+    http2 = await getHttp2();
+    console.log(`[PUSH] http2 module loaded`);
+  } catch (err) {
+    console.error(`[PUSH] http2 import failed:`, err);
+    throw err;
+  }
+
   const results = await Promise.allSettled(
-    tokens.map((t) => sendApnsPush(t.token, { title, body, data }))
+    tokens.map(async (t) => {
+      const result = await sendViaHttp2(http2, t.token, jwt, apnsPayload);
+
+      if (result.status === 410) {
+        await db.delete(deviceTokens).where(eq(deviceTokens.token, t.token));
+        console.log(`[PUSH] Removed stale token=${t.token.slice(0, 10)}...`);
+      }
+
+      return result;
+    })
   );
 
   for (const r of results) {
