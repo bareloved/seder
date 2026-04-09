@@ -119,7 +119,16 @@ export async function sendPushToUser(
 
   if (tokens.length === 0) return;
 
-  const jwt = await getApnsJwt();
+  console.log(`[PUSH] env check: KEY_ID=${APNS_KEY_ID ? "set" : "MISSING"} TEAM_ID=${APNS_TEAM_ID ? "set" : "MISSING"} PRIVATE_KEY=${APNS_PRIVATE_KEY ? `set(${APNS_PRIVATE_KEY.length}chars)` : "MISSING"} HOST=${APNS_HOST}`);
+
+  let jwt: string;
+  try {
+    jwt = await getApnsJwt();
+    console.log(`[PUSH] JWT generated OK`);
+  } catch (err) {
+    console.error(`[PUSH] JWT failed:`, err instanceof Error ? err.message : err);
+    throw err;
+  }
 
   const apnsPayload = {
     aps: {
