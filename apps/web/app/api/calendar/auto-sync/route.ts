@@ -8,7 +8,6 @@ import { DEFAULT_VAT_RATE } from "@/app/income/types";
 import { withGoogleToken, GoogleTokenError } from "@/lib/googleTokens";
 
 const WORK_CONFIDENCE_THRESHOLD = 0.7;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 interface SyncResult {
     userId: string;
@@ -20,7 +19,7 @@ export async function GET(request: Request) {
     try {
         // Verify cron secret for security
         const authHeader = request.headers.get("authorization");
-        if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+        if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }

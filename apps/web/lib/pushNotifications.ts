@@ -4,14 +4,19 @@ import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
 import type http2Type from "node:http2";
 
-const APNS_KEY_ID = process.env.APNS_KEY_ID!;
-const APNS_TEAM_ID = process.env.APNS_TEAM_ID!;
-const APNS_PRIVATE_KEY = process.env.APNS_PRIVATE_KEY!;
 const APNS_BUNDLE_ID = "com.bareloved.seder";
-const APNS_HOST =
-  process.env.APNS_ENVIRONMENT === "development"
-    ? "https://api.sandbox.push.apple.com"
-    : "https://api.push.apple.com";
+
+function getApnsConfig() {
+  return {
+    keyId: process.env.APNS_KEY_ID!,
+    teamId: process.env.APNS_TEAM_ID!,
+    privateKey: process.env.APNS_PRIVATE_KEY!,
+    host:
+      process.env.APNS_ENVIRONMENT === "development"
+        ? "https://api.sandbox.push.apple.com"
+        : "https://api.push.apple.com",
+  };
+}
 
 // Lazy-loaded at runtime to avoid bundler issues
 let _http2: typeof http2Type | null = null;
@@ -32,14 +37,15 @@ async function getApnsJwt(): Promise<string> {
     return cachedToken.jwt;
   }
 
+  const config = getApnsConfig();
   const key = await importPKCS8(
-    APNS_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    config.privateKey.replace(/\\n/g, "\n"),
     "ES256"
   );
 
   const jwt = await new SignJWT({})
-    .setProtectedHeader({ alg: "ES256", kid: APNS_KEY_ID })
-    .setIssuer(APNS_TEAM_ID)
+    .setProtectedHeader({ alg: "ES256", kid: config.keyId })
+    .setIssuer(config.teamId)
     .setIssuedAt(now)
     .sign(key);
 
@@ -55,7 +61,8 @@ function sendViaHttp2(
   const http2 = getHttp2();
 
   return new Promise((resolve) => {
-    const client = http2.connect(APNS_HOST);
+    const { host } = getApnsConfig();
+    const client = http2.connect(host);
     const timeout = setTimeout(() => {
       console.error(`[PUSH] timeout for token=${deviceToken.slice(0, 10)}...`);
       client.close();
