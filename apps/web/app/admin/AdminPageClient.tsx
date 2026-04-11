@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth, getAutoBackupEnabled, setAutoBackupEnabled, verifyUserEmail, deleteUser } from "./actions";
+import { setFeedbackStatus, deleteFeedback, replyToFeedback, triggerBackup, fetchSentryHealth, getAutoBackupEnabled, setAutoBackupEnabled, verifyUserEmail, deleteUser, sendTestPush } from "./actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -108,6 +108,8 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
   const [showReplyFor, setShowReplyFor] = React.useState<string | null>(null);
   const [isBackingUp, setIsBackingUp] = React.useState(false);
   const [backupResult, setBackupResult] = React.useState<string | null>(null);
+  const [isPushSending, setIsPushSending] = React.useState(false);
+  const [pushResult, setPushResult] = React.useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
   const [sentryHealth, setSentryHealth] = React.useState<{ errorCount24h: number; status: string } | null>(null);
   const [autoBackup, setAutoBackup] = React.useState<boolean | null>(null);
@@ -168,6 +170,19 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
       setBackupResult("הגיבוי נכשל. בדקו את ההגדרות.");
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    setIsPushSending(true);
+    setPushResult(null);
+    try {
+      await sendTestPush();
+      setPushResult("נשלח בהצלחה!");
+    } catch (err) {
+      setPushResult(err instanceof Error ? err.message : "שליחה נכשלה");
+    } finally {
+      setIsPushSending(false);
     }
   };
 
@@ -408,6 +423,30 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
                     >
                       {isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
                       {isBackingUp ? "מגבה..." : "גיבוי עכשיו"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Test push notification */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-border">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">התראת בדיקה</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {pushResult && (
+                      <span className={`text-xs ${pushResult.includes("בהצלחה") ? "text-green-600" : "text-red-500"}`}>
+                        {pushResult}
+                      </span>
+                    )}
+                    <Button
+                      onClick={handleTestPush}
+                      disabled={isPushSending}
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {isPushSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
+                      {isPushSending ? "שולח..." : "שלח התראה"}
                     </Button>
                   </div>
                 </div>

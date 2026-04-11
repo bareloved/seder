@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
-import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings } from "@/db/schema";
+import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings, deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 
@@ -231,4 +231,42 @@ export async function replyToFeedback(feedbackId: string, reply: string) {
     `.trim(),
     text: `תגובה למשוב שלך — סדר\n\nההודעה שלך:\n${fb.message}\n\nהתגובה שלנו:\n${reply}`,
   });
+}
+
+export async function sendTestPush(title?: string, body?: string) {
+  await requireAdmin();
+
+  if (!process.env.APNS_KEY_ID || !process.env.APNS_TEAM_ID || !process.env.APNS_PRIVATE_KEY) {
+    throw new Error("הגדרות APNS חסרות — בדקו את משתני הסביבה");
+  }
+
+  const TEST_USER_EMAIL = "barrelloved@gmail.com";
+  const [testUser] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.email, TEST_USER_EMAIL))
+    .limit(1);
+
+  if (!testUser) {
+    throw new Error("משתמש הבדיקה לא נמצא");
+  }
+
+  const tokens = await db
+    .select()
+    .from(deviceTokens)
+    .where(eq(deviceTokens.userId, testUser.id));
+
+  if (tokens.length === 0) {
+    throw new Error("אין מכשיר רשום לקבלת התראות");
+  }
+
+  // Dynamic import to avoid bundler issues with node:http2
+  const { sendPushToUser: send } = await import("@/lib/pushNotifications");
+
+  await send(
+    testUser.id,
+    title || "בדיקה 🔔",
+    body || "זו הודעת בדיקה מסדר",
+    { type: "test" }
+  );
 }
