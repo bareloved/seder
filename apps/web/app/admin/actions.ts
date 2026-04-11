@@ -233,7 +233,30 @@ export async function replyToFeedback(feedbackId: string, reply: string) {
   });
 }
 
-export async function sendTestPush(title?: string, body?: string) {
+const PUSH_PRESETS: Record<string, { title: string; body: string; data: Record<string, unknown> }> = {
+  overdue: {
+    title: "יש לך חשבונית שלא שולמה מעל 30 יום",
+    body: "לקוח לדוגמה - הופעה בבית שמש (₪2,500)",
+    data: { type: "nudge", nudgeType: "overdue" },
+  },
+  weekly_uninvoiced: {
+    title: "עבודות ממתינות לחשבונית",
+    body: "3 עבודות מהשבוע האחרון עדיין בלי חשבונית",
+    data: { type: "nudge", nudgeType: "weekly_uninvoiced" },
+  },
+  calendar_sync: {
+    title: "חודש חדש!",
+    body: "יש ביומן עבודות לסנכרן עם סדר?",
+    data: { type: "nudge", nudgeType: "calendar_sync" },
+  },
+  unpaid_check: {
+    title: "סוף חודש!",
+    body: "יש עבודות ששולמו כבר ולא סומנו?",
+    data: { type: "nudge", nudgeType: "unpaid_check" },
+  },
+};
+
+export async function sendTestPush(preset: string | null, customTitle?: string, customBody?: string) {
   await requireAdmin();
 
   if (!process.env.APNS_KEY_ID || !process.env.APNS_TEAM_ID || !process.env.APNS_PRIVATE_KEY) {
@@ -260,13 +283,20 @@ export async function sendTestPush(title?: string, body?: string) {
     throw new Error("אין מכשיר רשום לקבלת התראות");
   }
 
+  let title: string;
+  let body: string;
+  let data: Record<string, unknown>;
+
+  if (preset && PUSH_PRESETS[preset]) {
+    ({ title, body, data } = PUSH_PRESETS[preset]);
+  } else {
+    title = customTitle || "בדיקה 🔔";
+    body = customBody || "זו הודעת בדיקה מסדר";
+    data = { type: "test" };
+  }
+
   // Dynamic import to avoid bundler issues with node:http2
   const { sendPushToUser: send } = await import("@/lib/pushNotifications");
 
-  await send(
-    testUser.id,
-    title || "בדיקה 🔔",
-    body || "זו הודעת בדיקה מסדר",
-    { type: "test" }
-  );
+  await send(testUser.id, title, body, data);
 }
