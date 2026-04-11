@@ -110,6 +110,9 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
   const [backupResult, setBackupResult] = React.useState<string | null>(null);
   const [isPushSending, setIsPushSending] = React.useState(false);
   const [pushResult, setPushResult] = React.useState<string | null>(null);
+  const [pushMode, setPushMode] = React.useState<string>("overdue");
+  const [customPushTitle, setCustomPushTitle] = React.useState("");
+  const [customPushBody, setCustomPushBody] = React.useState("");
   const [selectedUserId, setSelectedUserId] = React.useState<string | null>(null);
   const [sentryHealth, setSentryHealth] = React.useState<{ errorCount24h: number; status: string } | null>(null);
   const [autoBackup, setAutoBackup] = React.useState<boolean | null>(null);
@@ -177,7 +180,15 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
     setIsPushSending(true);
     setPushResult(null);
     try {
-      await sendTestPush();
+      if (pushMode === "custom") {
+        if (!customPushTitle.trim() || !customPushBody.trim()) {
+          setPushResult("חובה למלא כותרת וגוף");
+          return;
+        }
+        await sendTestPush(null, customPushTitle, customPushBody);
+      } else {
+        await sendTestPush(pushMode);
+      }
       setPushResult("נשלח בהצלחה!");
     } catch (err) {
       setPushResult(err instanceof Error ? err.message : "שליחה נכשלה");
@@ -428,11 +439,47 @@ export default function AdminPageClient({ feedback, users, userDetails, stats, u
                 </div>
 
                 {/* Test push notification */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-border">
-                  <div>
+                <div className="pt-2 border-t border-slate-100 dark:border-border space-y-3">
+                  <div className="flex items-center justify-between">
                     <p className="text-sm text-slate-600 dark:text-slate-400">התראת בדיקה</p>
+                    <p className="text-xs text-slate-400">נשלח ל-barrelloved@gmail.com</p>
                   </div>
-                  <div className="flex items-center gap-3">
+
+                  <select
+                    value={pushMode}
+                    onChange={(e) => setPushMode(e.target.value)}
+                    className="w-full text-sm border rounded-md px-3 py-2 bg-white dark:bg-slate-900 dark:border-border"
+                    dir="rtl"
+                  >
+                    <option value="overdue">חשבונית לא שולמה (overdue)</option>
+                    <option value="weekly_uninvoiced">עבודות ללא חשבונית (weekly)</option>
+                    <option value="calendar_sync">חודש חדש — סנכרון יומן</option>
+                    <option value="unpaid_check">סוף חודש — בדיקת תשלומים</option>
+                    <option value="custom">טקסט חופשי...</option>
+                  </select>
+
+                  {pushMode === "custom" && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={customPushTitle}
+                        onChange={(e) => setCustomPushTitle(e.target.value)}
+                        placeholder="כותרת"
+                        className="w-full text-sm border rounded-md px-3 py-2 bg-white dark:bg-slate-900 dark:border-border"
+                        dir="rtl"
+                      />
+                      <input
+                        type="text"
+                        value={customPushBody}
+                        onChange={(e) => setCustomPushBody(e.target.value)}
+                        placeholder="תוכן ההתראה"
+                        className="w-full text-sm border rounded-md px-3 py-2 bg-white dark:bg-slate-900 dark:border-border"
+                        dir="rtl"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-3">
                     {pushResult && (
                       <span className={`text-xs ${pushResult.includes("בהצלחה") ? "text-green-600" : "text-red-500"}`}>
                         {pushResult}
