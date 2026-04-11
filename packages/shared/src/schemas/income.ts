@@ -7,7 +7,7 @@ export const incomeEntrySchema = z.object({
   description: z.string().min(1, "Description is required"),
   clientName: z.string().optional().default(""),
   clientId: z.string().uuid().optional(),
-  amountGross: z.number().positive(),
+  amountGross: z.number().min(0),
   amountPaid: z.number().min(0).optional().default(0),
   vatRate: z.number().min(0).max(100).optional().default(18),
   includesVat: z.boolean().optional().default(true),

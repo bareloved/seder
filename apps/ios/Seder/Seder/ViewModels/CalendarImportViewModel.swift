@@ -195,7 +195,7 @@ class CalendarImportViewModel: ObservableObject {
                 )
                 importedCount += 1
             } catch {
-                // Skip duplicates silently
+                print("Calendar import failed for '\(item.event.summary)': \(error)")
             }
         }
 
