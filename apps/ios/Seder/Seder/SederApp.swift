@@ -7,6 +7,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Initialize Sentry crash reporting
         SentryService.start()
 
+        // Set the GIDSignIn client configuration first so the App Check call
+        // below knows which iOS OAuth client to attest. App Attest is
+        // unavailable on the simulator, so we only configure on real devices.
+        GoogleSignInService.shared.bootstrapConfiguration()
+        #if !targetEnvironment(simulator)
+        GIDSignIn.sharedInstance.configure { error in
+            if let error {
+                print("Error configuring GIDSignIn App Check: \(error)")
+            }
+        }
+        #endif
+
         // Force RTL at the UIKit level so ALL views are RTL
         UIView.appearance().semanticContentAttribute = .forceRightToLeft
 

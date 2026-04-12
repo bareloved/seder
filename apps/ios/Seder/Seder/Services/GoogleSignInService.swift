@@ -12,8 +12,15 @@ class GoogleSignInService {
 
     private init() {}
 
-    func configure() {
-        // No additional config needed — clientID is passed per sign-in call
+    /// Sets the shared GIDSignIn configuration. Must be called before
+    /// `GIDSignIn.sharedInstance.configure(completion:)` so App Check knows
+    /// which OAuth client to attest — otherwise the App Check request hits
+    /// `oauthClients/(null):generateAppAttestChallenge` and 404s.
+    func bootstrapConfiguration() {
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(
+            clientID: iosClientID,
+            serverClientID: serverClientID
+        )
     }
 
     /// Presents the Google Sign-In UI and returns the ID token on success.
@@ -26,13 +33,12 @@ class GoogleSignInService {
             throw GoogleSignInError.noPresentingViewController
         }
 
-        let config = GIDConfiguration(clientID: iosClientID, serverClientID: serverClientID)
-        GIDSignIn.sharedInstance.configuration = config
-
+        // Incremental authorization: do NOT request calendar.readonly here.
+        // Calendar access is requested separately via the web settings page
+        // (Better Auth linkSocial), which is where the refresh token is stored.
         let result = try await GIDSignIn.sharedInstance.signIn(
             withPresenting: presentingVC,
-            hint: nil,
-            additionalScopes: ["https://www.googleapis.com/auth/calendar.readonly"]
+            hint: nil
         )
 
         guard let idToken = result.user.idToken?.tokenString else {
