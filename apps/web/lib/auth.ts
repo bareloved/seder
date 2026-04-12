@@ -53,9 +53,11 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      scope: ["https://www.googleapis.com/auth/calendar.readonly"],
+      // No extra scopes at sign-in (incremental authorization). The
+      // calendar.readonly scope is requested separately via linkSocial when
+      // the user explicitly connects their calendar.
       accessType: "offline",
-      prompt: "consent", // Always request consent to ensure refresh token is provided
+      prompt: "consent", // Ensure refresh token is provided when calendar is later linked
     },
   },
   databaseHooks: {

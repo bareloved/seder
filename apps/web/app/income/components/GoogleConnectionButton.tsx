@@ -27,6 +27,7 @@ export function GoogleConnectionButton({
         try {
             await authClient.linkSocial({
                 provider: "google",
+                scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
                 callbackURL: window.location.href,
             });
         } catch (error) {
