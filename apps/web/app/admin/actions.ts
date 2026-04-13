@@ -59,10 +59,14 @@ export async function fetchSentryHealth(): Promise<{
 export async function triggerBackup() {
   await requireAdmin();
 
+  if (!process.env.CRON_SECRET) {
+    throw new Error("CRON_SECRET is not configured");
+  }
+
   const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3001";
   const res = await fetch(`${baseUrl}/api/cron/backup`, {
     headers: {
-      Authorization: `Bearer ${process.env.CRON_SECRET || ""}`,
+      Authorization: `Bearer ${process.env.CRON_SECRET}`,
       "x-manual-trigger": "true",
     },
   });
