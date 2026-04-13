@@ -10,7 +10,7 @@ struct CalendarImportView: View {
     var onImportComplete: (() -> Void)?
 
     private var connectURL: URL {
-        URL(string: "https://sedder.app/settings?tab=calendar")!
+        URL(string: "https://sedder.app/m/connect-calendar")!
     }
 
     var body: some View {
