@@ -13,6 +13,8 @@ const baseEntry = (overrides: Record<string, unknown> = {}) => ({
   paidDate: null as string | null,
   updatedAt: new Date("2026-03-01"),
   calendarEventId: null as string | null,
+  rollingJobId: null as string | null,
+  detachedFromTemplate: false,
   ...overrides,
 });
 
@@ -217,5 +219,34 @@ describe("computeNudges", () => {
       expect(nudges[0].nudgeType).toBe("overdue");
       expect(nudges[1].nudgeType).toBe("weekly_uninvoiced");
     });
+  });
+});
+
+describe("computeNudges - rolling jobs filter", () => {
+  it("skips future unpaid rolling-job rows", () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 7);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+
+    const entries = [
+      {
+        id: "1",
+        date: tomorrowStr,
+        description: "Weekly piano",
+        clientName: "Dan",
+        amountGross: "150",
+        invoiceStatus: "draft",
+        paymentStatus: "unpaid",
+        invoiceSentDate: null,
+        paidDate: null,
+        updatedAt: new Date(),
+        calendarEventId: null,
+        rollingJobId: "job-1",
+        detachedFromTemplate: false,
+      },
+    ];
+
+    const nudges = computeNudges(entries as any, [], 5);
+    expect(nudges.filter((n) => n.nudgeType === "overdue")).toEqual([]);
   });
 });

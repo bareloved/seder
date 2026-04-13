@@ -12,6 +12,8 @@ interface NudgeEntry {
   paidDate: string | null;
   updatedAt: Date;
   calendarEventId: string | null;
+  rollingJobId: string | null;
+  detachedFromTemplate: boolean;
 }
 
 interface DismissedState {
@@ -150,7 +152,14 @@ export function computeNudges(
   weeklyDay: number = 5
 ): Nudge[] {
   const now = new Date();
-  const filtered = entries.filter(
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const filteredEntries = entries.filter((e) => {
+    // Skip future unpaid rolling-job rows — they haven't happened yet.
+    if (e.rollingJobId && e.date > todayStr) return false;
+    return true;
+  });
+
+  const filtered = filteredEntries.filter(
     (e) => e.invoiceStatus !== "cancelled" &&
       !(e.invoiceStatus === "paid" && e.paymentStatus === "paid")
   );
