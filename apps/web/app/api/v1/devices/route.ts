@@ -2,12 +2,17 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "../_lib/middleware";
 import { apiSuccess, apiError } from "../_lib/response";
 import { ValidationError } from "../_lib/errors";
+import {
+  enforceUserRateLimit,
+  deviceRegisterRatelimit,
+} from "@/lib/ratelimit";
 import { db } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAuth();
+    await enforceUserRateLimit(deviceRegisterRatelimit, userId);
     const { token, platform } = await request.json();
 
     if (!token || !platform) {

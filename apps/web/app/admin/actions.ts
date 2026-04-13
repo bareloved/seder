@@ -5,15 +5,14 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
 import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings, deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { sendEmail } from "@/lib/email";
-
-const ADMIN_EMAIL = "bareloved@gmail.com";
+import { sendEmail, escapeHtml } from "@/lib/email";
+import { isAdminEmail } from "@/lib/admin";
 
 async function requireAdmin() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session || session.user.email !== ADMIN_EMAIL) {
+  if (!session || !isAdminEmail(session.user.email)) {
     throw new Error("Unauthorized");
   }
   return session;
@@ -59,10 +58,14 @@ export async function fetchSentryHealth(): Promise<{
 export async function triggerBackup() {
   await requireAdmin();
 
+  if (!process.env.CRON_SECRET) {
+    throw new Error("CRON_SECRET is not configured");
+  }
+
   const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3001";
   const res = await fetch(`${baseUrl}/api/cron/backup`, {
     headers: {
-      Authorization: `Bearer ${process.env.CRON_SECRET || ""}`,
+      Authorization: `Bearer ${process.env.CRON_SECRET}`,
       "x-manual-trigger": "true",
     },
   });
@@ -177,15 +180,8 @@ export async function replyToFeedback(feedbackId: string, reply: string) {
     .where(eq(feedback.id, feedbackId));
 
   // Send reply email to user
-  const safeReply = reply
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  const safeMessage = fb.message
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const safeReply = escapeHtml(reply);
+  const safeMessage = escapeHtml(fb.message);
 
   await sendEmail({
     to: fb.userEmail,
@@ -263,7 +259,7 @@ export async function sendTestPush(preset: string | null, customTitle?: string, 
     throw new Error("הגדרות APNS חסרות — בדקו את משתני הסביבה");
   }
 
-  const TEST_USER_EMAIL = "barrelloved@gmail.com";
+  const TEST_USER_EMAIL = "bareloved@gmail.com";
   const [testUser] = await db
     .select({ id: user.id })
     .from(user)

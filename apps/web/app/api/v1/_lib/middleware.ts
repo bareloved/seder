@@ -12,6 +12,15 @@ export async function requireAuth(): Promise<string> {
     const serviceToken = process.env.SEDER_API_TOKEN;
     const serviceUserId = process.env.SEDER_API_USER_ID;
     if (serviceToken && serviceUserId && token === serviceToken) {
+      const ip =
+        headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        headersList.get("x-real-ip") ||
+        "unknown";
+      const ua = headersList.get("user-agent") || "unknown";
+      const referer = headersList.get("referer") || "";
+      console.log(
+        `[service-token] hit userId=${serviceUserId} ip=${ip} ua=${JSON.stringify(ua)} referer=${JSON.stringify(referer)}`
+      );
       return serviceUserId;
     }
   }

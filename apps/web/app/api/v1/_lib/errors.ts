@@ -25,3 +25,9 @@ export class ValidationError extends ApiError {
     super(400, message, "VALIDATION_ERROR");
   }
 }
+
+export class RateLimitError extends ApiError {
+  constructor(message = "נסה שוב מאוחר יותר") {
+    super(429, message, "RATE_LIMITED");
+  }
+}
