@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "../_lib/middleware";
 import { apiSuccess, apiError } from "../_lib/response";
 import { ValidationError } from "../_lib/errors";
+import { enforceUserRateLimit, feedbackRatelimit } from "@/lib/ratelimit";
 import { db } from "@/db/client";
 import { feedback } from "@/db/schema";
 
@@ -19,6 +20,7 @@ const FeedbackInput = z.object({
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAuth();
+    await enforceUserRateLimit(feedbackRatelimit, userId);
     const body = await request.json();
 
     let parsed: z.infer<typeof FeedbackInput>;
