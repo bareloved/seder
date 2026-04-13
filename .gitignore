@@ -45,3 +45,6 @@ package-lock.json
 # build info
 tsconfig.tsbuildinfo
 .superpowers/
+
+# personal working notes kept in the repo root
+seder-explainer-video-script.md
