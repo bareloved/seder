@@ -56,8 +56,15 @@ export const auth = betterAuth({
       // No extra scopes at sign-in (incremental authorization). The
       // calendar.readonly scope is requested separately via linkSocial when
       // the user explicitly connects their calendar.
+      //
+      // accessType offline + no prompt: Google issues a refresh token on the
+      // first calendar grant via linkSocial. We deliberately do NOT set
+      // prompt: "consent" because Better Auth hardcodes
+      // include_granted_scopes=true, and the combination causes Google to
+      // re-surface previously-granted sensitive scopes on every sign-in
+      // consent screen — which triggers the "unverified app" warning even
+      // when the current OAuth request only asks for basic profile scopes.
       accessType: "offline",
-      prompt: "consent", // Ensure refresh token is provided when calendar is later linked
     },
   },
   databaseHooks: {
