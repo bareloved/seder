@@ -10,6 +10,7 @@ export interface CalendarEvent {
   start: Date;
   end: Date;
   calendarId: string;  // Track which calendar this event came from
+  recurringEventId?: string;  // Present on recurring event instances
 }
 
 export interface GoogleCalendar {
@@ -138,7 +139,7 @@ export async function listEventsForMonth(
           timeMax,
           singleEvents: true,
           orderBy: "startTime",
-          fields: "items(id,summary,start,end)",
+          fields: "items(id,summary,start,end,recurringEventId)",
           maxResults: 500,
         });
 
@@ -161,6 +162,7 @@ export async function listEventsForMonth(
               start,
               end,
               calendarId,
+              recurringEventId: event.recurringEventId ?? undefined,
             };
           });
       } catch (calError) {
