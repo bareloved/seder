@@ -230,7 +230,7 @@ export function IncomeHeader({
               isConnected={isGoogleConnected ?? false}
               onConnectionChange={onGoogleConnectionChange}
             />
-            {onImportFromCalendar && isGoogleConnected && (
+            {onImportFromCalendar && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

@@ -1,3 +1,4 @@
+import SafariServices
 import SwiftUI
 
 struct CalendarImportView: View {
@@ -5,20 +6,29 @@ struct CalendarImportView: View {
     @StateObject private var viewModel = CalendarImportViewModel()
     @State private var importedCount: Int?
     @State private var showCalendarPicker = false
+    @State private var showConnectSafari = false
     var onImportComplete: (() -> Void)?
+
+    private var connectURL: URL {
+        URL(string: "https://sedder.app/settings?tab=calendar")!
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                switch viewModel.step {
-                case .selectCalendar:
-                    calendarSelectionStep
-                case .preview:
-                    EventPreviewView(viewModel: viewModel, onDone: { count in
-                        importedCount = count
-                        onImportComplete?()
-                        dismiss()
-                    })
+                if viewModel.connectionChecked && !viewModel.isConnected {
+                    notConnectedStep
+                } else {
+                    switch viewModel.step {
+                    case .selectCalendar:
+                        calendarSelectionStep
+                    case .preview:
+                        EventPreviewView(viewModel: viewModel, onDone: { count in
+                            importedCount = count
+                            onImportComplete?()
+                            dismiss()
+                        })
+                    }
                 }
             }
             .navigationTitle(viewModel.step == .selectCalendar ? "ייבוא מהיומן" : "תצוגה מקדימה")
@@ -35,6 +45,80 @@ struct CalendarImportView: View {
         }
         .environment(\.layoutDirection, .rightToLeft)
         .task { await viewModel.loadCalendars() }
+        .sheet(isPresented: $showConnectSafari, onDismiss: {
+            // Re-check connection state after the user returns from the
+            // browser — they may have just granted calendar access.
+            Task { await viewModel.loadCalendars() }
+        }) {
+            SafariView(url: connectURL)
+                .ignoresSafeArea()
+        }
+    }
+
+    // MARK: - Not-connected CTA
+
+    private var notConnectedStep: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 56))
+                .foregroundStyle(SederTheme.brandGreen)
+                .padding(.bottom, 12)
+
+            Text("חבר את היומן כדי לייבא")
+                .font(SederTheme.ploni(24, weight: .semibold))
+                .foregroundStyle(SederTheme.textPrimary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 6)
+
+            Text("כדי לייבא אירועים מ-Google Calendar כהכנסות, צריך להתחבר ולתת ל\"סדר\" הרשאת קריאה ליומן שלך.")
+                .font(SederTheme.ploni(16))
+                .foregroundStyle(SederTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 20)
+
+            // Warning box mirroring the web ConnectCalendarDialog
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.shield.fill")
+                    .foregroundStyle(.orange)
+                    .font(.system(size: 18))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("שים לב")
+                        .font(SederTheme.ploni(14, weight: .semibold))
+                        .foregroundStyle(SederTheme.textPrimary)
+                    Text("ייתכן שגוגל יציג אזהרה (\"Google hasn't verified this app\") כי האפליקציה נמצאת בתהליך אישור. לחץ על Advanced ואז על Go to sedder.app כדי להמשיך.")
+                        .font(SederTheme.ploni(13))
+                        .foregroundStyle(SederTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(12)
+            .background(Color.orange.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.orange.opacity(0.25), lineWidth: 1)
+            )
+
+            Spacer()
+            Spacer()
+
+            Button {
+                showConnectSafari = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "safari")
+                    Text("חבר את היומן בדפדפן")
+                        .font(SederTheme.ploni(18, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(SederTheme.brandGreen)
+        }
+        .padding(16)
     }
 
     // MARK: - Calendar summary text
@@ -219,6 +303,18 @@ struct CalendarImportView: View {
             }
         }
     }
+}
+
+// MARK: - SFSafariViewController wrapper
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
 
 // MARK: - Calendar Picker Sub-Sheet
