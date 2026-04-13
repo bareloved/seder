@@ -38,7 +38,7 @@ describe("generateOccurrences - daily", () => {
     ]);
   });
 
-  it("respects endDate exclusive upper bound <= horizon", () => {
+  it("respects endDate inclusive upper bound <= horizon", () => {
     const cadence: Cadence = { kind: "daily", interval: 1 };
     const out = generateOccurrences({
       cadence,
