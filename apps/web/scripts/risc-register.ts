@@ -23,7 +23,41 @@
  * After registration it sends a verification ping; check the Vercel function
  * logs for "[risc] verification ping" to confirm the webhook received it.
  */
-import { google } from "googleapis";
+import fs from "fs";
+import { SignJWT, importPKCS8 } from "jose";
+
+const RISC_AUDIENCE =
+  "https://risc.googleapis.com/google.identity.risc.v1beta.RiscManagementService";
+
+interface ServiceAccountKey {
+  client_email: string;
+  private_key: string;
+  private_key_id: string;
+}
+
+async function mintSelfSignedJwt(): Promise<string> {
+  const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!keyPath) {
+    throw new Error(
+      "GOOGLE_APPLICATION_CREDENTIALS must point to a service account JSON key"
+    );
+  }
+  const raw = fs.readFileSync(keyPath, "utf8");
+  const key = JSON.parse(raw) as ServiceAccountKey;
+  const privateKey = await importPKCS8(key.private_key, "RS256");
+  return new SignJWT({})
+    .setProtectedHeader({
+      alg: "RS256",
+      typ: "JWT",
+      kid: key.private_key_id,
+    })
+    .setIssuer(key.client_email)
+    .setSubject(key.client_email)
+    .setAudience(RISC_AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(privateKey);
+}
 
 const EVENTS_REQUESTED = [
   "https://schemas.openid.net/secevent/risc/event-type/sessions-revoked",
@@ -52,17 +86,10 @@ async function main() {
     process.exit(1);
   }
 
-  const auth = new google.auth.GoogleAuth({
-    scopes: ["https://www.googleapis.com/auth/risc.configuration"],
-  });
-  const client = await auth.getClient();
-  const tokenResponse = await client.getAccessToken();
-  const accessToken = tokenResponse.token;
-  if (!accessToken) {
-    throw new Error(
-      "Failed to obtain access token — is GOOGLE_APPLICATION_CREDENTIALS set?"
-    );
-  }
+  // RISC uses self-signed JWT auth (RFC 7523), not OAuth2 access tokens.
+  // We sign a JWT with aud = RISC service URL and use it directly as the
+  // bearer credential.
+  const accessToken = await mintSelfSignedJwt();
 
   console.log(`Registering RISC stream → ${webhookUrl}`);
   const updateRes = await fetch(
