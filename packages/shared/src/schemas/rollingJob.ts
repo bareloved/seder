@@ -57,14 +57,15 @@ export const createRollingJobSchema = z
     { message: "תאריך סיום חייב להיות אחרי תאריך התחלה", path: ["endDate"] },
   );
 
+// sourceCalendarRecurringEventId and sourceCalendarId are immutable — omitted from updates.
 export const updateRollingJobSchema = z
   .object({
-    title: z.string().min(1).max(100).optional(),
-    description: z.string().min(1).max(500).optional(),
+    title: z.string().min(1, "שם נדרש").max(100).optional(),
+    description: z.string().min(1, "תיאור נדרש").max(500).optional(),
     clientId: z.string().uuid().optional().nullable(),
     clientName: z.string().min(1).max(100).optional(),
     categoryId: z.string().uuid().optional().nullable(),
-    amountGross: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+    amountGross: z.string().regex(/^\d+(\.\d{1,2})?$/, "סכום לא תקין").optional(),
     vatRate: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
     includesVat: z.boolean().optional(),
     cadence: cadenceSchema.optional(),
