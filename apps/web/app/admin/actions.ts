@@ -6,14 +6,13 @@ import { db } from "@/db/client";
 import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings, deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
-
-const ADMIN_EMAIL = "bareloved@gmail.com";
+import { isAdminEmail } from "@/lib/admin";
 
 async function requireAdmin() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  if (!session || session.user.email !== ADMIN_EMAIL) {
+  if (!session || !isAdminEmail(session.user.email)) {
     throw new Error("Unauthorized");
   }
   return session;
@@ -267,7 +266,7 @@ export async function sendTestPush(preset: string | null, customTitle?: string, 
     throw new Error("הגדרות APNS חסרות — בדקו את משתני הסביבה");
   }
 
-  const TEST_USER_EMAIL = "barrelloved@gmail.com";
+  const TEST_USER_EMAIL = "bareloved@gmail.com";
   const [testUser] = await db
     .select({ id: user.id })
     .from(user)

@@ -4,18 +4,17 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { feedback, user, incomeEntries, session, account, userSettings, categories, clients, deviceTokens } from "@/db/schema";
 import { desc, eq, count, sql, gte } from "drizzle-orm";
+import { isAdminEmail } from "@/lib/admin";
 import AdminPageClient from "./AdminPageClient";
 
 export const dynamic = "force-dynamic";
-
-const ADMIN_EMAIL = "bareloved@gmail.com";
 
 export default async function AdminPage() {
   const authSession = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (!authSession || authSession.user.email !== ADMIN_EMAIL) {
+  if (!authSession || !isAdminEmail(authSession.user.email)) {
     redirect("/income");
   }
 
