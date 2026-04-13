@@ -16,8 +16,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { FeedbackModal } from "@/components/FeedbackModal";
-import { MessageSquare } from "lucide-react";
 
 function SettingsContent() {
     const router = useRouter();
@@ -58,20 +56,10 @@ function SettingsContent() {
         <div className="min-h-screen bg-[#F0F2F5] dark:bg-slate-950/50 pb-24 md:pb-20 font-sans" dir="rtl">
             <Navbar user={session.user} />
 
-            <main className="max-w-7xl mx-auto px-2 sm:px-12 lg:px-20 py-8 space-y-6">
-                <div className="flex items-start justify-between">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">הגדרות</h1>
-                        <p className="text-slate-500">נהל את החשבון, ההעדפות והנתונים שלך במקום אחד.</p>
-                    </div>
-                    <FeedbackModal
-                        trigger={
-                            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-                                <MessageSquare className="h-4 w-4" />
-                                שליחת משוב
-                            </button>
-                        }
-                    />
+            <main className="max-w-7xl mx-auto px-4 sm:px-12 lg:px-20 py-5 md:py-8 space-y-4 md:space-y-6">
+                <div className="flex flex-col gap-1 md:gap-2">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">הגדרות</h1>
+                    <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">נהל את החשבון, ההעדפות והנתונים שלך.</p>
                 </div>
 
                 <SettingsLayout activeTab={activeTab} onTabChange={handleTabChange}>

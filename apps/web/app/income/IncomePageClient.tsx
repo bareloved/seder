@@ -7,6 +7,7 @@ import { KPICards } from "./components/KPICards";
 import { IncomeTable } from "./components/IncomeTable";
 import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
 import { CalendarImportDialog } from "./components/CalendarImportDialog";
+import { ConnectCalendarDialog } from "./components/ConnectCalendarDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
@@ -157,6 +158,8 @@ export default function IncomePageClient({
   }, []);
 
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = React.useState(false);
+  const [isConnectCalendarDialogOpen, setIsConnectCalendarDialogOpen] =
+    React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
   const [isImporting, setIsImporting] = React.useState(false);
 
@@ -843,7 +846,11 @@ export default function IncomePageClient({
             onViewModeChange={handleViewModeChange}
             monthPaymentStatuses={monthPaymentStatuses}
             isGoogleConnected={isGoogleConnected}
-            onImportFromCalendar={() => setIsCalendarDialogOpen(true)}
+            onImportFromCalendar={() =>
+              isGoogleConnected
+                ? setIsCalendarDialogOpen(true)
+                : setIsConnectCalendarDialogOpen(true)
+            }
             isNavigating={isNavigating}
             isImporting={isImporting}
             // Sort props
@@ -918,6 +925,11 @@ export default function IncomePageClient({
         defaultMonth={month}
         onImportStart={handleImportStart}
         onImportEnd={handleImportEnd}
+      />
+
+      <ConnectCalendarDialog
+        isOpen={isConnectCalendarDialogOpen}
+        onClose={() => setIsConnectCalendarDialogOpen(false)}
       />
 
       <CategoryManagerDialog

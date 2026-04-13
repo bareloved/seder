@@ -10,6 +10,12 @@ class CalendarImportViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    // Connection state — true when the backend has a Google refresh token for
+    // this user. Defaults to true to avoid flashing the connect CTA on first
+    // load; updated from the /api/v1/calendar/list response.
+    @Published var isConnected = true
+    @Published var connectionChecked = false
+
     // Step 1
     @Published var calendars: [GoogleCalendar] = []
     @Published var selectedCalendarIds: Set<String> = []
@@ -49,6 +55,8 @@ class CalendarImportViewModel: ObservableObject {
             let response: CalendarListResponse = try await api.request(
                 endpoint: "/api/v1/calendar/list"
             )
+            isConnected = response.connected
+            connectionChecked = true
             calendars = response.calendars
             // Restore saved selection or default to primary
             let saved = UserDefaults.standard.stringArray(forKey: savedCalendarsKey)
@@ -58,6 +66,7 @@ class CalendarImportViewModel: ObservableObject {
                 selectedCalendarIds = [primary.id]
             }
         } catch {
+            connectionChecked = true
             errorMessage = "שגיאה בטעינת יומנים"
         }
     }
