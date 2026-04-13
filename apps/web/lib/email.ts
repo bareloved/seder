@@ -1,5 +1,15 @@
 import { Resend } from "resend";
 
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\//g, "&#x2F;");
+}
+
 let resend: Resend | null = null;
 
 function getResendClient() {
@@ -224,7 +234,8 @@ ${url}
 }
 
 export async function sendWelcomeEmail(to: string, name?: string) {
-  const greeting = name ? `שלום ${name},` : "שלום,";
+  const greetingText = name ? `שלום ${name},` : "שלום,";
+  const greetingHtml = name ? `שלום ${escapeHtml(name)},` : "שלום,";
   await sendEmail({
     to,
     subject: "ברוכים הבאים לסדר!",
@@ -254,7 +265,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
           <tr>
             <td style="padding: 0 32px 16px; direction: rtl;">
               <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6; text-align: center; direction: rtl; unicode-bidi: embed;">
-                &#x200F;${greeting}
+                &#x200F;${greetingHtml}
                 <br>
                 &#x200F;החשבון שלך אומת!
                 <br>
@@ -349,7 +360,7 @@ export async function sendWelcomeEmail(to: string, name?: string) {
 </body>
 </html>
     `.trim(),
-    text: `${greeting}\n\nברוכים הבאים לסדר! החשבון שלך אומת!\nהנה כמה דברים שאפשר לעשות עם האפליקציה:\n\n📊 מעקב הכנסות — ניהול חשבוניות ותשלומים במקום אחד\n📅 ייבוא מיומן Google — הפכו אירועים להכנסות באופן אוטומטי\n📈 דוחות וניתוחים — תמונה ברורה של ההכנסות שלכם\n🔔 תזכורות חכמות — לא לשכוח חשבוניות ותשלומים\n\nכניסה: https://sedder.app`,
+    text: `${greetingText}\n\nברוכים הבאים לסדר! החשבון שלך אומת!\nהנה כמה דברים שאפשר לעשות עם האפליקציה:\n\n📊 מעקב הכנסות — ניהול חשבוניות ותשלומים במקום אחד\n📅 ייבוא מיומן Google — הפכו אירועים להכנסות באופן אוטומטי\n📈 דוחות וניתוחים — תמונה ברורה של ההכנסות שלכם\n🔔 תזכורות חכמות — לא לשכוח חשבוניות ותשלומים\n\nכניסה: https://sedder.app`,
   });
 }
 

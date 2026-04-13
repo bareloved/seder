@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
 import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings, deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 import { isAdminEmail } from "@/lib/admin";
 
 async function requireAdmin() {
@@ -180,15 +180,8 @@ export async function replyToFeedback(feedbackId: string, reply: string) {
     .where(eq(feedback.id, feedbackId));
 
   // Send reply email to user
-  const safeReply = reply
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  const safeMessage = fb.message
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const safeReply = escapeHtml(reply);
+  const safeMessage = escapeHtml(fb.message);
 
   await sendEmail({
     to: fb.userEmail,
