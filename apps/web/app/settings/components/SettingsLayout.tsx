@@ -43,17 +43,17 @@ export function SettingsLayout({ children, activeTab, onTabChange }: SettingsLay
     }, [activeTab]);
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 md:gap-10 min-h-[600px]">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-10 min-h-[600px]">
             {/* Sidebar Navigation */}
             <aside className="w-full md:w-64 flex-shrink-0">
                 <div className="relative">
                     {/* Fade indicators for scroll affordance on mobile */}
-                    <div className="md:hidden absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-[#F0F2F5] dark:from-slate-950/50 to-transparent pointer-events-none z-10" />
-                    <div className="md:hidden absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-[#F0F2F5] dark:from-slate-950/50 to-transparent pointer-events-none z-10" />
+                    <div className="md:hidden absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#F0F2F5] dark:from-slate-950/50 to-transparent pointer-events-none z-10" />
+                    <div className="md:hidden absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#F0F2F5] dark:from-slate-950/50 to-transparent pointer-events-none z-10" />
 
                     <nav
                         ref={navRef}
-                        className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none px-1"
+                        className="flex flex-row md:flex-col gap-1 md:gap-1 overflow-x-auto md:overflow-visible scrollbar-none -mx-1 px-1 md:mx-0"
                     >
                         {tabs.map((tab) => {
                             const Icon = tab.icon;
@@ -66,12 +66,12 @@ export function SettingsLayout({ children, activeTab, onTabChange }: SettingsLay
                                     variant="ghost"
                                     onClick={() => onTabChange(tab.id)}
                                     className={cn(
-                                        "justify-start gap-3 h-11 px-4 rounded-lg transition-colors whitespace-nowrap",
+                                        "flex-shrink-0 justify-start gap-2 md:gap-3 h-9 md:h-11 px-3 md:px-4 text-sm rounded-full md:rounded-lg transition-colors whitespace-nowrap",
                                         isActive
-                                            ? "bg-white shadow-sm text-brand-primary font-medium"
-                                            : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800",
+                                            ? "bg-brand-primary text-white font-medium hover:bg-[#27ae60] hover:text-white md:bg-white md:shadow-sm md:text-brand-primary md:hover:bg-white"
+                                            : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800",
                                         tab.color && !isActive ? tab.color : "",
-                                        tab.color && isActive ? "text-red-600 bg-red-50" : ""
+                                        tab.color && isActive ? "bg-red-500 text-white hover:bg-red-600 hover:text-white md:bg-red-50 md:text-red-600 md:hover:bg-red-50" : ""
                                     )}
                                 >
                                     <Icon className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-70")} />
@@ -85,7 +85,7 @@ export function SettingsLayout({ children, activeTab, onTabChange }: SettingsLay
 
             {/* Main Content Areas */}
             <div className="flex-1 min-w-0">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 p-6 md:p-8">
+                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 p-4 md:p-8">
                     {children}
                 </div>
             </div>

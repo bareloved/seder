@@ -54,18 +54,21 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-4 md:space-y-6" dir="rtl">
       <Card>
-        <CardHeader>
-          <CardTitle>התראות Push</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-lg md:text-2xl">התראות Push</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 pt-0 md:p-6 md:pt-0 space-y-4">
           {(Object.keys(pushLabels) as Array<keyof NudgePushPreferences>).map((key) => (
-            <div key={key} className="flex items-center justify-between">
-              <Label>{pushLabels[key]}</Label>
+            <div key={key} className="flex items-center justify-between gap-3">
+              <Label className="flex-1 text-sm leading-snug text-slate-700 dark:text-slate-300 cursor-pointer" onClick={() => handleToggle(key)}>
+                {pushLabels[key]}
+              </Label>
               <Switch
                 checked={pushPrefs[key]}
                 onCheckedChange={() => handleToggle(key)}
+                className="flex-shrink-0"
               />
             </div>
           ))}
@@ -73,18 +76,18 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>יום תזכורת שבועית</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-lg md:text-2xl">יום תזכורת שבועית</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <Label>באיזה יום לשלוח תזכורת חשבוניות?</Label>
+        <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="flex-1 text-sm leading-snug text-slate-700 dark:text-slate-300">באיזה יום לשלוח תזכורת?</Label>
             <Select
               value={String(weeklyDay)}
               onValueChange={(v) => setWeeklyDay(Number(v))}
               dir="rtl"
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 flex-shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -99,7 +102,7 @@ export function NotificationsSection({ initialSettings }: NotificationsSectionPr
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} disabled={isPending}>
+      <Button onClick={handleSave} disabled={isPending} className="w-full md:w-auto bg-brand-primary hover:bg-[#27ae60] text-white">
         {isPending ? "שומר..." : "שמור שינויים"}
       </Button>
     </div>
