@@ -50,6 +50,13 @@
       "when": 1773399416511,
       "tag": "0006_special_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776117308818,
+      "tag": "0007_gorgeous_pixie",
+      "breakpoints": true
     }
   ]
 }

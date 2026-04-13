@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -110,6 +111,43 @@ export const clients = pgTable("clients", {
 export type Client = typeof clients.$inferSelect;
 export type NewClient = typeof clients.$inferInsert;
 
+// Rolling jobs table - recurring income templates
+export const rollingJobs = pgTable("rolling_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  isActive: boolean("is_active").default(true).notNull(),
+  title: varchar("title", { length: 100 }).notNull(),
+  description: varchar("description", { length: 500 }).notNull(),
+  clientId: uuid("client_id").references(() => clients.id),
+  clientName: varchar("client_name", { length: 100 }).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id),
+  amountGross: numeric("amount_gross", { precision: 12, scale: 2 }).notNull(),
+  vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).default("18").notNull(),
+  includesVat: boolean("includes_vat").default(true).notNull(),
+  defaultInvoiceStatus: varchar("default_invoice_status", { length: 20 })
+    .$type<InvoiceStatus>()
+    .default("draft")
+    .notNull(),
+  cadence: json("cadence").notNull(), // { kind: "daily"|"weekly"|"monthly", ... }
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  sourceCalendarRecurringEventId: varchar("source_calendar_recurring_event_id", { length: 255 }),
+  sourceCalendarId: varchar("source_calendar_id", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("rolling_jobs_user_id_idx").on(table.userId),
+  userActiveIdx: index("rolling_jobs_user_active_idx").on(table.userId, table.isActive),
+  userCalendarRecurringIdx: index("rolling_jobs_user_cal_recurring_idx").on(
+    table.userId,
+    table.sourceCalendarRecurringEventId,
+  ),
+}));
+
+export type RollingJobRow = typeof rollingJobs.$inferSelect;
+export type NewRollingJobRow = typeof rollingJobs.$inferInsert;
+
 // Income entries table
 export const incomeEntries = pgTable("income_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -133,6 +171,8 @@ export const incomeEntries = pgTable("income_entries", {
   category: varchar("category", { length: 50 }), // Legacy - kept for migration
   categoryId: uuid("category_id").references(() => categories.id), // New FK
   clientId: uuid("client_id").references(() => clients.id), // FK to clients table
+  rollingJobId: uuid("rolling_job_id").references(() => rollingJobs.id, { onDelete: "set null" }),
+  detachedFromTemplate: boolean("detached_from_template").default(false).notNull(),
   invoiceSentDate: date("invoice_sent_date"),
   paidDate: date("paid_date"),
   // Enforce NOT NULL now that migration is complete
@@ -154,6 +194,9 @@ export const incomeEntries = pgTable("income_entries", {
       table.userId,
       table.calendarEventId
     ),
+    rollingJobDateUnique: uniqueIndex("income_rolling_job_date_key")
+      .on(table.rollingJobId, table.date)
+      .where(sql`${table.rollingJobId} IS NOT NULL`),
   };
 });
 
