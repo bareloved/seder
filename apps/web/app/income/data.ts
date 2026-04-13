@@ -1095,6 +1095,16 @@ export interface UpdateIncomeEntryInput {
   paidDate?: string | null;
 }
 
+const TEMPLATE_TRACKED_FIELDS = [
+  "description",
+  "amountGross",
+  "vatRate",
+  "includesVat",
+  "date",
+  "clientId",
+  "categoryId",
+] as const;
+
 export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<IncomeEntry> {
   const { id, userId, ...updates } = input;
 
@@ -1114,6 +1124,13 @@ export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<
   if (updates.notes !== undefined) updateData.notes = updates.notes;
   if (updates.invoiceSentDate !== undefined) updateData.invoiceSentDate = updates.invoiceSentDate ?? undefined;
   if (updates.paidDate !== undefined) updateData.paidDate = updates.paidDate ?? undefined;
+
+  const touchesTemplateField = TEMPLATE_TRACKED_FIELDS.some(
+    (k) => (updates as Record<string, unknown>)[k] !== undefined,
+  );
+  if (touchesTemplateField) {
+    updateData.detachedFromTemplate = true;
+  }
 
   updateData.updatedAt = new Date();
 
@@ -1389,6 +1406,13 @@ export async function batchUpdateIncomeEntries(
 
   if (updates.categoryId !== undefined) {
     updateData.categoryId = updates.categoryId ?? undefined;
+  }
+
+  const batchTouchesTemplateField = TEMPLATE_TRACKED_FIELDS.some(
+    (k) => (updates as Record<string, unknown>)[k] !== undefined,
+  );
+  if (batchTouchesTemplateField) {
+    updateData.detachedFromTemplate = true;
   }
 
   if (updates.invoiceStatus !== undefined) {
