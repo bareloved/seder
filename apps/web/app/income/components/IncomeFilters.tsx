@@ -60,6 +60,9 @@ interface IncomeFiltersProps {
   sortColumn?: SortColumn;
   sortDirection?: "asc" | "desc";
   onSort?: (column: SortColumn) => void;
+  // Hide-future toggle
+  hideFuture?: boolean;
+  onHideFutureChange?: (v: boolean) => void;
 }
 
 // Sort options with Hebrew labels
@@ -96,6 +99,8 @@ export function IncomeFilters({
   sortColumn = "date",
   sortDirection = "asc",
   onSort,
+  hideFuture = false,
+  onHideFutureChange,
 }: IncomeFiltersProps) {
   const [isFilterSheetOpen, setIsFilterSheetOpen] = React.useState(false);
 
@@ -290,6 +295,19 @@ export function IncomeFilters({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+
+          {/* Hide-future toggle (desktop) */}
+          {onHideFutureChange && (
+            <label className="hidden md:flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none px-2 h-9">
+              <input
+                type="checkbox"
+                checked={hideFuture}
+                onChange={(e) => onHideFutureChange(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              <span className="hidden xl:inline">הסתר עתיד</span>
+            </label>
           )}
         </div>
 
@@ -587,6 +605,21 @@ export function IncomeFilters({
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </div>
+            )}
+
+            {/* Hide-future toggle */}
+            {onHideFutureChange && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={hideFuture}
+                    onChange={(e) => onHideFutureChange(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  הסתר רשומות עתידיות שלא שולמו
+                </label>
               </div>
             )}
 

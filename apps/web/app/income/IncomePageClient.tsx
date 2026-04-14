@@ -97,6 +97,8 @@ export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
     invoiceSentDate: dbEntry.invoiceSentDate,
     paidDate: dbEntry.paidDate,
     calendarEventId: dbEntry.calendarEventId,
+    rollingJobId: dbEntry.rollingJobId,
+    detachedFromTemplate: dbEntry.detachedFromTemplate,
     createdAt: dbEntry.createdAt,
     updatedAt: dbEntry.updatedAt,
   };
@@ -185,6 +187,19 @@ export default function IncomePageClient({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedClient, setSelectedClient] = React.useState<string>("all");
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
+  const [hideFuture, setHideFutureState] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    setHideFutureState(window.localStorage.getItem("seder_income_hide_future") === "1");
+  }, []);
+
+  const setHideFuture = React.useCallback((v: boolean) => {
+    setHideFutureState(v);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("seder_income_hide_future", v ? "1" : "0");
+    }
+  }, []);
   const [sortColumn, setSortColumn] = React.useState<SortColumn>("date");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
 
@@ -469,6 +484,12 @@ export default function IncomePageClient({
       );
     }
 
+    if (hideFuture) {
+      result = result.filter(
+        (e) => !(e.date > todayDateString && e.paymentStatus !== "paid"),
+      );
+    }
+
     return [...result].sort((a, b) => {
       const multiplier = sortDirection === "desc" ? -1 : 1;
 
@@ -499,7 +520,7 @@ export default function IncomePageClient({
           return 0;
       }
     });
-  }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortColumn, sortDirection]);
+  }, [entries, activeFilter, selectedClient, selectedCategories, searchQuery, sortColumn, sortDirection, hideFuture, todayDateString]);
 
   // Define selectAll after filteredEntries to avoid circular dependency
   const selectAll = React.useCallback(() => {
@@ -854,6 +875,8 @@ export default function IncomePageClient({
                 : setIsConnectCalendarDialogOpen(true)
             }
             onOpenRollingJobs={() => setIsRollingJobsDialogOpen(true)}
+            hideFuture={hideFuture}
+            onHideFutureChange={setHideFuture}
             isNavigating={isNavigating}
             isImporting={isImporting}
             // Sort props

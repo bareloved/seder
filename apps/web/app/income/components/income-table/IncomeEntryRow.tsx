@@ -27,6 +27,7 @@ import {
   MoreHorizontal,
   CheckSquare,
   Send,
+  Repeat,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
@@ -338,6 +339,17 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                 onInlineEdit && "hover:text-slate-600 dark:hover:text-slate-300"
               )}>
                 {entry.description}
+                {entry.rollingJobId && (
+                  <Repeat
+                    className={cn(
+                      "h-3.5 w-3.5 ms-1 inline-block align-middle",
+                      entry.detachedFromTemplate
+                        ? "text-slate-300 dark:text-slate-600"
+                        : "text-slate-400 dark:text-slate-500"
+                    )}
+                    aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "רשומה מסדרה"}
+                  />
+                )}
               </span>
               <div
                 className="text-sm text-slate-500 dark:text-slate-400 truncate"
@@ -573,6 +585,17 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold text-slate-800 dark:text-slate-100 truncate text-base">
               {entry.description}
+              {entry.rollingJobId && (
+                <Repeat
+                  className={cn(
+                    "h-3.5 w-3.5 ms-1 inline-block align-middle",
+                    entry.detachedFromTemplate
+                      ? "text-slate-300 dark:text-slate-600"
+                      : "text-slate-400 dark:text-slate-500"
+                  )}
+                  aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "רשומה מסדרה"}
+                />
+              )}
             </span>
             <div className={cn(
               "amount-value text-lg font-numbers tracking-tight shrink-0",
