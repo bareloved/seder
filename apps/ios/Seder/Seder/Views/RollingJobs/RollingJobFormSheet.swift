@@ -163,7 +163,7 @@ struct RollingJobFormSheet: View {
                 .multilineTextAlignment(.leading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -179,7 +179,7 @@ struct RollingJobFormSheet: View {
                 .multilineTextAlignment(.leading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -204,7 +204,7 @@ struct RollingJobFormSheet: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -239,7 +239,7 @@ struct RollingJobFormSheet: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -271,7 +271,7 @@ struct RollingJobFormSheet: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
@@ -319,7 +319,7 @@ struct RollingJobFormSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
-                    .background(SederTheme.subtleBg)
+                    .background(SederTheme.cardBg)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
@@ -356,7 +356,7 @@ struct RollingJobFormSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
-                    .background(SederTheme.subtleBg)
+                    .background(SederTheme.cardBg)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
@@ -375,7 +375,7 @@ struct RollingJobFormSheet: View {
                 .lineLimit(2...5)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(SederTheme.subtleBg)
+                .background(SederTheme.cardBg)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)

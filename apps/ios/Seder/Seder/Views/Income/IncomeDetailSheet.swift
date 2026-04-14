@@ -54,7 +54,7 @@ struct IncomeDetailSheet: View {
                                 .multilineTextAlignment(.leading)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -84,7 +84,7 @@ struct IncomeDetailSheet: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -100,7 +100,7 @@ struct IncomeDetailSheet: View {
                             .multilineTextAlignment(.leading)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 12)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
@@ -148,7 +148,7 @@ struct IncomeDetailSheet: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
@@ -177,7 +177,7 @@ struct IncomeDetailSheet: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -199,7 +199,7 @@ struct IncomeDetailSheet: View {
                             .lineLimit(3...6)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 12)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
