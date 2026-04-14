@@ -25,6 +25,19 @@ struct IncomeDetailSheet: View {
     @FocusState private var amountFocused: Bool
     @FocusState private var clientFocused: Bool
 
+    // Rolling-job (אירוע חוזר) — only shown when creating a new entry
+    @State private var isRolling = false
+    @State private var cadence: Cadence = .weekly(
+        interval: 1,
+        weekdays: [Calendar.current.component(.weekday, from: Date()) - 1]
+    )
+    @State private var rollingEndDate: Date? = nil
+    @State private var hasRollingEndDate = false
+    @State private var showRollingEndDatePicker = false
+
+    // Error banner (shown when save fails)
+    @State private var saveError: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -41,7 +54,7 @@ struct IncomeDetailSheet: View {
                                 .multilineTextAlignment(.leading)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -71,7 +84,7 @@ struct IncomeDetailSheet: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -87,7 +100,7 @@ struct IncomeDetailSheet: View {
                             .multilineTextAlignment(.leading)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 12)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
@@ -135,7 +148,7 @@ struct IncomeDetailSheet: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
@@ -164,7 +177,7 @@ struct IncomeDetailSheet: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 12)
-                                .background(SederTheme.subtleBg)
+                                .background(SederTheme.cardBg)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -186,12 +199,71 @@ struct IncomeDetailSheet: View {
                             .lineLimit(3...6)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 12)
-                            .background(SederTheme.subtleBg)
+                            .background(SederTheme.cardBg)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
+                    }
+
+                    // Row 6: Recurring event (only for new entries)
+                    if !isEditing {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle(isOn: $isRolling.animation(.easeInOut(duration: 0.2))) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(SederTheme.textSecondary)
+                                    Text("אירוע חוזר")
+                                        .font(SederTheme.ploni(17, weight: .medium))
+                                        .foregroundStyle(SederTheme.textPrimary)
+                                }
+                            }
+                            .tint(SederTheme.brandGreen)
+
+                            if isRolling {
+                                VStack(alignment: .trailing, spacing: 12) {
+                                    CadencePickerView(cadence: $cadence)
+
+                                    Toggle(isOn: $hasRollingEndDate) {
+                                        Text("תאריך סיום")
+                                            .font(SederTheme.ploni(15))
+                                            .foregroundStyle(SederTheme.textSecondary)
+                                    }
+                                    .tint(SederTheme.brandGreen)
+
+                                    if hasRollingEndDate {
+                                        Button {
+                                            showRollingEndDatePicker.toggle()
+                                        } label: {
+                                            Text(
+                                                (rollingEndDate ?? Date())
+                                                    .formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "he_IL")))
+                                            )
+                                            .font(SederTheme.ploni(16))
+                                            .foregroundStyle(SederTheme.textPrimary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 10)
+                                            .background(SederTheme.cardBg)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(14)
+                        .background(SederTheme.subtleBg)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(SederTheme.cardBorder, lineWidth: 1)
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -204,7 +276,7 @@ struct IncomeDetailSheet: View {
             Button {
                 Task { await save() }
             } label: {
-                Text(isEditing ? "סגור" : "שמירה")
+                Text(saveButtonLabel)
                     .font(SederTheme.ploni(17, weight: .medium))
                     .foregroundStyle(isEditing ? SederTheme.textPrimary : .white)
                     .frame(maxWidth: .infinity)
@@ -230,20 +302,70 @@ struct IncomeDetailSheet: View {
                     showDatePicker = false
                 }
         }
+        .alert("לא ניתן לשמור", isPresented: Binding(
+            get: { saveError != nil },
+            set: { if !$0 { saveError = nil } }
+        )) {
+            Button("אישור", role: .cancel) { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
+        }
+        .sheet(isPresented: $showRollingEndDatePicker) {
+            DatePicker(
+                "",
+                selection: Binding(
+                    get: { rollingEndDate ?? Date() },
+                    set: { rollingEndDate = $0 }
+                ),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .environment(\.calendar, Calendar(identifier: .gregorian))
+            .environment(\.locale, Locale(identifier: "he_IL"))
+            .tint(SederTheme.brandGreen)
+            .padding()
+            .presentationDetents([.medium])
+            .onChange(of: rollingEndDate) {
+                showRollingEndDatePicker = false
+            }
+        }
     }
 
     // MARK: - Client Suggestions
 
+    /// Full client directory (every client on the user's account) ∪ the month's
+    /// in-entry names. Month-filtering is correct for the toolbar client picker,
+    /// but for a new entry we need to be able to pick from the whole directory.
+    private var allKnownClientNames: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for c in clientsVM?.clients ?? [] {
+            let name = c.name
+            if !name.isEmpty, seen.insert(name.lowercased()).inserted {
+                out.append(name)
+            }
+        }
+        for name in clientNames where !name.isEmpty {
+            if seen.insert(name.lowercased()).inserted {
+                out.append(name)
+            }
+        }
+        return out.sorted { $0.localizedCompare($1) == .orderedAscending }
+    }
+
     private var filteredClientNames: [String] {
+        let source = allKnownClientNames
         if clientName.isEmpty {
-            return Array(clientNames.prefix(5))
+            return Array(source.prefix(5))
         }
         let q = clientName.lowercased()
-        return clientNames.filter { $0.lowercased().contains(q) }
+        return source.filter { $0.lowercased().contains(q) }
     }
 
     private var isNewClient: Bool {
-        !clientName.isEmpty && !clientNames.contains(where: { $0.lowercased() == clientName.lowercased() })
+        let trimmed = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return false }
+        return !allKnownClientNames.contains(where: { $0.lowercased() == trimmed.lowercased() })
     }
 
     private var clientSuggestionsView: some View {
@@ -492,6 +614,12 @@ struct IncomeDetailSheet: View {
         notes = entry.notes ?? ""
     }
 
+    private var saveButtonLabel: String {
+        if isEditing { return "סגור" }
+        if isRolling { return "צור אירוע חוזר" }
+        return "שמירה"
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -513,18 +641,68 @@ struct IncomeDetailSheet: View {
             if await viewModel.updateEntry(entry.id, request) {
                 dismiss()
             }
-        } else {
-            let request = CreateIncomeRequest(
-                date: dateStr,
+            return
+        }
+
+        if isRolling {
+            let trimmedClient = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedClient.isEmpty {
+                saveError = "יש לבחור או להקליד שם לקוח לפני יצירת אירוע חוזר"
+                return
+            }
+            if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                saveError = "יש להזין תיאור עבודה"
+                return
+            }
+            if rawAmount.isEmpty {
+                saveError = "יש להזין סכום"
+                return
+            }
+
+            let endDateStr: String? = {
+                guard hasRollingEndDate, let end = rollingEndDate else { return nil }
+                return formatter.string(from: end)
+            }()
+
+            let titleValue = String(description.prefix(100))
+
+            let input = CreateRollingJobInput(
+                title: titleValue,
                 description: description,
-                clientName: clientName,
-                amountGross: Double(rawAmount) ?? 0,
+                clientId: nil,
+                clientName: trimmedClient,
                 categoryId: selectedCategoryId,
+                amountGross: rawAmount,
+                vatRate: "18",
+                includesVat: true,
+                cadence: cadence,
+                startDate: dateStr,
+                endDate: endDateStr,
                 notes: notes.isEmpty ? nil : notes
             )
-            if await viewModel.createEntry(request) {
+
+            do {
+                _ = try await APIClient.shared.createRollingJob(input)
+                await viewModel.loadEntries()
                 dismiss()
+            } catch let error as APIError {
+                saveError = error.errorDescription ?? "שגיאה ביצירת אירוע חוזר"
+            } catch {
+                saveError = "שגיאה ביצירת אירוע חוזר"
             }
+            return
+        }
+
+        let request = CreateIncomeRequest(
+            date: dateStr,
+            description: description,
+            clientName: clientName,
+            amountGross: Double(rawAmount) ?? 0,
+            categoryId: selectedCategoryId,
+            notes: notes.isEmpty ? nil : notes
+        )
+        if await viewModel.createEntry(request) {
+            dismiss()
         }
     }
 }

@@ -21,9 +21,14 @@ import { CalendarDays, Loader2, Settings2 } from "lucide-react";
 import { MONTH_NAMES } from "../utils";
 import { CalendarPickerDialog, getSavedCalendarSelection } from "./CalendarPickerDialog";
 import { ImportPreviewDialog } from "./ImportPreviewDialog";
+import { RollingJobsDialog } from "./RollingJobsDialog";
 import type { GoogleCalendar, CalendarEvent } from "@/lib/googleCalendar";
+import type { Cadence, RollingJob } from "@seder/shared";
+import { parseGoogleRRule } from "@seder/shared";
+import type { Client, Category } from "@/db/schema";
 import {
   fetchCalendarEventsAction,
+  fetchRecurringEventRecurrenceAction,
   importSelectedEventsAction,
 } from "../actions";
 import { classifyByRules, getUserRules } from "@/lib/classificationRules";
@@ -37,6 +42,8 @@ interface CalendarImportDialogProps {
   defaultMonth: number;
   onImportStart?: () => void;
   onImportEnd?: (success: boolean, error?: string) => void;
+  clients?: Client[];
+  categories?: Category[];
 }
 
 export function CalendarImportDialog({
@@ -46,6 +53,8 @@ export function CalendarImportDialog({
   defaultMonth,
   onImportStart,
   onImportEnd,
+  clients,
+  categories,
 }: CalendarImportDialogProps) {
   const [selectedYear, setSelectedYear] = React.useState(defaultYear);
   const [selectedMonth, setSelectedMonth] = React.useState(defaultMonth);
@@ -64,6 +73,7 @@ export function CalendarImportDialog({
     confidence: number;
     suggestedClient?: string;
   }>>([]);
+  const [rollingPrefill, setRollingPrefill] = React.useState<Partial<RollingJob> | null>(null);
 
   // Load saved calendar selection and fetch calendar list when dialog opens
   React.useEffect(() => {
@@ -131,6 +141,7 @@ export function CalendarImportDialog({
         start: new Date(e.start),
         end: new Date(e.end),
         calendarId: e.calendarId,
+        recurringEventId: e.recurringEventId ?? undefined,
       }));
 
       setFetchedEvents(events);
@@ -184,6 +195,35 @@ export function CalendarImportDialog({
       // Don't show toast here - parent shows enhanced error
       onImportEnd?.(false, result.error || "שגיאה לא ידועה");
     }
+  };
+
+  const handlePromoteToRollingJob = async (event: CalendarEvent) => {
+    if (!event.recurringEventId) return;
+    let cadence: Cadence | null = null;
+    try {
+      const res = await fetchRecurringEventRecurrenceAction(event.calendarId, event.recurringEventId);
+      if (res.success && res.recurrence) {
+        cadence = parseGoogleRRule(res.recurrence);
+      }
+    } catch (err) {
+      console.error("Failed to fetch recurrence:", err);
+    }
+    if (!cadence) {
+      toast.info("לא הצלחנו לקרוא את דפוס החזרה — בחר ידנית");
+    }
+    const startDate = event.start.toISOString().split("T")[0];
+    setRollingPrefill({
+      title: event.summary || "",
+      description: event.summary || "",
+      clientName: "",
+      amountGross: "0",
+      vatRate: "18",
+      includesVat: true,
+      cadence: cadence ?? undefined,
+      startDate,
+      sourceCalendarRecurringEventId: event.recurringEventId,
+      sourceCalendarId: event.calendarId,
+    });
   };
 
   // Get display text for selected calendars
@@ -317,7 +357,18 @@ export function CalendarImportDialog({
         importedEventIds={importedEventIds}
         classifications={classifications}
         onRulesChanged={() => classifyWithRules(fetchedEvents)}
+        onPromoteToRollingJob={clients && categories ? handlePromoteToRollingJob : undefined}
       />
+
+      {clients && categories && (
+        <RollingJobsDialog
+          open={!!rollingPrefill}
+          onOpenChange={(o) => { if (!o) setRollingPrefill(null); }}
+          clients={clients}
+          categories={categories}
+          initialPrefill={rollingPrefill ?? undefined}
+        />
+      )}
     </>
   );
 }

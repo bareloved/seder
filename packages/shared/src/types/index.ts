@@ -4,3 +4,4 @@ export * from "./client";
 export * from "./settings";
 export * from "./calendar";
 export * from "./analytics";
+export * from "./rollingJob";

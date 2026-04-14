@@ -1,5 +1,5 @@
 import { db } from "@/db/client";
-import { incomeEntries, account, categories, userSettings, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
+import { incomeEntries, account, categories, userSettings, rollingJobs, type IncomeEntry, type NewIncomeEntry, type Category } from "@/db/schema";
 import { eq, and, gte, lte, asc, desc, sql, count, lt, inArray } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { Currency, DEFAULT_VAT_RATE } from "@seder/shared";
@@ -104,6 +104,8 @@ export async function getIncomeEntriesForMonth({
       categoryId: incomeEntries.categoryId,
       invoiceSentDate: incomeEntries.invoiceSentDate,
       paidDate: incomeEntries.paidDate,
+      rollingJobId: incomeEntries.rollingJobId,
+      detachedFromTemplate: incomeEntries.detachedFromTemplate,
       userId: incomeEntries.userId,
       createdAt: incomeEntries.createdAt,
       updatedAt: incomeEntries.updatedAt,
@@ -148,6 +150,8 @@ export async function getAllIncomeEntries(userId: string): Promise<IncomeEntryWi
       categoryId: incomeEntries.categoryId,
       invoiceSentDate: incomeEntries.invoiceSentDate,
       paidDate: incomeEntries.paidDate,
+      rollingJobId: incomeEntries.rollingJobId,
+      detachedFromTemplate: incomeEntries.detachedFromTemplate,
       userId: incomeEntries.userId,
       createdAt: incomeEntries.createdAt,
       updatedAt: incomeEntries.updatedAt,
@@ -1095,6 +1099,16 @@ export interface UpdateIncomeEntryInput {
   paidDate?: string | null;
 }
 
+const TEMPLATE_TRACKED_FIELDS = [
+  "description",
+  "amountGross",
+  "vatRate",
+  "includesVat",
+  "date",
+  "clientId",
+  "categoryId",
+] as const;
+
 export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<IncomeEntry> {
   const { id, userId, ...updates } = input;
 
@@ -1114,6 +1128,13 @@ export async function updateIncomeEntry(input: UpdateIncomeEntryInput): Promise<
   if (updates.notes !== undefined) updateData.notes = updates.notes;
   if (updates.invoiceSentDate !== undefined) updateData.invoiceSentDate = updates.invoiceSentDate ?? undefined;
   if (updates.paidDate !== undefined) updateData.paidDate = updates.paidDate ?? undefined;
+
+  const touchesTemplateField = TEMPLATE_TRACKED_FIELDS.some(
+    (k) => (updates as Record<string, unknown>)[k] !== undefined,
+  );
+  if (touchesTemplateField) {
+    updateData.detachedFromTemplate = true;
+  }
 
   updateData.updatedAt = new Date();
 
@@ -1303,6 +1324,23 @@ export async function getImportedCalendarEventIds(userId: string, eventIds: stri
     .filter((id): id is string => id !== null);
 }
 
+async function getOwnedRecurringEventIds(
+  userId: string,
+  recurringEventIds: string[]
+): Promise<Set<string>> {
+  if (recurringEventIds.length === 0) return new Set();
+  const rows = await db
+    .select({ id: rollingJobs.sourceCalendarRecurringEventId })
+    .from(rollingJobs)
+    .where(
+      and(
+        eq(rollingJobs.userId, userId),
+        inArray(rollingJobs.sourceCalendarRecurringEventId, recurringEventIds)
+      )
+    );
+  return new Set(rows.map((r) => r.id).filter((v): v is string => v !== null));
+}
+
 export async function importIncomeEntriesFromCalendarForMonth({
   year,
   month,
@@ -1317,7 +1355,19 @@ export async function importIncomeEntriesFromCalendarForMonth({
 
     if (calendarEvents.length === 0) return 0;
 
-    const rowsToInsert: NewIncomeEntry[] = calendarEvents.map((event) => {
+    // Skip events whose parent recurring series is already owned by a rolling job
+    const recurringIds = calendarEvents
+      .map((e) => e.recurringEventId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    const ownedRecurringIds = await getOwnedRecurringEventIds(userId, recurringIds);
+    const eventsForInsert = calendarEvents.filter((e) => {
+      if (e.recurringEventId && ownedRecurringIds.has(e.recurringEventId)) return false;
+      return true;
+    });
+
+    if (eventsForInsert.length === 0) return 0;
+
+    const rowsToInsert: NewIncomeEntry[] = eventsForInsert.map((event) => {
       const dateString = event.start.toISOString().split("T")[0];
       return {
         date: dateString,
@@ -1389,6 +1439,13 @@ export async function batchUpdateIncomeEntries(
 
   if (updates.categoryId !== undefined) {
     updateData.categoryId = updates.categoryId ?? undefined;
+  }
+
+  const batchTouchesTemplateField = TEMPLATE_TRACKED_FIELDS.some(
+    (k) => (updates as Record<string, unknown>)[k] !== undefined,
+  );
+  if (batchTouchesTemplateField) {
+    updateData.detachedFromTemplate = true;
   }
 
   if (updates.invoiceStatus !== undefined) {

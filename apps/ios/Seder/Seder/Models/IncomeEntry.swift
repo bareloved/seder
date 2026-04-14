@@ -18,6 +18,8 @@ nonisolated struct IncomeEntry: Codable, Identifiable, Sendable {
     let invoiceSentDate: String?
     let paidDate: String?
     let calendarEventId: String?
+    let rollingJobId: String?
+    let detachedFromTemplate: Bool?
     let createdAt: String?
     let updatedAt: String?
 

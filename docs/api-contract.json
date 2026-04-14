@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-15T16:56:09.452Z",
+  "generatedAt": "2026-04-14T09:04:31.311Z",
   "version": "1.0.0",
   "interfaces": [
     {
@@ -101,6 +101,16 @@
           "optional": true
         },
         {
+          "name": "rollingJobId",
+          "type": "string | null",
+          "optional": true
+        },
+        {
+          "name": "detachedFromTemplate",
+          "type": "boolean",
+          "optional": true
+        },
+        {
           "name": "createdAt",
           "type": "Date",
           "optional": true
@@ -108,6 +118,136 @@
         {
           "name": "updatedAt",
           "type": "Date",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "name": "RollingJob",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "userId",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "isActive",
+          "type": "boolean",
+          "optional": false
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "clientId",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "clientName",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "categoryId",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "amountGross",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "vatRate",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "includesVat",
+          "type": "boolean",
+          "optional": false
+        },
+        {
+          "name": "defaultInvoiceStatus",
+          "type": "InvoiceStatus",
+          "optional": false
+        },
+        {
+          "name": "cadence",
+          "type": "Cadence",
+          "optional": false
+        },
+        {
+          "name": "startDate",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "endDate",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "sourceCalendarRecurringEventId",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "sourceCalendarId",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "notes",
+          "type": "string | null",
+          "optional": false
+        },
+        {
+          "name": "createdAt",
+          "type": "string",
+          "optional": false
+        },
+        {
+          "name": "updatedAt",
+          "type": "string",
+          "optional": false
+        }
+      ]
+    },
+    {
+      "name": "Cadence",
+      "fields": [
+        {
+          "name": "kind",
+          "type": "'daily' | 'weekly' | 'monthly'",
+          "optional": false
+        },
+        {
+          "name": "interval",
+          "type": "number",
+          "optional": false
+        },
+        {
+          "name": "weekdays",
+          "type": "number[]",
+          "optional": true
+        },
+        {
+          "name": "dayOfMonth",
+          "type": "number",
           "optional": true
         }
       ]

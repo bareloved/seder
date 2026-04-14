@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +29,7 @@ import {
   Check,
   ChevronDown,
   Plus,
+  Repeat,
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -40,6 +44,9 @@ import { CategoryChip } from "../CategoryChip";
 import { ClientDropdown } from "@/app/clients/components/ClientDropdown";
 import { CategoryManagerDialog } from "@/app/categories/components/CategoryManagerDialog";
 import type { Client } from "@/db/schema";
+import { CadencePicker } from "../rolling-jobs/CadencePicker";
+import type { Cadence } from "@seder/shared";
+import { createRollingJobAction } from "@/app/rolling-jobs/actions";
 
 interface IncomeDetailEditProps {
   entry: IncomeEntry;
@@ -78,11 +85,55 @@ export function IncomeDetailEdit({
 
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [isEndDateCalendarOpen, setIsEndDateCalendarOpen] = React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
   const descriptionRef = React.useRef<HTMLInputElement>(null);
   const amountRef = React.useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-  const handleSave = () => {
+  // Rolling-job (אירוע חוזר) state — only shown when creating a new entry
+  const isNew = entry.id === "new";
+  const [isRolling, setIsRolling] = React.useState(false);
+  const [cadence, setCadence] = React.useState<Cadence>({
+    kind: "weekly",
+    interval: 1,
+    weekdays: [new Date().getDay()],
+  });
+  const [rollingEndDate, setRollingEndDate] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleSave = async () => {
+    if (isNew && isRolling) {
+      setIsSubmitting(true);
+      try {
+        const result = await createRollingJobAction({
+          title: editedEntry.description.slice(0, 100),
+          description: editedEntry.description,
+          clientId: editedEntry.clientId ?? null,
+          clientName: editedEntry.clientName,
+          categoryId: editedEntry.categoryId ?? null,
+          amountGross: String(editedEntry.amountGross ?? 0),
+          vatRate: String(editedEntry.vatRate ?? 18),
+          includesVat: editedEntry.includesVat ?? true,
+          cadence,
+          startDate: editedEntry.date,
+          endDate: rollingEndDate,
+          notes: editedEntry.notes ?? null,
+        });
+        if (result.success) {
+          toast.success("אירוע חוזר נוצר");
+          setIsDirty(false);
+          router.refresh();
+          onClose();
+        } else {
+          toast.error(typeof result.error === "string" ? result.error : "שמירה נכשלה");
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     onSave(editedEntry);
     setIsDirty(false);
   };
@@ -281,15 +332,92 @@ export function IncomeDetailEdit({
         />
       </div>
 
+      {/* Rolling-job (אירוע חוזר) — only when creating a new entry */}
+      {isNew && (
+        <div className="rounded-md border border-slate-200 dark:border-border bg-slate-50/60 dark:bg-slate-800/40 p-3">
+          <label className="flex items-center justify-between gap-2 cursor-pointer">
+            <div className="flex items-center gap-1.5">
+              <Repeat className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                אירוע חוזר
+              </span>
+            </div>
+            <Switch
+              checked={isRolling}
+              onCheckedChange={(v) => {
+                setIsRolling(v);
+                setIsDirty(true);
+              }}
+            />
+          </label>
+
+          {isRolling && (
+            <div className="mt-3 space-y-3 pt-3 border-t border-slate-200 dark:border-border">
+              <CadencePicker value={cadence} onChange={setCadence} />
+
+              <div>
+                <label className={labelClassName}>
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  תאריך סיום (לא חובה)
+                </label>
+                <Popover open={isEndDateCalendarOpen} onOpenChange={setIsEndDateCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        inputClassName,
+                        "w-full justify-start text-right font-normal",
+                        !rollingEndDate && "text-slate-400",
+                      )}
+                    >
+                      {rollingEndDate
+                        ? format(new Date(rollingEndDate), "EEEEEE, dd.MM.yy", { locale: he })
+                        : "ללא תאריך סיום"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={rollingEndDate ? new Date(rollingEndDate) : undefined}
+                      onSelect={(date) => {
+                        setRollingEndDate(date ? format(date, "yyyy-MM-dd") : null);
+                        setIsEndDateCalendarOpen(false);
+                      }}
+                      locale={he}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {rollingEndDate && (
+                  <button
+                    type="button"
+                    onClick={() => setRollingEndDate(null)}
+                    className="text-xs text-slate-500 hover:text-slate-700 mt-1"
+                  >
+                    נקה תאריך סיום
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Footer Actions */}
       <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-border">
-        {/* Save Changes (only if dirty) */}
-        {isDirty && (
+        {/* Save Changes (always shown for new entries; only if dirty for existing) */}
+        {(isDirty || isNew) && (
           <Button
             onClick={handleSave}
-            className="flex-1 bg-slate-900 text-white hover:bg-slate-800"
+            disabled={isSubmitting}
+            className="flex-1 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60"
           >
-            שמור שינויים
+            {isSubmitting
+              ? "שומר..."
+              : isNew
+                ? isRolling
+                  ? "צור אירוע חוזר"
+                  : "צור עבודה"
+                : "שמור שינויים"}
           </Button>
         )}
 

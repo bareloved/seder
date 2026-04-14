@@ -10,6 +10,7 @@ export interface CalendarEvent {
   start: Date;
   end: Date;
   calendarId: string;  // Track which calendar this event came from
+  recurringEventId?: string;  // Present on recurring event instances
 }
 
 export interface GoogleCalendar {
@@ -138,7 +139,7 @@ export async function listEventsForMonth(
           timeMax,
           singleEvents: true,
           orderBy: "startTime",
-          fields: "items(id,summary,start,end)",
+          fields: "items(id,summary,start,end,recurringEventId)",
           maxResults: 500,
         });
 
@@ -161,6 +162,7 @@ export async function listEventsForMonth(
               start,
               end,
               calendarId,
+              recurringEventId: event.recurringEventId ?? undefined,
             };
           });
       } catch (calError) {
@@ -198,5 +200,34 @@ export async function listEventsForMonth(
     throw new Error(
       `Failed to fetch calendar events: ${error instanceof Error ? error.message : "Unknown error"}`
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fetch the recurrence rule (RRULE/EXDATE strings) for a master recurring event
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getRecurringEventRecurrence(
+  accessToken: string,
+  calendarId: string,
+  recurringEventId: string,
+): Promise<string[] | null> {
+  const calendar = getCalendarClient(accessToken);
+  try {
+    const res = await calendar.events.get({
+      calendarId,
+      eventId: recurringEventId,
+      fields: "id,recurrence",
+    });
+    return res.data.recurrence ?? null;
+  } catch (error) {
+    console.error("Failed to fetch recurring event:", error);
+    const status =
+      (error as { code?: number; response?: { status?: number } })?.code ??
+      (error as { code?: number; response?: { status?: number } })?.response?.status;
+    if (status === 401 || status === 403) {
+      throw new GoogleCalendarAuthError("Google access token is expired or revoked");
+    }
+    return null;
   }
 }

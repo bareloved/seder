@@ -262,6 +262,7 @@ export async function fetchCalendarEventsAction(
       start: e.start.toISOString(),
       end: e.end.toISOString(),
       calendarId: e.calendarId,
+      recurringEventId: e.recurringEventId ?? null,
     }));
 
     return { success: true, events: serializedEvents, importedEventIds, requiresReconnect: false };
@@ -285,6 +286,29 @@ export async function fetchCalendarEventsAction(
       importedEventIds: [],
       requiresReconnect: false,
     };
+  }
+}
+
+/**
+ * Fetch the recurrence rule for a master recurring calendar event,
+ * used by the calendar-import → rolling-job promotion flow.
+ */
+export async function fetchRecurringEventRecurrenceAction(
+  calendarId: string,
+  recurringEventId: string,
+) {
+  const userId = await getUserId();
+  if (!userId) return { success: false as const, error: "Unauthorized" };
+  try {
+    const accessToken = await getValidGoogleAccessToken(userId);
+    const { getRecurringEventRecurrence } = await import("@/lib/googleCalendar");
+    const recurrence = await getRecurringEventRecurrence(accessToken, calendarId, recurringEventId);
+    return { success: true as const, recurrence };
+  } catch (error) {
+    if (error instanceof GoogleTokenError) {
+      return { success: false as const, error: error.message };
+    }
+    return { success: false as const, error: error instanceof Error ? error.message : "Failed to fetch recurrence" };
   }
 }
 

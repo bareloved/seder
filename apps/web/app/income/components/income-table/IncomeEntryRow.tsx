@@ -27,6 +27,7 @@ import {
   MoreHorizontal,
   CheckSquare,
   Send,
+  Repeat,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
@@ -108,6 +109,7 @@ function getStatusColor(status: "paid" | "sent" | "draft") {
 export interface IncomeEntryRowProps {
   entry: IncomeEntry;
   onClick: (entry: IncomeEntry) => void;
+  onRollingJobClick?: (rollingJobId: string) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
   onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
@@ -133,6 +135,7 @@ export interface IncomeEntryRowProps {
 export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   entry,
   onClick,
+  onRollingJobClick,
   onStatusChange,
   onMoneyStatusChange,
   onMarkAsPaid,
@@ -338,6 +341,27 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                 onInlineEdit && "hover:text-slate-600 dark:hover:text-slate-300"
               )}>
                 {entry.description}
+                {entry.rollingJobId && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onRollingJobClick && entry.rollingJobId) {
+                        onRollingJobClick(entry.rollingJobId);
+                      }
+                    }}
+                    className={cn(
+                      "ms-2 inline-flex items-center justify-center align-middle h-6 w-6 rounded-md border transition-colors",
+                      entry.detachedFromTemplate
+                        ? "bg-slate-50 border-slate-200/70 text-slate-400 dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-500"
+                        : "bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 dark:bg-sky-900/25 dark:border-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-900/40",
+                    )}
+                    aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                    title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                  >
+                    <Repeat className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </span>
               <div
                 className="text-sm text-slate-500 dark:text-slate-400 truncate"
@@ -573,6 +597,27 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold text-slate-800 dark:text-slate-100 truncate text-base">
               {entry.description}
+              {entry.rollingJobId && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onRollingJobClick && entry.rollingJobId) {
+                      onRollingJobClick(entry.rollingJobId);
+                    }
+                  }}
+                  className={cn(
+                    "ms-2 inline-flex items-center justify-center align-middle h-6 w-6 rounded-md border transition-colors",
+                    entry.detachedFromTemplate
+                      ? "bg-slate-50 border-slate-200/70 text-slate-400 dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-500"
+                      : "bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 dark:bg-sky-900/25 dark:border-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-900/40",
+                  )}
+                  aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                  title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                >
+                  <Repeat className="h-3.5 w-3.5" />
+                </button>
+              )}
             </span>
             <div className={cn(
               "amount-value text-lg font-numbers tracking-tight shrink-0",

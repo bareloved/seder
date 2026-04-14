@@ -10,6 +10,7 @@ struct IncomeEntryRow: View {
     let entry: IncomeEntry
     var isSelectionMode: Bool = false
     var isSelected: Bool = false
+    var onRollingJobTap: ((String) -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -41,10 +42,44 @@ struct IncomeEntryRow: View {
                 HStack(alignment: .top, spacing: 4) {
                     // Description + Client — physical RIGHT in RTL
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.description)
-                            .font(SederTheme.ploni(18, weight: .semibold))
-                            .foregroundStyle(SederTheme.textPrimary)
-                            .lineLimit(2)
+                        HStack(spacing: 6) {
+                            Text(entry.description)
+                                .font(SederTheme.ploni(18, weight: .semibold))
+                                .foregroundStyle(SederTheme.textPrimary)
+                                .lineLimit(2)
+                            if let rollingJobId = entry.rollingJobId {
+                                let detached = entry.detachedFromTemplate ?? false
+                                Button {
+                                    onRollingJobTap?(rollingJobId)
+                                } label: {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(
+                                            detached
+                                                ? SederTheme.textTertiary
+                                                : Color(red: 0.02, green: 0.53, blue: 0.82)
+                                        )
+                                        .frame(width: 22, height: 22)
+                                        .background(
+                                            detached
+                                                ? Color(.systemGray6)
+                                                : Color(red: 0.90, green: 0.95, blue: 1.0)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .stroke(
+                                                    detached
+                                                        ? SederTheme.cardBorder
+                                                        : Color(red: 0.75, green: 0.87, blue: 0.98),
+                                                    lineWidth: 1
+                                                )
+                                        )
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(detached ? "נותק מתבנית הסדרה" : "ערוך סדרה")
+                            }
+                        }
                         if !entry.clientName.isEmpty {
                             Text(entry.clientName)
                                 .font(SederTheme.ploni(15))

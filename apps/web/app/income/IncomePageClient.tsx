@@ -8,6 +8,7 @@ import { IncomeTable } from "./components/IncomeTable";
 import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
 import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { ConnectCalendarDialog } from "./components/ConnectCalendarDialog";
+import { RollingJobsDialog } from "./components/RollingJobsDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
@@ -96,6 +97,8 @@ export function dbEntryToUIEntry(dbEntry: any): IncomeEntry {
     invoiceSentDate: dbEntry.invoiceSentDate,
     paidDate: dbEntry.paidDate,
     calendarEventId: dbEntry.calendarEventId,
+    rollingJobId: dbEntry.rollingJobId,
+    detachedFromTemplate: dbEntry.detachedFromTemplate,
     createdAt: dbEntry.createdAt,
     updatedAt: dbEntry.updatedAt,
   };
@@ -161,6 +164,7 @@ export default function IncomePageClient({
   const [isConnectCalendarDialogOpen, setIsConnectCalendarDialogOpen] =
     React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
+  const [editingRollingJobId, setEditingRollingJobId] = React.useState<string | null>(null);
   const [isImporting, setIsImporting] = React.useState(false);
 
   const handleImportStart = React.useCallback(() => {
@@ -766,6 +770,7 @@ export default function IncomePageClient({
     onMarkInvoiceSent: markInvoiceSent,
     onDuplicate: duplicateEntry,
     onRowClick: openDialog,
+    onRollingJobClick: (rollingJobId: string) => setEditingRollingJobId(rollingJobId),
     clients: allClients,
     clientRecords: clientRecords,
     categories: categories,
@@ -925,6 +930,8 @@ export default function IncomePageClient({
         defaultMonth={month}
         onImportStart={handleImportStart}
         onImportEnd={handleImportEnd}
+        clients={clientRecords}
+        categories={categories}
       />
 
       <ConnectCalendarDialog
@@ -936,6 +943,14 @@ export default function IncomePageClient({
         isOpen={isCategoryDialogOpen}
         onClose={() => setIsCategoryDialogOpen(false)}
         initialCategories={categories}
+      />
+
+      <RollingJobsDialog
+        open={editingRollingJobId !== null}
+        onOpenChange={(o) => { if (!o) setEditingRollingJobId(null); }}
+        clients={clientRecords}
+        categories={categories}
+        initialEditJobId={editingRollingJobId ?? undefined}
       />
 
       {/* Batch Action Bar */}

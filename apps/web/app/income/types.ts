@@ -42,6 +42,8 @@ export interface IncomeEntry {
   invoiceSentDate?: string | null;
   paidDate?: string | null;
   calendarEventId?: string | null;
+  rollingJobId?: string | null;
+  detachedFromTemplate?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

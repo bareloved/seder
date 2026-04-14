@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Settings2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Settings2, Eye, EyeOff, Repeat } from "lucide-react";
 import { RulesManagerDialog } from "./RulesManagerDialog";
 import type { CalendarEvent } from "@/lib/googleCalendar";
 
@@ -39,6 +39,7 @@ interface ImportPreviewDialogProps {
         suggestedClient?: string;
     }>;
     onRulesChanged: () => void;
+    onPromoteToRollingJob?: (event: CalendarEvent) => void;
 }
 
 export function ImportPreviewDialog({
@@ -49,6 +50,7 @@ export function ImportPreviewDialog({
     importedEventIds,
     classifications,
     onRulesChanged,
+    onPromoteToRollingJob,
 }: ImportPreviewDialogProps) {
     const [isRulesOpen, setIsRulesOpen] = React.useState(false);
     const [showPersonal, setShowPersonal] = React.useState(true);
@@ -240,6 +242,23 @@ export function ImportPreviewDialog({
                                             onChange={(e) => updateClientName(event.id, e.target.value)}
                                             className="w-32 h-8 text-sm"
                                         />
+                                    )}
+
+                                    {/* Promote to rolling job */}
+                                    {event.recurringEventId && onPromoteToRollingJob && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-slate-500 hover:text-slate-700"
+                                            title="ניהול כסדרה"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onPromoteToRollingJob(event);
+                                            }}
+                                        >
+                                            <Repeat className="h-4 w-4" />
+                                        </Button>
                                     )}
                                 </div>
                             ))}

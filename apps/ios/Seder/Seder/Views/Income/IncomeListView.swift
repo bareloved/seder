@@ -27,6 +27,7 @@ struct IncomeListView: View {
     @StateObject private var nudgeVM = NudgeViewModel()
     @State private var highlightedEntryId: String?
     @State private var showFeedback = false
+    @State private var editingRollingJobId: String? = nil
     @State private var isInitialLoad = true
 
     // Multi-select
@@ -169,6 +170,16 @@ struct IncomeListView: View {
         }
         .sheet(isPresented: $showFeedback) {
             FeedbackSheet()
+        }
+        .sheet(item: Binding(
+            get: { editingRollingJobId.map { IdString(id: $0) } },
+            set: { editingRollingJobId = $0?.id }
+        )) { wrapper in
+            EditRollingJobSheet(
+                jobId: wrapper.id,
+                clients: clientsVM.clients,
+                categories: categoriesVM.categories
+            )
         }
         .task {
             async let entries: () = viewModel.loadEntries()
@@ -346,7 +357,8 @@ struct IncomeListView: View {
                                         IncomeEntryRow(
                                             entry: entry,
                                             isSelectionMode: isSelectionMode,
-                                            isSelected: selectedEntryIds.contains(entry.id)
+                                            isSelected: selectedEntryIds.contains(entry.id),
+                                            onRollingJobTap: { id in editingRollingJobId = id }
                                         )
                                     }
                                     .id(entry.id)

@@ -27,6 +27,7 @@ interface IncomeListViewProps {
   categories: Category[];
   defaultDate?: string;
   onRowClick: (entry: IncomeEntry) => void;
+  onRollingJobClick?: (rollingJobId: string) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
   onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
@@ -107,6 +108,7 @@ export const IncomeListView = React.memo(function IncomeListView({
   clientRecords,
   categories,
   onRowClick,
+  onRollingJobClick,
   onStatusChange,
   onMoneyStatusChange,
   onMarkAsPaid,
@@ -164,6 +166,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 key={entry.id}
                 entry={entry}
                 onClick={onRowClick}
+                onRollingJobClick={onRollingJobClick}
                 onStatusChange={onStatusChange}
                 onMoneyStatusChange={onMoneyStatusChange}
                 onMarkAsPaid={onMarkAsPaid}
@@ -214,6 +217,7 @@ export const IncomeListView = React.memo(function IncomeListView({
                 key={entry.id}
                 entry={entry}
                 onClick={onRowClick}
+                onRollingJobClick={onRollingJobClick}
                 onStatusChange={onStatusChange}
                 onMarkAsPaid={onMarkAsPaid}
                 onMarkInvoiceSent={onMarkInvoiceSent}
