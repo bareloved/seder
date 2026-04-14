@@ -30,4 +30,4 @@ ALTER TABLE "income_entries" ADD CONSTRAINT "income_entries_rolling_job_id_rolli
 CREATE INDEX "rolling_jobs_user_id_idx" ON "rolling_jobs" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "rolling_jobs_user_active_idx" ON "rolling_jobs" USING btree ("user_id","is_active");--> statement-breakpoint
 CREATE INDEX "rolling_jobs_user_cal_recurring_idx" ON "rolling_jobs" USING btree ("user_id","source_calendar_recurring_event_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "income_rolling_job_date_key" ON "income_entries" USING btree ("rolling_job_id","date") WHERE "income_entries"."rolling_job_id" IS NOT NULL;
+CREATE UNIQUE INDEX "income_rolling_job_date_key" ON "income_entries" USING btree ("rolling_job_id","date");

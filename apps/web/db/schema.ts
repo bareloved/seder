@@ -194,9 +194,10 @@ export const incomeEntries = pgTable("income_entries", {
       table.userId,
       table.calendarEventId
     ),
-    rollingJobDateUnique: uniqueIndex("income_rolling_job_date_key")
-      .on(table.rollingJobId, table.date)
-      .where(sql`${table.rollingJobId} IS NOT NULL`),
+    rollingJobDateUnique: uniqueIndex("income_rolling_job_date_key").on(
+      table.rollingJobId,
+      table.date
+    ),
   };
 });
 
