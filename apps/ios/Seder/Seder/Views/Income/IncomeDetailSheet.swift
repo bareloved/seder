@@ -35,6 +35,9 @@ struct IncomeDetailSheet: View {
     @State private var hasRollingEndDate = false
     @State private var showRollingEndDatePicker = false
 
+    // Error banner (shown when save fails)
+    @State private var saveError: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -298,6 +301,14 @@ struct IncomeDetailSheet: View {
                 .onChange(of: date) {
                     showDatePicker = false
                 }
+        }
+        .alert("לא ניתן לשמור", isPresented: Binding(
+            get: { saveError != nil },
+            set: { if !$0 { saveError = nil } }
+        )) {
+            Button("אישור", role: .cancel) { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
         }
         .sheet(isPresented: $showRollingEndDatePicker) {
             DatePicker(
@@ -611,21 +622,34 @@ struct IncomeDetailSheet: View {
         }
 
         if isRolling {
+            let trimmedClient = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedClient.isEmpty {
+                saveError = "יש לבחור או להקליד שם לקוח לפני יצירת אירוע חוזר"
+                return
+            }
+            if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                saveError = "יש להזין תיאור עבודה"
+                return
+            }
+            if rawAmount.isEmpty {
+                saveError = "יש להזין סכום"
+                return
+            }
+
             let endDateStr: String? = {
                 guard hasRollingEndDate, let end = rollingEndDate else { return nil }
                 return formatter.string(from: end)
             }()
 
             let titleValue = String(description.prefix(100))
-            let amountString = rawAmount.isEmpty ? "0" : rawAmount
 
             let input = CreateRollingJobInput(
                 title: titleValue,
                 description: description,
                 clientId: nil,
-                clientName: clientName,
+                clientName: trimmedClient,
                 categoryId: selectedCategoryId,
-                amountGross: amountString,
+                amountGross: rawAmount,
                 vatRate: "18",
                 includesVat: true,
                 cadence: cadence,
@@ -639,9 +663,9 @@ struct IncomeDetailSheet: View {
                 await viewModel.loadEntries()
                 dismiss()
             } catch let error as APIError {
-                viewModel.errorMessage = error.errorDescription
+                saveError = error.errorDescription ?? "שגיאה ביצירת אירוע חוזר"
             } catch {
-                viewModel.errorMessage = "שגיאה ביצירת אירוע חוזר"
+                saveError = "שגיאה ביצירת אירוע חוזר"
             }
             return
         }
