@@ -91,9 +91,12 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent dir="rtl" className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent
+          dir="rtl"
+          className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto font-sans"
+        >
+          <DialogHeader className="pb-3 border-b border-slate-200 dark:border-border">
+            <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {mode.kind === "list" && "סדרות הכנסה"}
               {mode.kind === "create" && "יצירת סדרה חדשה"}
               {mode.kind === "edit" && `עריכת סדרה: ${mode.job.title}`}
@@ -101,15 +104,19 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
           </DialogHeader>
 
           {mode.kind === "list" && (
-            <div className="space-y-4">
+            <div className="space-y-3 pt-3">
               <div className="flex justify-end">
-                <Button onClick={() => setMode({ kind: "create" })}>
-                  <Plus className="h-4 w-4 ms-1" />
+                <Button
+                  onClick={() => setMode({ kind: "create" })}
+                  className="bg-[#2ecc71] hover:bg-[#27ae60] text-white gap-1.5"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4" />
                   סדרה חדשה
                 </Button>
               </div>
               {loading ? (
-                <p className="text-sm text-muted-foreground text-center p-4">טוען...</p>
+                <p className="text-sm text-slate-400 text-center p-4">טוען...</p>
               ) : (
                 <RollingJobList
                   jobs={jobs}
