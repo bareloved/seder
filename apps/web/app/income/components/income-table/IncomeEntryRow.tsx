@@ -109,6 +109,7 @@ function getStatusColor(status: "paid" | "sent" | "draft") {
 export interface IncomeEntryRowProps {
   entry: IncomeEntry;
   onClick: (entry: IncomeEntry) => void;
+  onRollingJobClick?: (rollingJobId: string) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
   onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
@@ -134,6 +135,7 @@ export interface IncomeEntryRowProps {
 export const IncomeEntryRow = React.memo(function IncomeEntryRow({
   entry,
   onClick,
+  onRollingJobClick,
   onStatusChange,
   onMoneyStatusChange,
   onMarkAsPaid,
@@ -340,15 +342,30 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
               )}>
                 {entry.description}
                 {entry.rollingJobId && (
-                  <Repeat
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onRollingJobClick && entry.rollingJobId) {
+                        onRollingJobClick(entry.rollingJobId);
+                      }
+                    }}
                     className={cn(
-                      "h-3.5 w-3.5 ms-1 inline-block align-middle",
-                      entry.detachedFromTemplate
-                        ? "text-slate-300 dark:text-slate-600"
-                        : "text-slate-400 dark:text-slate-500"
+                      "ms-1 inline-flex items-center align-middle rounded transition-colors",
+                      onRollingJobClick && "hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer",
                     )}
-                    aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "רשומה מסדרה"}
-                  />
+                    aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                    title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                  >
+                    <Repeat
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        entry.detachedFromTemplate
+                          ? "text-slate-300 dark:text-slate-600"
+                          : "text-slate-400 dark:text-slate-500"
+                      )}
+                    />
+                  </button>
                 )}
               </span>
               <div
@@ -586,15 +603,30 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
             <span className="font-semibold text-slate-800 dark:text-slate-100 truncate text-base">
               {entry.description}
               {entry.rollingJobId && (
-                <Repeat
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onRollingJobClick && entry.rollingJobId) {
+                      onRollingJobClick(entry.rollingJobId);
+                    }
+                  }}
                   className={cn(
-                    "h-3.5 w-3.5 ms-1 inline-block align-middle",
-                    entry.detachedFromTemplate
-                      ? "text-slate-300 dark:text-slate-600"
-                      : "text-slate-400 dark:text-slate-500"
+                    "ms-1 inline-flex items-center align-middle rounded",
+                    onRollingJobClick && "hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer",
                   )}
-                  aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "רשומה מסדרה"}
-                />
+                  aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                  title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
+                >
+                  <Repeat
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      entry.detachedFromTemplate
+                        ? "text-slate-300 dark:text-slate-600"
+                        : "text-slate-400 dark:text-slate-500"
+                    )}
+                  />
+                </button>
               )}
             </span>
             <div className={cn(

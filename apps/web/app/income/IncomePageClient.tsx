@@ -164,7 +164,7 @@ export default function IncomePageClient({
   const [isConnectCalendarDialogOpen, setIsConnectCalendarDialogOpen] =
     React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
-  const [isRollingJobsDialogOpen, setIsRollingJobsDialogOpen] = React.useState(false);
+  const [editingRollingJobId, setEditingRollingJobId] = React.useState<string | null>(null);
   const [isImporting, setIsImporting] = React.useState(false);
 
   const handleImportStart = React.useCallback(() => {
@@ -789,6 +789,7 @@ export default function IncomePageClient({
     onMarkInvoiceSent: markInvoiceSent,
     onDuplicate: duplicateEntry,
     onRowClick: openDialog,
+    onRollingJobClick: (rollingJobId: string) => setEditingRollingJobId(rollingJobId),
     clients: allClients,
     clientRecords: clientRecords,
     categories: categories,
@@ -874,7 +875,6 @@ export default function IncomePageClient({
                 ? setIsCalendarDialogOpen(true)
                 : setIsConnectCalendarDialogOpen(true)
             }
-            onOpenRollingJobs={() => setIsRollingJobsDialogOpen(true)}
             hideFuture={hideFuture}
             onHideFutureChange={setHideFuture}
             isNavigating={isNavigating}
@@ -967,10 +967,11 @@ export default function IncomePageClient({
       />
 
       <RollingJobsDialog
-        open={isRollingJobsDialogOpen}
-        onOpenChange={setIsRollingJobsDialogOpen}
+        open={editingRollingJobId !== null}
+        onOpenChange={(o) => { if (!o) setEditingRollingJobId(null); }}
         clients={clientRecords}
         categories={categories}
+        initialEditJobId={editingRollingJobId ?? undefined}
       />
 
       {/* Batch Action Bar */}

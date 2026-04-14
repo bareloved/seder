@@ -2,9 +2,6 @@
 
 import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { RollingJobList } from "./rolling-jobs/RollingJobList";
 import { RollingJobForm } from "./rolling-jobs/RollingJobForm";
 import { DeleteRollingJobDialog } from "./rolling-jobs/DeleteRollingJobDialog";
 import type { Cadence, RollingJob } from "@seder/shared";
@@ -63,30 +60,51 @@ interface RollingJobsDialogProps {
   clients: Client[];
   categories: Category[];
   initialPrefill?: Partial<RollingJob>;
+  initialEditJobId?: string;
 }
 
-type Mode = { kind: "list" } | { kind: "create" } | { kind: "edit"; job: RollingJob };
+type Mode =
+  | { kind: "loading" }
+  | { kind: "create" }
+  | { kind: "edit"; job: RollingJob };
 
-export function RollingJobsDialog({ open, onOpenChange, clients, categories, initialPrefill }: RollingJobsDialogProps) {
-  const [mode, setMode] = React.useState<Mode>({ kind: "list" });
-  const [jobs, setJobs] = React.useState<RollingJob[]>([]);
+export function RollingJobsDialog({
+  open,
+  onOpenChange,
+  clients,
+  categories,
+  initialPrefill,
+  initialEditJobId,
+}: RollingJobsDialogProps) {
+  const [mode, setMode] = React.useState<Mode>({ kind: "loading" });
   const [deleting, setDeleting] = React.useState<RollingJob | null>(null);
-  const [loading, setLoading] = React.useState(false);
-
-  const reload = React.useCallback(async () => {
-    setLoading(true);
-    const res = await listRollingJobsAction();
-    setLoading(false);
-    if (res.success) setJobs(res.jobs.map(normalizeJob));
-  }, []);
 
   React.useEffect(() => {
-    if (open) {
-      reload();
-      if (initialPrefill) setMode({ kind: "create" });
-      else setMode({ kind: "list" });
+    if (!open) return;
+
+    if (initialPrefill) {
+      setMode({ kind: "create" });
+      return;
     }
-  }, [open, initialPrefill, reload]);
+
+    if (initialEditJobId) {
+      setMode({ kind: "loading" });
+      listRollingJobsAction().then((res) => {
+        if (!res.success) return;
+        const jobs = res.jobs.map(normalizeJob);
+        const target = jobs.find((j) => j.id === initialEditJobId);
+        if (target) {
+          setMode({ kind: "edit", job: target });
+        } else {
+          onOpenChange(false);
+        }
+      });
+      return;
+    }
+
+    // Fallback — shouldn't happen in the new flow.
+    setMode({ kind: "create" });
+  }, [open, initialPrefill, initialEditJobId, onOpenChange]);
 
   return (
     <>
@@ -97,35 +115,14 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
         >
           <DialogHeader className="pb-3 border-b border-slate-200 dark:border-border">
             <DialogTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-              {mode.kind === "list" && "סדרות הכנסה"}
-              {mode.kind === "create" && "יצירת סדרה חדשה"}
+              {mode.kind === "loading" && "טוען..."}
+              {mode.kind === "create" && "אירוע חוזר חדש"}
               {mode.kind === "edit" && `עריכת סדרה: ${mode.job.title}`}
             </DialogTitle>
           </DialogHeader>
 
-          {mode.kind === "list" && (
-            <div className="space-y-3 pt-3">
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setMode({ kind: "create" })}
-                  className="bg-[#2ecc71] hover:bg-[#27ae60] text-white gap-1.5"
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4" />
-                  סדרה חדשה
-                </Button>
-              </div>
-              {loading ? (
-                <p className="text-sm text-slate-400 text-center p-4">טוען...</p>
-              ) : (
-                <RollingJobList
-                  jobs={jobs}
-                  onEdit={(job) => setMode({ kind: "edit", job })}
-                  onDelete={(job) => setDeleting(job)}
-                  onChanged={reload}
-                />
-              )}
-            </div>
+          {mode.kind === "loading" && (
+            <p className="text-sm text-slate-400 text-center p-6">טוען...</p>
           )}
 
           {mode.kind === "create" && (
@@ -133,8 +130,8 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
               clients={clients}
               categories={categories}
               initial={initialPrefill}
-              onSaved={() => { setMode({ kind: "list" }); reload(); }}
-              onCancel={() => setMode({ kind: "list" })}
+              onSaved={() => onOpenChange(false)}
+              onCancel={() => onOpenChange(false)}
             />
           )}
 
@@ -143,8 +140,9 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
               initial={mode.job}
               clients={clients}
               categories={categories}
-              onSaved={() => { setMode({ kind: "list" }); reload(); }}
-              onCancel={() => setMode({ kind: "list" })}
+              onDelete={() => setDeleting(mode.job)}
+              onSaved={() => onOpenChange(false)}
+              onCancel={() => onOpenChange(false)}
             />
           )}
         </DialogContent>
@@ -153,7 +151,7 @@ export function RollingJobsDialog({ open, onOpenChange, clients, categories, ini
       <DeleteRollingJobDialog
         job={deleting}
         onClose={() => setDeleting(null)}
-        onDeleted={() => { setDeleting(null); reload(); }}
+        onDeleted={() => { setDeleting(null); onOpenChange(false); }}
       />
     </>
   );

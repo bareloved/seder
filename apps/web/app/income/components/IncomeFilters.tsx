@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown, Tags, Users, Repeat } from "lucide-react";
+import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown, Tags, Users } from "lucide-react";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import type { Category } from "@/db/schema";
 import { ViewMode } from "./ViewModeToggle";
@@ -52,7 +52,6 @@ interface IncomeFiltersProps {
   // Calendar import props
   isGoogleConnected?: boolean;
   onImportFromCalendar?: () => void;
-  onOpenRollingJobs?: () => void;
   // Loading states
   isNavigating?: boolean;
   isImporting?: boolean;
@@ -92,7 +91,6 @@ export function IncomeFilters({
   monthPaymentStatuses,
   isGoogleConnected,
   onImportFromCalendar,
-  onOpenRollingJobs,
   isNavigating,
   isImporting,
   // Sort props
@@ -361,26 +359,6 @@ export function IncomeFilters({
           </Tooltip>
         )}
 
-        {/* Rolling Jobs Button - Desktop only (with label on xl+) */}
-        {onOpenRollingJobs && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenRollingJobs}
-                className="h-9 gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hidden md:flex"
-              >
-                <Repeat className="h-4 w-4" />
-                <span className="text-sm hidden xl:inline">סדרות</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>סדרות הכנסה</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-
         {/* Month Selector Dropdown with Arrows */}
         <div className="flex items-center bg-white dark:bg-card rounded-md border border-slate-200 dark:border-border p-0.5 h-9">
           <Button
@@ -623,26 +601,9 @@ export function IncomeFilters({
               </div>
             )}
 
-            {/* Mobile Rolling Jobs Button */}
-            {onOpenRollingJobs && (
-              <div className="pt-2 border-t border-slate-100">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    onOpenRollingJobs();
-                    setIsFilterSheetOpen(false);
-                  }}
-                  className="w-full gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                >
-                  <Repeat className="h-4 w-4" />
-                  <span>סדרות הכנסה</span>
-                </Button>
-              </div>
-            )}
-
             {/* Mobile Calendar Import Button */}
             {isGoogleConnected && onImportFromCalendar && (
-              <div>
+              <div className="pt-2 border-t border-slate-100">
                 <Button
                   onClick={() => {
                     onImportFromCalendar();

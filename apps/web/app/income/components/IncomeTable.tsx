@@ -16,6 +16,7 @@ interface IncomeTableProps {
   clientRecords?: Client[];
   categories: Category[];
   onRowClick: (entry: IncomeEntry) => void;
+  onRollingJobClick?: (rollingJobId: string) => void;
   onStatusChange: (id: string, status: DisplayStatus) => void;
   onMoneyStatusChange?: (id: string, status: MoneyStatus) => void;
   onMarkAsPaid: (id: string) => void;
@@ -40,6 +41,7 @@ export const IncomeTable = React.memo(function IncomeTable({
   clientRecords,
   categories,
   onRowClick,
+  onRollingJobClick,
   onStatusChange,
   onMoneyStatusChange,
   onMarkAsPaid,
@@ -63,6 +65,7 @@ export const IncomeTable = React.memo(function IncomeTable({
       clientRecords={clientRecords}
       categories={categories}
       onRowClick={onRowClick}
+      onRollingJobClick={onRollingJobClick}
       onStatusChange={onStatusChange}
       onMoneyStatusChange={onMoneyStatusChange}
       onMarkAsPaid={onMarkAsPaid}

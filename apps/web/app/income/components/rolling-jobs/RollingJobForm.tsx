@@ -42,6 +42,7 @@ interface RollingJobFormProps {
   categories: Category[];
   onSaved: () => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
 function todayIso(): string {
@@ -49,7 +50,7 @@ function todayIso(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function RollingJobForm({ initial, clients, categories, onSaved, onCancel }: RollingJobFormProps) {
+export function RollingJobForm({ initial, clients, categories, onSaved, onCancel, onDelete }: RollingJobFormProps) {
   const [title, setTitle] = React.useState(initial?.title ?? "");
   const [description, setDescription] = React.useState(initial?.description ?? "");
   const [clientId, setClientId] = React.useState<string | null>(initial?.clientId ?? null);
@@ -359,6 +360,16 @@ export function RollingJobForm({ initial, clients, categories, onSaved, onCancel
         >
           {submitting ? "שומר..." : initial?.id ? "שמור שינויים" : "צור סדרה"}
         </Button>
+        {onDelete && initial?.id && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onDelete}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            מחק
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
