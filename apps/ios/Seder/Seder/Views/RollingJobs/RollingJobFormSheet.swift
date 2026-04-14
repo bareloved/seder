@@ -28,6 +28,8 @@ struct RollingJobFormSheet: View {
     @State private var notes: String = ""
     @State private var submitting: Bool = false
     @State private var saveError: String? = nil
+    @State private var showDeleteConfirm: Bool = false
+    @State private var deleting: Bool = false
 
     // UI state
     @State private var showStartDatePicker = false
@@ -91,6 +93,21 @@ struct RollingJobFormSheet: View {
             Button("אישור", role: .cancel) { saveError = nil }
         } message: {
             Text(saveError ?? "")
+        }
+        .confirmationDialog(
+            "מחיקת סדרה",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("מחק גם רשומות טיוטה עתידיות", role: .destructive) {
+                Task { await performDelete(deleteFutureDrafts: true) }
+            }
+            Button("מחק רק את הסדרה (השאר רשומות עתידיות)", role: .destructive) {
+                Task { await performDelete(deleteFutureDrafts: false) }
+            }
+            Button("ביטול", role: .cancel) {}
+        } message: {
+            Text("רשומות עבר יישמרו תמיד. בחר מה לעשות ברשומות טיוטה עתידיות שלא שולמו.")
         }
         .sheet(isPresented: $showStartDatePicker) {
             DatePicker("", selection: $startDate, displayedComponents: .date)
@@ -451,20 +468,35 @@ struct RollingJobFormSheet: View {
     // MARK: - Save Button
 
     private var saveButton: some View {
-        Button {
-            Task { await save() }
-        } label: {
-            Text(isEdit ? "שמור שינויים" : "צור סדרה")
-                .font(SederTheme.ploni(17, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(canSubmit ? SederTheme.brandGreen : SederTheme.brandGreen.opacity(0.4))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
+        VStack(spacing: 8) {
+            Button {
+                Task { await save() }
+            } label: {
+                Text(isEdit ? "שמור שינויים" : "צור סדרה")
+                    .font(SederTheme.ploni(17, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(canSubmit ? SederTheme.brandGreen : SederTheme.brandGreen.opacity(0.4))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .disabled(!canSubmit)
+
+            if isEdit {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Text(deleting ? "מוחק..." : "מחק סדרה")
+                        .font(SederTheme.ploni(15, weight: .medium))
+                        .foregroundStyle(Color(red: 0.86, green: 0.15, blue: 0.15))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .disabled(deleting)
+            }
         }
-        .disabled(!canSubmit)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Lifecycle
@@ -518,6 +550,19 @@ struct RollingJobFormSheet: View {
     }
 
     // MARK: - Save
+
+    private func performDelete(deleteFutureDrafts: Bool) async {
+        guard case .edit(let job) = mode else { return }
+        deleting = true
+        defer { deleting = false }
+
+        let ok = await viewModel.delete(id: job.id, deleteFutureDrafts: deleteFutureDrafts)
+        if ok {
+            dismiss()
+        } else {
+            saveError = viewModel.errorMessage ?? "מחיקה נכשלה"
+        }
+    }
 
     private func save() async {
         submitting = true

@@ -329,7 +329,12 @@ struct IncomeListView: View {
                         }
 
                         // Entries
-                        if viewModel.isLoading {
+                        // Only show a full-screen spinner during the initial load when we
+                        // have nothing to show yet. During pull-to-refresh (entries already
+                        // populated), keep the rows visible — the native pull spinner is
+                        // the only indicator needed, and replacing the subtree cancels the
+                        // refreshable task.
+                        if viewModel.isLoading && viewModel.entries.isEmpty {
                             ProgressView()
                                 .tint(SederTheme.brandGreen)
                                 .padding(.top, 40)
@@ -412,8 +417,19 @@ struct IncomeListView: View {
                     }
                 }
                 .refreshable {
-                    await viewModel.loadEntries()
-                    await nudgeVM.fetchNudges()
+                    // Decouple from the refresh task scope. SwiftUI's
+                    // .refreshable on a ScrollView inside ScrollViewReader
+                    // cancels the child task prematurely — requests come
+                    // back as NSURLErrorCancelled (-999). Using a detached
+                    // task + continuation makes the actual work an
+                    // independent root task that runs to completion.
+                    await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                        Task.detached { @MainActor in
+                            await viewModel.loadEntries()
+                            await nudgeVM.fetchNudges()
+                            cont.resume()
+                        }
+                    }
                 }
                 .background(SederTheme.pageBg)
             }
