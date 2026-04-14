@@ -25,12 +25,14 @@ export default function MobileConnectCalendarPage() {
       .catch(() => setConnectionStatus("notConnected"));
   }, [session]);
 
-  const handleSignInAndConnect = async () => {
+  const handleSignIn = async () => {
     setIsSubmitting(true);
     try {
+      // Incremental authorization: request only the basic profile scopes at
+      // sign-in. Calendar access is granted in a second step via linkSocial
+      // once the user is signed in.
       await authClient.signIn.social({
         provider: "google",
-        scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
         callbackURL: "/m/connect-calendar",
       });
     } catch (error) {
@@ -69,10 +71,10 @@ export default function MobileConnectCalendarPage() {
         ) : !session ? (
           <PromptState
             isSubmitting={isSubmitting}
-            title="חבר את היומן כדי לייבא"
-            description="היכנס עם חשבון Google כדי שסדר יוכל לייבא אירועים מהיומן שלך כהכנסות."
-            actionLabel="היכנס וחבר את היומן"
-            onAction={handleSignInAndConnect}
+            title="היכנס לחשבון"
+            description="היכנס עם חשבון Google כדי להתחיל. אחרי ההתחברות תתבקש לאשר גישה ליומן."
+            actionLabel="היכנס עם Google"
+            onAction={handleSignIn}
           />
         ) : (
           <PromptState
