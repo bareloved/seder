@@ -12,7 +12,6 @@ struct RollingJobFormSheet: View {
     let categories: [Category]
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title: String = ""
     @State private var description: String = ""
     @State private var clientName: String = ""
     @State private var clientId: String? = nil
@@ -52,7 +51,6 @@ struct RollingJobFormSheet: View {
 
     private var canSubmit: Bool {
         !submitting
-            && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !amountGross.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !clientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -65,10 +63,11 @@ struct RollingJobFormSheet: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    titleField
                     descriptionField
-                    clientField
-                    categoryField
+                    HStack(alignment: .top, spacing: 12) {
+                        clientField
+                        categoryField
+                    }
                     amountField
                     cadenceSection
                     startDateField
@@ -155,22 +154,6 @@ struct RollingJobFormSheet: View {
     }
 
     // MARK: - Fields
-
-    private var titleField: some View {
-        fieldColumn(label: "שם הסדרה", icon: "arrow.triangle.2.circlepath") {
-            TextField("למשל: שיעור שבועי", text: $title)
-                .font(SederTheme.ploni(18))
-                .multilineTextAlignment(.leading)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 12)
-                .background(SederTheme.cardBg)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(SederTheme.cardBorder, lineWidth: 1)
-                )
-        }
-    }
 
     private var descriptionField: some View {
         fieldColumn(label: "תיאור עבודה", icon: "doc.text") {
@@ -488,7 +471,6 @@ struct RollingJobFormSheet: View {
 
     private func populate() {
         if case .edit(let job) = mode {
-            title = job.title
             description = job.description
             clientName = job.clientName
             clientId = job.clientId
@@ -553,7 +535,7 @@ struct RollingJobFormSheet: View {
         }
 
         let input = CreateRollingJobInput(
-            title: String(title.prefix(100)),
+            title: String(description.prefix(100)),
             description: description,
             clientId: clientId,
             clientName: trimmedClient,

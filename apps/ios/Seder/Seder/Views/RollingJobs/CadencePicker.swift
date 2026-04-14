@@ -14,7 +14,8 @@ struct CadencePickerView: View {
     }
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 12) {
+        VStack(alignment: .trailing, spacing: 14) {
+            // Segmented kind picker
             Picker("תדירות", selection: Binding(
                 get: { currentKind },
                 set: { newKind in
@@ -39,28 +40,38 @@ struct CadencePickerView: View {
 
             switch cadence {
             case .daily(let interval):
-                HStack {
+                HStack(spacing: 8) {
                     Text("כל")
-                    Stepper(value: Binding(
-                        get: { interval },
-                        set: { cadence = .daily(interval: max(1, $0)) }
-                    ), in: 1...365) {
-                        Text("\(interval)")
-                    }
+                        .font(SederTheme.ploni(15))
+                        .foregroundStyle(SederTheme.textSecondary)
+                    numberStepper(
+                        value: interval,
+                        range: 1...365,
+                        onChange: { cadence = .daily(interval: $0) },
+                    )
                     Text(interval == 1 ? "יום" : "ימים")
+                        .font(SederTheme.ploni(15))
+                        .foregroundStyle(SederTheme.textSecondary)
+                    Spacer()
                 }
+
             case .weekly(let interval, let selectedDays):
-                VStack(alignment: .trailing, spacing: 8) {
-                    HStack {
+                VStack(alignment: .trailing, spacing: 12) {
+                    HStack(spacing: 8) {
                         Text("כל")
-                        Stepper(value: Binding(
-                            get: { interval },
-                            set: { cadence = .weekly(interval: max(1, $0), weekdays: selectedDays) }
-                        ), in: 1...52) {
-                            Text("\(interval)")
-                        }
-                        Text("שבועות ב-")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        numberStepper(
+                            value: interval,
+                            range: 1...52,
+                            onChange: { cadence = .weekly(interval: $0, weekdays: selectedDays) },
+                        )
+                        Text(interval == 1 ? "שבוע ב-" : "שבועות ב-")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        Spacer()
                     }
+
                     HStack(spacing: 8) {
                         ForEach(0..<7, id: \.self) { idx in
                             let isSelected = selectedDays.contains(idx)
@@ -77,30 +88,117 @@ struct CadencePickerView: View {
                             } label: {
                                 Text(weekdays[idx])
                                     .font(.system(size: 14, weight: .medium))
-                                    .frame(width: 36, height: 36)
-                                    .background(isSelected ? SederTheme.brandGreen : SederTheme.subtleBg)
-                                    .foregroundColor(isSelected ? .white : SederTheme.textSecondary)
+                                    .frame(width: 32, height: 32)
+                                    .background(isSelected ? SederTheme.brandGreen : SederTheme.cardBg)
+                                    .foregroundStyle(isSelected ? .white : SederTheme.textSecondary)
                                     .clipShape(Circle())
-                                    .overlay(Circle().stroke(SederTheme.cardBorder, lineWidth: 1))
+                                    .overlay(
+                                        Circle().stroke(
+                                            isSelected ? SederTheme.brandGreen : SederTheme.cardBorder,
+                                            lineWidth: 1,
+                                        )
+                                    )
                             }
                         }
                     }
                 }
+
             case .monthly(let interval, let dayOfMonth):
-                HStack {
-                    Text("כל")
-                    Stepper(value: Binding(
-                        get: { interval },
-                        set: { cadence = .monthly(interval: max(1, $0), dayOfMonth: dayOfMonth) }
-                    ), in: 1...12) { Text("\(interval)") }
-                    Text("חודשים ביום")
-                    Stepper(value: Binding(
-                        get: { dayOfMonth },
-                        set: { cadence = .monthly(interval: interval, dayOfMonth: max(1, min(31, $0))) }
-                    ), in: 1...31) { Text("\(dayOfMonth)") }
+                VStack(alignment: .trailing, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Text("כל")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        numberStepper(
+                            value: interval,
+                            range: 1...12,
+                            onChange: { cadence = .monthly(interval: $0, dayOfMonth: dayOfMonth) },
+                        )
+                        Text(interval == 1 ? "חודש" : "חודשים")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        Spacer()
+                    }
+                    HStack(spacing: 8) {
+                        Text("ביום")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        numberStepper(
+                            value: dayOfMonth,
+                            range: 1...31,
+                            onChange: { cadence = .monthly(interval: interval, dayOfMonth: $0) },
+                        )
+                        Text("בכל חודש")
+                            .font(SederTheme.ploni(15))
+                            .foregroundStyle(SederTheme.textSecondary)
+                        Spacer()
+                    }
                 }
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    // MARK: - Compact number stepper
+    //
+    // Renders: [value-box] [-] | [+]
+    // Much tighter than SwiftUI's built-in Stepper, and keeps the value visually
+    // adjacent to the controls so the connection is obvious.
+    @ViewBuilder
+    private func numberStepper(
+        value: Int,
+        range: ClosedRange<Int>,
+        onChange: @escaping (Int) -> Void,
+    ) -> some View {
+        HStack(spacing: 6) {
+            // Number pill — the thing that changes
+            Text("\(value)")
+                .font(.system(size: 16, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(SederTheme.textPrimary)
+                .frame(minWidth: 32)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(SederTheme.cardBg)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(SederTheme.cardBorder, lineWidth: 1)
+                )
+
+            // +/- buttons in one segmented pill, tight together
+            HStack(spacing: 0) {
+                Button {
+                    let next = min(range.upperBound, value + 1)
+                    if next != value { onChange(next) }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(value < range.upperBound ? SederTheme.textPrimary : SederTheme.textTertiary)
+                        .frame(width: 32, height: 28)
+                }
+                .disabled(value >= range.upperBound)
+
+                Rectangle()
+                    .fill(SederTheme.cardBorder)
+                    .frame(width: 1, height: 16)
+
+                Button {
+                    let next = max(range.lowerBound, value - 1)
+                    if next != value { onChange(next) }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(value > range.lowerBound ? SederTheme.textPrimary : SederTheme.textTertiary)
+                        .frame(width: 32, height: 28)
+                }
+                .disabled(value <= range.lowerBound)
+            }
+            .background(SederTheme.cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+            )
+        }
     }
 }
