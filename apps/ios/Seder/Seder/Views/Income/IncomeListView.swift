@@ -22,7 +22,6 @@ struct IncomeListView: View {
     @State private var selectedClientName: String?
     @State private var sortColumn: SortColumn = .date
     @State private var sortDirection: SortDirection = .asc
-    @AppStorage("seder_income_hide_future") private var hideFuture = false
     @StateObject private var categoriesVM = CategoriesViewModel()
     @State private var clientsVM = ClientsViewModel()
     @StateObject private var nudgeVM = NudgeViewModel()
@@ -72,14 +71,6 @@ struct IncomeListView: View {
         // Client filter
         if let client = selectedClientName {
             result = result.filter { $0.clientName == client }
-        }
-
-        // Hide future unpaid rows (e.g. rolling-job drafts)
-        if hideFuture {
-            let f = DateFormatter()
-            f.dateFormat = "yyyy-MM-dd"
-            let today = f.string(from: Date())
-            result = result.filter { !($0.date > today && $0.paymentStatus != .paid) }
         }
 
         // Search
@@ -163,7 +154,6 @@ struct IncomeListView: View {
                 selectedClientName: $selectedClientName,
                 sortColumn: $sortColumn,
                 sortDirection: $sortDirection,
-                hideFuture: $hideFuture,
                 categories: categoriesVM.categories,
                 clientNames: uniqueClientNames
             )

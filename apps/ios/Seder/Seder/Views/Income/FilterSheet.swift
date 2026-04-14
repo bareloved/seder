@@ -31,7 +31,6 @@ struct FilterSheet: View {
     @Binding var selectedClientName: String?
     @Binding var sortColumn: SortColumn
     @Binding var sortDirection: SortDirection
-    @Binding var hideFuture: Bool
 
     var categories: [Category]
     var clientNames: [String]
@@ -155,14 +154,6 @@ struct FilterSheet: View {
                         )
                     }
                 }
-
-                // Hide future
-                Toggle(isOn: $hideFuture) {
-                    Text("הסתר רשומות עתידיות שלא שולמו")
-                        .font(SederTheme.ploni(16))
-                        .foregroundStyle(SederTheme.textPrimary)
-                }
-                .tint(SederTheme.brandGreen)
 
                 Spacer()
             }
