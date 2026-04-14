@@ -295,18 +295,6 @@ export function IncomeFilters({
             </DropdownMenu>
           )}
 
-          {/* Hide-future toggle (desktop) */}
-          {onHideFutureChange && (
-            <label className="hidden md:flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none px-2 h-9">
-              <input
-                type="checkbox"
-                checked={hideFuture}
-                onChange={(e) => onHideFutureChange(e.target.checked)}
-                className="h-3.5 w-3.5"
-              />
-              <span className="hidden xl:inline">הסתר עתיד</span>
-            </label>
-          )}
         </div>
 
       </div>
