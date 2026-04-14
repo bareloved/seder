@@ -333,16 +333,39 @@ struct IncomeDetailSheet: View {
 
     // MARK: - Client Suggestions
 
+    /// Full client directory (every client on the user's account) ∪ the month's
+    /// in-entry names. Month-filtering is correct for the toolbar client picker,
+    /// but for a new entry we need to be able to pick from the whole directory.
+    private var allKnownClientNames: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for c in clientsVM?.clients ?? [] {
+            let name = c.name
+            if !name.isEmpty, seen.insert(name.lowercased()).inserted {
+                out.append(name)
+            }
+        }
+        for name in clientNames where !name.isEmpty {
+            if seen.insert(name.lowercased()).inserted {
+                out.append(name)
+            }
+        }
+        return out.sorted { $0.localizedCompare($1) == .orderedAscending }
+    }
+
     private var filteredClientNames: [String] {
+        let source = allKnownClientNames
         if clientName.isEmpty {
-            return Array(clientNames.prefix(5))
+            return Array(source.prefix(5))
         }
         let q = clientName.lowercased()
-        return clientNames.filter { $0.lowercased().contains(q) }
+        return source.filter { $0.lowercased().contains(q) }
     }
 
     private var isNewClient: Bool {
-        !clientName.isEmpty && !clientNames.contains(where: { $0.lowercased() == clientName.lowercased() })
+        let trimmed = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return false }
+        return !allKnownClientNames.contains(where: { $0.lowercased() == trimmed.lowercased() })
     }
 
     private var clientSuggestionsView: some View {
