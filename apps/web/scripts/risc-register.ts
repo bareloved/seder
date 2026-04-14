@@ -59,22 +59,60 @@ async function mintSelfSignedJwt(): Promise<string> {
     .sign(privateKey);
 }
 
+// Must match Google's events_supported exactly — unsupported URIs are silently
+// dropped by Google at stream:update time.
 const EVENTS_REQUESTED = [
   "https://schemas.openid.net/secevent/risc/event-type/sessions-revoked",
-  "https://schemas.openid.net/secevent/risc/event-type/tokens-revoked",
+  "https://schemas.openid.net/secevent/oauth/event-type/tokens-revoked",
   "https://schemas.openid.net/secevent/oauth/event-type/token-revoked",
   "https://schemas.openid.net/secevent/risc/event-type/account-disabled",
   "https://schemas.openid.net/secevent/risc/event-type/account-enabled",
-  "https://schemas.openid.net/secevent/risc/event-type/account-purged",
   "https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required",
   "https://schemas.openid.net/secevent/risc/event-type/verification",
 ];
 
+async function runStatus(accessToken: string) {
+  console.log("Fetching current RISC stream config from Google…\n");
+  const res = await fetch("https://risc.googleapis.com/v1beta/stream", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  console.log(`stream:get -> HTTP ${res.status}`);
+  const body = await res.text();
+  console.log(body);
+  if (res.status === 404) {
+    console.log(
+      "\nNo stream registered. Run without --status to create one:"
+    );
+    console.log(
+      "  GOOGLE_APPLICATION_CREDENTIALS=~/risc-admin-key.json \\"
+    );
+    console.log(
+      "    pnpm tsx apps/web/scripts/risc-register.ts https://sedder.app/api/google/risc"
+    );
+  }
+}
+
 async function main() {
-  const webhookUrl = process.argv[2];
+  const arg = process.argv[2];
+
+  // RISC uses self-signed JWT auth (RFC 7523), not OAuth2 access tokens.
+  // We sign a JWT with aud = RISC service URL and use it directly as the
+  // bearer credential.
+  const accessToken = await mintSelfSignedJwt();
+
+  if (arg === "--status") {
+    await runStatus(accessToken);
+    return;
+  }
+
+  const webhookUrl = arg;
   if (!webhookUrl) {
     console.error(
       "Usage: tsx apps/web/scripts/risc-register.ts <https-webhook-url>"
+    );
+    console.error(
+      "       tsx apps/web/scripts/risc-register.ts --status"
     );
     console.error(
       "Example: tsx apps/web/scripts/risc-register.ts https://sedder.app/api/google/risc"
@@ -85,11 +123,6 @@ async function main() {
     console.error("Webhook URL must be HTTPS");
     process.exit(1);
   }
-
-  // RISC uses self-signed JWT auth (RFC 7523), not OAuth2 access tokens.
-  // We sign a JWT with aud = RISC service URL and use it directly as the
-  // bearer credential.
-  const accessToken = await mintSelfSignedJwt();
 
   console.log(`Registering RISC stream → ${webhookUrl}`);
   const updateRes = await fetch(

@@ -82,7 +82,6 @@ async function handleEvent(
       break;
 
     case RISC_EVENT_TYPES.ACCOUNT_DISABLED:
-    case RISC_EVENT_TYPES.ACCOUNT_PURGED:
       await revokeAllSessions(userId);
       await clearGoogleTokens(userId);
       console.log(

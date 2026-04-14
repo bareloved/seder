@@ -15,15 +15,13 @@ export const RISC_EVENT_TYPES = {
   SESSIONS_REVOKED:
     "https://schemas.openid.net/secevent/risc/event-type/sessions-revoked",
   TOKENS_REVOKED:
-    "https://schemas.openid.net/secevent/risc/event-type/tokens-revoked",
+    "https://schemas.openid.net/secevent/oauth/event-type/tokens-revoked",
   TOKEN_REVOKED:
     "https://schemas.openid.net/secevent/oauth/event-type/token-revoked",
   ACCOUNT_DISABLED:
     "https://schemas.openid.net/secevent/risc/event-type/account-disabled",
   ACCOUNT_ENABLED:
     "https://schemas.openid.net/secevent/risc/event-type/account-enabled",
-  ACCOUNT_PURGED:
-    "https://schemas.openid.net/secevent/risc/event-type/account-purged",
   ACCOUNT_CREDENTIAL_CHANGE_REQUIRED:
     "https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required",
   VERIFICATION:
