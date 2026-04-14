@@ -41,10 +41,21 @@ struct IncomeEntryRow: View {
                 HStack(alignment: .top, spacing: 4) {
                     // Description + Client — physical RIGHT in RTL
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.description)
-                            .font(SederTheme.ploni(18, weight: .semibold))
-                            .foregroundStyle(SederTheme.textPrimary)
-                            .lineLimit(2)
+                        HStack(spacing: 4) {
+                            Text(entry.description)
+                                .font(SederTheme.ploni(18, weight: .semibold))
+                                .foregroundStyle(SederTheme.textPrimary)
+                                .lineLimit(2)
+                            if entry.rollingJobId != nil {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 11, weight: .regular))
+                                    .foregroundStyle(
+                                        (entry.detachedFromTemplate ?? false)
+                                            ? SederTheme.textTertiary
+                                            : SederTheme.textSecondary
+                                    )
+                            }
+                        }
                         if !entry.clientName.isEmpty {
                             Text(entry.clientName)
                                 .font(SederTheme.ploni(15))

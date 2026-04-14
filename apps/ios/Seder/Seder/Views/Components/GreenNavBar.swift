@@ -23,12 +23,14 @@ struct GreenNavBar<LeadingContent: View>: View {
     let title: String
     var onSettingsTap: () -> Void
     var onFeedbackTap: (() -> Void)?
+    var onRollingJobsTap: (() -> Void)?
     @ViewBuilder var leadingContent: () -> LeadingContent
 
     init(
         title: String,
         onSettingsTap: @escaping () -> Void,
         onFeedbackTap: (() -> Void)? = nil,
+        onRollingJobsTap: (() -> Void)? = nil,
         avatarURL: String? = nil,
         avatarImage: UIImage? = nil,
         @ViewBuilder leadingContent: @escaping () -> LeadingContent = { EmptyView() }
@@ -36,6 +38,7 @@ struct GreenNavBar<LeadingContent: View>: View {
         self.title = title
         self.onSettingsTap = onSettingsTap
         self.onFeedbackTap = onFeedbackTap
+        self.onRollingJobsTap = onRollingJobsTap
         self.leadingContent = leadingContent
     }
 
@@ -52,8 +55,16 @@ struct GreenNavBar<LeadingContent: View>: View {
 
                 Spacer()
 
-                // Physical left (trailing in RTL): feedback + avatar/settings
+                // Physical left (trailing in RTL): rolling jobs + feedback + avatar/settings
                 HStack(spacing: 12) {
+                if let onRollingJobsTap {
+                    Button(action: onRollingJobsTap) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                }
+
                 if let onFeedbackTap {
                     Button(action: onFeedbackTap) {
                         Image(systemName: "bubble.left.fill")

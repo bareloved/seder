@@ -27,6 +27,7 @@ struct IncomeListView: View {
     @StateObject private var nudgeVM = NudgeViewModel()
     @State private var highlightedEntryId: String?
     @State private var showFeedback = false
+    @State private var showRollingJobs = false
     @State private var isInitialLoad = true
 
     // Multi-select
@@ -170,6 +171,9 @@ struct IncomeListView: View {
         .sheet(isPresented: $showFeedback) {
             FeedbackSheet()
         }
+        .sheet(isPresented: $showRollingJobs) {
+            RollingJobsView(clients: clientsVM.clients, categories: categoriesVM.categories)
+        }
         .task {
             async let entries: () = viewModel.loadEntries()
             async let categories: () = categoriesVM.loadCategories()
@@ -225,6 +229,7 @@ struct IncomeListView: View {
                 title: "הכנסות",
                 onSettingsTap: { showSettings = true },
                 onFeedbackTap: { showFeedback = true },
+                onRollingJobsTap: { showRollingJobs = true },
                 avatarURL: auth.user?.image,
                 avatarImage: auth.avatarImage
             ) {
