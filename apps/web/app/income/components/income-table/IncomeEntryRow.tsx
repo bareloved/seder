@@ -351,20 +351,15 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                       }
                     }}
                     className={cn(
-                      "ms-1 inline-flex items-center align-middle rounded transition-colors",
-                      onRollingJobClick && "hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer",
+                      "ms-2 inline-flex items-center justify-center align-middle h-6 w-6 rounded-md border transition-colors",
+                      entry.detachedFromTemplate
+                        ? "bg-slate-50 border-slate-200/70 text-slate-400 dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-500"
+                        : "bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 dark:bg-sky-900/25 dark:border-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-900/40",
                     )}
                     aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
                     title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
                   >
-                    <Repeat
-                      className={cn(
-                        "h-3.5 w-3.5",
-                        entry.detachedFromTemplate
-                          ? "text-slate-300 dark:text-slate-600"
-                          : "text-slate-400 dark:text-slate-500"
-                      )}
-                    />
+                    <Repeat className="h-3.5 w-3.5" />
                   </button>
                 )}
               </span>
@@ -612,20 +607,15 @@ export const IncomeEntryRow = React.memo(function IncomeEntryRow({
                     }
                   }}
                   className={cn(
-                    "ms-1 inline-flex items-center align-middle rounded",
-                    onRollingJobClick && "hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer",
+                    "ms-2 inline-flex items-center justify-center align-middle h-6 w-6 rounded-md border transition-colors",
+                    entry.detachedFromTemplate
+                      ? "bg-slate-50 border-slate-200/70 text-slate-400 dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-500"
+                      : "bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 dark:bg-sky-900/25 dark:border-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-900/40",
                   )}
                   aria-label={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
                   title={entry.detachedFromTemplate ? "נותק מתבנית הסדרה" : "ערוך סדרה"}
                 >
-                  <Repeat
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      entry.detachedFromTemplate
-                        ? "text-slate-300 dark:text-slate-600"
-                        : "text-slate-400 dark:text-slate-500"
-                    )}
-                  />
+                  <Repeat className="h-3.5 w-3.5" />
                 </button>
               )}
             </span>
