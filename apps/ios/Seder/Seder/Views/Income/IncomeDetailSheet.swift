@@ -25,6 +25,16 @@ struct IncomeDetailSheet: View {
     @FocusState private var amountFocused: Bool
     @FocusState private var clientFocused: Bool
 
+    // Rolling-job (אירוע חוזר) — only shown when creating a new entry
+    @State private var isRolling = false
+    @State private var cadence: Cadence = .weekly(
+        interval: 1,
+        weekdays: [Calendar.current.component(.weekday, from: Date()) - 1]
+    )
+    @State private var rollingEndDate: Date? = nil
+    @State private var hasRollingEndDate = false
+    @State private var showRollingEndDatePicker = false
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -193,6 +203,65 @@ struct IncomeDetailSheet: View {
                                     .stroke(SederTheme.cardBorder, lineWidth: 1)
                             )
                     }
+
+                    // Row 6: Recurring event (only for new entries)
+                    if !isEditing {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle(isOn: $isRolling.animation(.easeInOut(duration: 0.2))) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(SederTheme.textSecondary)
+                                    Text("אירוע חוזר")
+                                        .font(SederTheme.ploni(17, weight: .medium))
+                                        .foregroundStyle(SederTheme.textPrimary)
+                                }
+                            }
+                            .tint(SederTheme.brandGreen)
+
+                            if isRolling {
+                                VStack(alignment: .trailing, spacing: 12) {
+                                    CadencePickerView(cadence: $cadence)
+
+                                    Toggle(isOn: $hasRollingEndDate) {
+                                        Text("תאריך סיום")
+                                            .font(SederTheme.ploni(15))
+                                            .foregroundStyle(SederTheme.textSecondary)
+                                    }
+                                    .tint(SederTheme.brandGreen)
+
+                                    if hasRollingEndDate {
+                                        Button {
+                                            showRollingEndDatePicker.toggle()
+                                        } label: {
+                                            Text(
+                                                (rollingEndDate ?? Date())
+                                                    .formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "he_IL")))
+                                            )
+                                            .font(SederTheme.ploni(16))
+                                            .foregroundStyle(SederTheme.textPrimary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 10)
+                                            .background(SederTheme.cardBg)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(SederTheme.cardBorder, lineWidth: 1)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(14)
+                        .background(SederTheme.subtleBg)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(SederTheme.cardBorder, lineWidth: 1)
+                        )
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -204,7 +273,7 @@ struct IncomeDetailSheet: View {
             Button {
                 Task { await save() }
             } label: {
-                Text(isEditing ? "סגור" : "שמירה")
+                Text(saveButtonLabel)
                     .font(SederTheme.ploni(17, weight: .medium))
                     .foregroundStyle(isEditing ? SederTheme.textPrimary : .white)
                     .frame(maxWidth: .infinity)
@@ -229,6 +298,25 @@ struct IncomeDetailSheet: View {
                 .onChange(of: date) {
                     showDatePicker = false
                 }
+        }
+        .sheet(isPresented: $showRollingEndDatePicker) {
+            DatePicker(
+                "",
+                selection: Binding(
+                    get: { rollingEndDate ?? Date() },
+                    set: { rollingEndDate = $0 }
+                ),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .environment(\.calendar, Calendar(identifier: .gregorian))
+            .environment(\.locale, Locale(identifier: "he_IL"))
+            .tint(SederTheme.brandGreen)
+            .padding()
+            .presentationDetents([.medium])
+            .onChange(of: rollingEndDate) {
+                showRollingEndDatePicker = false
+            }
         }
     }
 
@@ -492,6 +580,12 @@ struct IncomeDetailSheet: View {
         notes = entry.notes ?? ""
     }
 
+    private var saveButtonLabel: String {
+        if isEditing { return "סגור" }
+        if isRolling { return "צור אירוע חוזר" }
+        return "שמירה"
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -513,18 +607,55 @@ struct IncomeDetailSheet: View {
             if await viewModel.updateEntry(entry.id, request) {
                 dismiss()
             }
-        } else {
-            let request = CreateIncomeRequest(
-                date: dateStr,
+            return
+        }
+
+        if isRolling {
+            let endDateStr: String? = {
+                guard hasRollingEndDate, let end = rollingEndDate else { return nil }
+                return formatter.string(from: end)
+            }()
+
+            let titleValue = String(description.prefix(100))
+            let amountString = rawAmount.isEmpty ? "0" : rawAmount
+
+            let input = CreateRollingJobInput(
+                title: titleValue,
                 description: description,
+                clientId: nil,
                 clientName: clientName,
-                amountGross: Double(rawAmount) ?? 0,
                 categoryId: selectedCategoryId,
+                amountGross: amountString,
+                vatRate: "18",
+                includesVat: true,
+                cadence: cadence,
+                startDate: dateStr,
+                endDate: endDateStr,
                 notes: notes.isEmpty ? nil : notes
             )
-            if await viewModel.createEntry(request) {
+
+            do {
+                _ = try await APIClient.shared.createRollingJob(input)
+                await viewModel.loadEntries()
                 dismiss()
+            } catch let error as APIError {
+                viewModel.errorMessage = error.errorDescription
+            } catch {
+                viewModel.errorMessage = "שגיאה ביצירת אירוע חוזר"
             }
+            return
+        }
+
+        let request = CreateIncomeRequest(
+            date: dateStr,
+            description: description,
+            clientName: clientName,
+            amountGross: Double(rawAmount) ?? 0,
+            categoryId: selectedCategoryId,
+            notes: notes.isEmpty ? nil : notes
+        )
+        if await viewModel.createEntry(request) {
+            dismiss()
         }
     }
 }
