@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP } from "better-auth/plugins";
+import { OAuth2Client } from "google-auth-library";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import {
@@ -11,6 +12,32 @@ import {
   getVerificationEmailHtml,
   getVerificationEmailText,
 } from "./email";
+
+// Accept Google ID tokens minted for either the web OAuth client (used by the
+// browser redirect flow) or the native iOS client (used by the iOS app's
+// GoogleSignIn SDK). Both are OUR tokens — just issued to different OAuth
+// clients we own. Without this override Better Auth only accepts the web
+// audience, so iOS `POST /api/auth/sign-in/social` calls fail with
+// "Invalid id token".
+const googleAllowedAudiences: string[] = [
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_IOS_CLIENT_ID,
+].filter((v): v is string => !!v);
+
+const googleOAuthClient = new OAuth2Client();
+
+async function verifyGoogleIdToken(token: string, _nonce?: string): Promise<boolean> {
+  if (googleAllowedAudiences.length === 0) return false;
+  try {
+    const ticket = await googleOAuthClient.verifyIdToken({
+      idToken: token,
+      audience: googleAllowedAudiences,
+    });
+    return !!ticket.getPayload();
+  } catch {
+    return false;
+  }
+}
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "build-placeholder-not-used-at-runtime",
@@ -65,6 +92,8 @@ export const auth = betterAuth({
       // consent screen — which triggers the "unverified app" warning even
       // when the current OAuth request only asks for basic profile scopes.
       accessType: "offline",
+      // Accept iOS-native tokens in addition to web-flow tokens.
+      verifyIdToken: verifyGoogleIdToken,
     },
   },
   databaseHooks: {

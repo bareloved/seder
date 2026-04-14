@@ -19,6 +19,13 @@ nonisolated class APIClient: @unchecked Sendable {
     }()
 
     private let session = URLSession.shared
+
+    init() {
+        // Purge any leftover responses from before we switched to
+        // .reloadIgnoringLocalCacheData. Cheap, safe, runs once per launch.
+        URLCache.shared.removeAllCachedResponses()
+    }
+
     private let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
@@ -158,6 +165,10 @@ nonisolated class APIClient: @unchecked Sendable {
 
         var request = URLRequest(url: components.url!)
         request.httpMethod = method
+        // Always hit the network. Next.js API routes don't send Cache-Control,
+        // so URLSession's default policy would serve stale GET responses from
+        // the shared URLCache — breaking pull-to-refresh.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(baseURL, forHTTPHeaderField: "Origin")
 
