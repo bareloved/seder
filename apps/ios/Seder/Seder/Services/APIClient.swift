@@ -7,8 +7,16 @@ private nonisolated struct BetterAuthErrorResponse: Decodable {
 nonisolated class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
-    // Always use production URL — localhost isn't reachable from a physical device
-    private let baseURL = "https://sedder.app"
+    // Debug builds (Xcode → Run) hit the local dev server.
+    // Release builds (archive, TestFlight, App Store) always hit production.
+    // This is checked at compile time — impossible to ship localhost by accident.
+    private let baseURL: String = {
+        #if DEBUG
+        return "http://localhost:3001"
+        #else
+        return "https://sedder.app"
+        #endif
+    }()
 
     private let session = URLSession.shared
     private let decoder: JSONDecoder = {

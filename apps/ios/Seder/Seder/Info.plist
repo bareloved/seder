@@ -6,6 +6,13 @@
 	<string>272605104614-vg11q50l666ji06an4t1khfr94duumr5.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
 	<string>272605104614-v4dea68n9613hi6ofbfla2u2dnj8gt2i.apps.googleusercontent.com</string>
+	<!-- Allow HTTP traffic to localhost / LAN for debug builds that point APIClient.baseURL at the dev server.
+	     NSAllowsLocalNetworking is a narrow exception — it does NOT open up arbitrary HTTP to the public internet. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
