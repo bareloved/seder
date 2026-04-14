@@ -951,6 +951,8 @@ export default function IncomePageClient({
         defaultMonth={month}
         onImportStart={handleImportStart}
         onImportEnd={handleImportEnd}
+        clients={clientRecords}
+        categories={categories}
       />
 
       <ConnectCalendarDialog

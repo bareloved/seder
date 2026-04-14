@@ -202,3 +202,32 @@ export async function listEventsForMonth(
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fetch the recurrence rule (RRULE/EXDATE strings) for a master recurring event
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getRecurringEventRecurrence(
+  accessToken: string,
+  calendarId: string,
+  recurringEventId: string,
+): Promise<string[] | null> {
+  const calendar = getCalendarClient(accessToken);
+  try {
+    const res = await calendar.events.get({
+      calendarId,
+      eventId: recurringEventId,
+      fields: "id,recurrence",
+    });
+    return res.data.recurrence ?? null;
+  } catch (error) {
+    console.error("Failed to fetch recurring event:", error);
+    const status =
+      (error as { code?: number; response?: { status?: number } })?.code ??
+      (error as { code?: number; response?: { status?: number } })?.response?.status;
+    if (status === 401 || status === 403) {
+      throw new GoogleCalendarAuthError("Google access token is expired or revoked");
+    }
+    return null;
+  }
+}
