@@ -8,6 +8,7 @@ import { IncomeTable } from "./components/IncomeTable";
 import { IncomeDetailDialog } from "./components/IncomeDetailDialog";
 import { CalendarImportDialog } from "./components/CalendarImportDialog";
 import { ConnectCalendarDialog } from "./components/ConnectCalendarDialog";
+import { RollingJobsDialog } from "./components/RollingJobsDialog";
 import { IncomeFilters } from "./components/IncomeFilters";
 import { IncomeListView } from "./components/IncomeListView";
 import type { ViewMode } from "./components/ViewModeToggle";
@@ -161,6 +162,7 @@ export default function IncomePageClient({
   const [isConnectCalendarDialogOpen, setIsConnectCalendarDialogOpen] =
     React.useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = React.useState(false);
+  const [isRollingJobsDialogOpen, setIsRollingJobsDialogOpen] = React.useState(false);
   const [isImporting, setIsImporting] = React.useState(false);
 
   const handleImportStart = React.useCallback(() => {
@@ -851,6 +853,7 @@ export default function IncomePageClient({
                 ? setIsCalendarDialogOpen(true)
                 : setIsConnectCalendarDialogOpen(true)
             }
+            onOpenRollingJobs={() => setIsRollingJobsDialogOpen(true)}
             isNavigating={isNavigating}
             isImporting={isImporting}
             // Sort props
@@ -936,6 +939,13 @@ export default function IncomePageClient({
         isOpen={isCategoryDialogOpen}
         onClose={() => setIsCategoryDialogOpen(false)}
         initialCategories={categories}
+      />
+
+      <RollingJobsDialog
+        open={isRollingJobsDialogOpen}
+        onOpenChange={setIsRollingJobsDialogOpen}
+        clients={clientRecords}
+        categories={categories}
       />
 
       {/* Batch Action Bar */}

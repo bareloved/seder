@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown, Tags, Users } from "lucide-react";
+import { Search, X, ChevronDown, Plus, ChevronRight, ChevronLeft, Filter, CalendarPlus, Loader2, ArrowUpDown, Tags, Users, Repeat } from "lucide-react";
 import type { SortColumn } from "./income-table/IncomeTableHeader";
 import type { Category } from "@/db/schema";
 import { ViewMode } from "./ViewModeToggle";
@@ -52,6 +52,7 @@ interface IncomeFiltersProps {
   // Calendar import props
   isGoogleConnected?: boolean;
   onImportFromCalendar?: () => void;
+  onOpenRollingJobs?: () => void;
   // Loading states
   isNavigating?: boolean;
   isImporting?: boolean;
@@ -88,6 +89,7 @@ export function IncomeFilters({
   monthPaymentStatuses,
   isGoogleConnected,
   onImportFromCalendar,
+  onOpenRollingJobs,
   isNavigating,
   isImporting,
   // Sort props
@@ -337,6 +339,26 @@ export function IncomeFilters({
             </TooltipTrigger>
             <TooltipContent>
               <p>ייבוא מהיומן</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Rolling Jobs Button */}
+        {onOpenRollingJobs && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onOpenRollingJobs}
+                className="h-9 gap-2 bg-white dark:bg-card border-slate-200 dark:border-border text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <Repeat className="h-4 w-4" />
+                <span className="text-sm hidden xl:inline">סדרות</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>סדרות הכנסה</p>
             </TooltipContent>
           </Tooltip>
         )}
