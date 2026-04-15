@@ -6,7 +6,7 @@ import {
   enforceUserRateLimit,
   deviceRegisterRatelimit,
 } from "@/lib/ratelimit";
-import { db } from "@/db/client";
+import { withUser } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 
 export async function POST(request: NextRequest) {
@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("platform must be 'ios' or 'android'");
     }
 
-    await db
-      .insert(deviceTokens)
-      .values({ userId, token, platform })
-      .onConflictDoNothing();
+    await withUser(userId, async (tx) => {
+      await tx
+        .insert(deviceTokens)
+        .values({ userId, token, platform })
+        .onConflictDoNothing();
+    });
 
     return apiSuccess({ registered: true }, 201);
   } catch (error) {

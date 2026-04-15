@@ -7,7 +7,7 @@ import {
   deleteIncomeEntry,
 } from "@/app/income/data";
 import { updateIncomeEntrySchema } from "@seder/shared";
-import { db } from "@/db/client";
+import { withUser } from "@/db/client";
 import { incomeEntries } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -19,10 +19,15 @@ export async function GET(
     const userId = await requireAuth();
     const { id } = await params;
 
-    const [entry] = await db
-      .select()
-      .from(incomeEntries)
-      .where(and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId)));
+    const entry = await withUser(userId, async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(incomeEntries)
+        .where(
+          and(eq(incomeEntries.id, id), eq(incomeEntries.userId, userId))
+        );
+      return row;
+    });
 
     if (!entry) {
       throw new NotFoundError("Income entry");

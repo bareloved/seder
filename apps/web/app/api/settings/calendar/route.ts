@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db/client";
+import { withUser } from "@/db/client";
 import { userSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -18,11 +18,15 @@ export async function GET() {
             );
         }
 
-        const [settings] = await db
-            .select()
-            .from(userSettings)
-            .where(eq(userSettings.userId, session.user.id))
-            .limit(1);
+        const userId = session.user.id;
+        const settings = await withUser(userId, async (tx) => {
+            const [row] = await tx
+                .select()
+                .from(userSettings)
+                .where(eq(userSettings.userId, userId))
+                .limit(1);
+            return row;
+        });
 
         const calendarSettings = settings?.calendarSettings || {};
 

@@ -21,14 +21,16 @@ if (fs.existsSync(envPath)) {
 }
 
 // Now import the db client (which expects process.env.DATABASE_URL to be set)
-import { db } from "@/db/client";
+import { withAdminBypass } from "@/db/client";
 import { incomeEntries } from "@/db/schema";
 
 async function backup() {
   console.log("Starting backup...");
-  
+
   try {
-    const entries = await db.select().from(incomeEntries).orderBy(desc(incomeEntries.date));
+    const entries = await withAdminBypass(async (tx) =>
+      tx.select().from(incomeEntries).orderBy(desc(incomeEntries.date))
+    );
     
     if (entries.length === 0) {
       console.log("No entries found to backup.");

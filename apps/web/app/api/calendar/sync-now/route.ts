@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/db/client";
+import { withUser, type DbTx } from "@/db/client";
 import { userSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -27,11 +27,14 @@ export async function POST() {
         const userId = session.user.id;
 
         // Get user settings for calendar IDs
-        const [settings] = await db
-            .select()
-            .from(userSettings)
-            .where(eq(userSettings.userId, userId))
-            .limit(1);
+        const settings = await withUser(userId, async (tx) => {
+            const [row] = await tx
+                .select()
+                .from(userSettings)
+                .where(eq(userSettings.userId, userId))
+                .limit(1);
+            return row;
+        });
 
         const calendarSettings = settings?.calendarSettings || {};
         const calendarIds = calendarSettings.selectedCalendarIds || ["primary"];
@@ -122,11 +125,13 @@ async function updateLastSyncTimestamp(
         lastAutoSync: new Date().toISOString(),
     };
 
-    await db
-        .update(userSettings)
-        .set({
-            calendarSettings: updatedSettings,
-            updatedAt: new Date(),
-        })
-        .where(eq(userSettings.userId, userId));
+    await withUser(userId, async (tx: DbTx) => {
+        await tx
+            .update(userSettings)
+            .set({
+                calendarSettings: updatedSettings,
+                updatedAt: new Date(),
+            })
+            .where(eq(userSettings.userId, userId));
+    });
 }

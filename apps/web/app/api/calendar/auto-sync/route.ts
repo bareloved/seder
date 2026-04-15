@@ -1,4 +1,4 @@
-import { db } from "@/db/client";
+import { withUser, withAdminBypass, type DbTx } from "@/db/client";
 import { userSettings, incomeEntries, type NewIncomeEntry } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -26,16 +26,18 @@ export async function GET(request: Request) {
             );
         }
 
-        // Find all users with autoSyncEnabled = true
-        const usersWithAutoSync = await db
-            .select({
-                userId: userSettings.userId,
-                calendarSettings: userSettings.calendarSettings,
-            })
-            .from(userSettings)
-            .where(
-                sql`${userSettings.calendarSettings}->>'autoSyncEnabled' = 'true'`
-            );
+        // Find all users with autoSyncEnabled = true (cross-user query requires admin bypass)
+        const usersWithAutoSync = await withAdminBypass(async (tx) => {
+            return await tx
+                .select({
+                    userId: userSettings.userId,
+                    calendarSettings: userSettings.calendarSettings,
+                })
+                .from(userSettings)
+                .where(
+                    sql`${userSettings.calendarSettings}->>'autoSyncEnabled' = 'true'`
+                );
+        });
 
         if (usersWithAutoSync.length === 0) {
             return NextResponse.json({
@@ -145,13 +147,18 @@ async function syncUserCalendar(
             });
 
             // Insert with deduplication
-            const result = await db
-                .insert(incomeEntries)
-                .values(rowsToInsert)
-                .onConflictDoNothing({
-                    target: [incomeEntries.userId, incomeEntries.calendarEventId],
-                })
-                .returning({ id: incomeEntries.id });
+            const result = await withUser(userId, async (tx: DbTx) => {
+                return await tx
+                    .insert(incomeEntries)
+                    .values(rowsToInsert)
+                    .onConflictDoNothing({
+                        target: [
+                            incomeEntries.userId,
+                            incomeEntries.calendarEventId,
+                        ],
+                    })
+                    .returning({ id: incomeEntries.id });
+            });
 
             return result.length;
         });
@@ -183,11 +190,13 @@ async function updateLastSyncTimestamp(
         lastAutoSync: new Date().toISOString(),
     };
 
-    await db
-        .update(userSettings)
-        .set({
-            calendarSettings: updatedSettings,
-            updatedAt: new Date(),
-        })
-        .where(eq(userSettings.userId, userId));
+    await withUser(userId, async (tx: DbTx) => {
+        await tx
+            .update(userSettings)
+            .set({
+                calendarSettings: updatedSettings,
+                updatedAt: new Date(),
+            })
+            .where(eq(userSettings.userId, userId));
+    });
 }

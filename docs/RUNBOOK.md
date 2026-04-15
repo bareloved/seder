@@ -197,10 +197,62 @@ Manual backup and restore are done through the Neon console or API. There are no
 
 ## Security
 
-- All data scoped by `userId` — Row-Level Security (RLS) enabled
+- All data scoped by `userId` — Row-Level Security (RLS) enforced at the database level on 7 user-scoped tables via the `withUser` / `withAdminBypass` transaction wrappers in `apps/web/db/client.ts` and policies in `apps/web/drizzle/0008_enable_rls.sql`. The app connects as the `seder_app` role (which has `NOBYPASSRLS`); `neondb_owner` retains `BYPASSRLS` and is reserved for migrations and emergency admin work.
 - API routes validate Bearer tokens via Better Auth middleware (`apps/web/app/api/v1/_lib/`)
 - Google OAuth tokens stored in `account` table, never exposed to client
 - iOS auth tokens in Keychain via `KeychainService`
 - Auth endpoints rate-limited via Upstash (10 req/60s per IP)
 - Email verification required for email/password sign-ups
 - Feedback endpoint HTML-escapes user input to prevent XSS
+
+## RLS On Fire — Emergency Rollback
+
+**Symptom:** After shipping the RLS retrofit, users report:
+- Empty income list where they had entries
+- "Save" button works but changes don't persist
+- New entries fail to create with a 500 error
+- A cron (push notifications, rolling jobs, backup) stops running
+- Sentry shows errors matching `"new row violates row-level security policy"`
+
+**Diagnosis:** A query path is running outside a `withUser` or `withAdminBypass` wrapper. The RLS policies are denying it because the `seder_app` role has `NOBYPASSRLS`.
+
+### Mitigation Level 1 — Env var flip (recommended, 30 seconds, no redeploy)
+
+1. Open Vercel → Seder project → Settings → Environment Variables.
+2. Change `DATABASE_URL` (Production) from the `seder_app` connection string to the `neondb_owner` connection string. The `neondb_owner` URL should be stored alongside as `DATABASE_URL_ADMIN` — copy its value into `DATABASE_URL`.
+3. Redeploy the current production deployment (or wait for the next one — the env var picks up on next cold start without a full redeploy).
+
+**Effect:** the app immediately starts connecting as `neondb_owner`, which has `BYPASSRLS`. Every policy is skipped → app-layer isolation only, same behavior as before the RLS retrofit. No data loss. The `withUser`/`withAdminBypass` wrappers in the code become no-ops.
+
+**When to use this:** any time a missing wrapper is suspected. This is the primary rollback.
+
+### Mitigation Level 2 — SQL rollback (removes RLS at the DB level)
+
+If the env var flip isn't enough (e.g., there's some other reason the `seder_app` role is compromised), disable RLS at the database level:
+
+```bash
+psql "$DATABASE_URL_ADMIN" -f apps/web/drizzle/rollback_rls.sql
+```
+
+Or paste `apps/web/drizzle/rollback_rls.sql` into the Neon SQL Editor and run.
+
+**Effect:** disables RLS on all 7 tables. Independent of which role is connecting. No data loss. Re-enabling later means re-running `0008_enable_rls.sql`.
+
+### After mitigation
+
+1. Check Sentry / Vercel logs for the specific failing route.
+2. Find the missed wrap: look for direct `db.select`/`db.insert`/`db.update`/`db.delete` calls against any of the 7 user-scoped tables (`income_entries`, `categories`, `clients`, `user_settings`, `device_tokens`, `dismissed_nudges`, `feedback`) or the `rolling_jobs` table. The coverage grep:
+   ```bash
+   grep -rnE "\bdb\.(select|insert|update|delete|transaction|execute)" apps/web --include="*.ts" --include="*.tsx" | grep -E "incomeEntries|categories|clients|userSettings|deviceTokens|dismissedNudges|feedback|rollingJobs"
+   ```
+3. Wrap the missed call site with `withUser(userId, async (tx) => { ... })` or `withAdminBypass(async (tx) => { ... })` as appropriate.
+4. Ship the fix via a normal PR.
+5. Flip `DATABASE_URL` back to the `seder_app` URL to re-enable enforcement.
+
+### Switching DATABASE_URL between roles
+
+Production Vercel env vars (both should be configured at all times):
+- `DATABASE_URL` — the active connection. Points at `seder_app` when RLS is enforced, `neondb_owner` when it's not.
+- `DATABASE_URL_ADMIN` — always the `neondb_owner` connection, kept as the rollback source.
+
+**When NOT to use rollback:** if the issue is an unrelated bug that happens to coincide with the RLS rollout, disabling RLS won't help and will just mask a second bug. Read the Sentry error first — a Postgres `"row-level security policy"` error confirms RLS is the cause. Anything else, investigate independently.

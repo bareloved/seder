@@ -1,7 +1,7 @@
 // apps/web/app/api/cron/rolling-jobs/route.ts
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { db } from "@/db/client";
+import { withAdminBypass } from "@/db/client";
 import { rollingJobs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { materializeRollingJob } from "@/lib/rollingJobs/materialize";
@@ -24,10 +24,15 @@ export async function GET(request: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const jobs = await db
-    .select()
-    .from(rollingJobs)
-    .where(eq(rollingJobs.isActive, true));
+  // Cross-user listing requires admin bypass. Each subsequent
+  // materializeRollingJob call opens its own withUser transaction
+  // scoped to that job's owner, so isolation is preserved per row.
+  const jobs = await withAdminBypass(async (tx) => {
+    return tx
+      .select()
+      .from(rollingJobs)
+      .where(eq(rollingJobs.isActive, true));
+  });
 
   let processed = 0;
   let inserted = 0;

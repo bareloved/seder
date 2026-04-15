@@ -1,6 +1,6 @@
 import { requireAuth } from "../../_lib/middleware";
 import { apiSuccess, apiError } from "../../_lib/response";
-import { db } from "@/db/client";
+import { withAdminBypass } from "@/db/client";
 import {
   incomeEntries,
   categories,
@@ -17,7 +17,7 @@ export async function DELETE() {
     const userId = await requireAuth();
 
     // Delete all user data in correct order (respecting foreign keys)
-    await db.transaction(async (tx) => {
+    await withAdminBypass(async (tx) => {
       // 1. Delete income entries (has FKs to categories, clients, user)
       await tx.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
 

@@ -4,7 +4,7 @@ import { requireAuth } from "../_lib/middleware";
 import { apiSuccess, apiError } from "../_lib/response";
 import { ValidationError } from "../_lib/errors";
 import { enforceUserRateLimit, feedbackRatelimit } from "@/lib/ratelimit";
-import { db } from "@/db/client";
+import { withUser } from "@/db/client";
 import { feedback } from "@/db/schema";
 
 const FeedbackInput = z.object({
@@ -34,11 +34,13 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    await db.insert(feedback).values({
-      userId,
-      message: parsed.message,
-      category: parsed.category,
-      platform: parsed.platform,
+    await withUser(userId, async (tx) => {
+      await tx.insert(feedback).values({
+        userId,
+        message: parsed.message,
+        category: parsed.category,
+        platform: parsed.platform,
+      });
     });
 
     return apiSuccess({ sent: true });
