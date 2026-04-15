@@ -12,6 +12,51 @@
 
 ---
 
+## ⚠️ Addendum (2026-04-15) — Role separation required
+
+**Found during Task 4 smoke test against a Neon dev branch:**
+
+Neon's default database role `neondb_owner` has `rolbypassrls = t` — the `BYPASSRLS` privilege. That privilege **overrides `FORCE ROW LEVEL SECURITY`**. Neon locks down `neondb_owner` so that even `ALTER ROLE neondb_owner NOBYPASSRLS` fails with "permission denied" — only Neon's internal `cloud_admin` role can modify it.
+
+**Effect:** the original spec's `FORCE ROW LEVEL SECURITY` mechanism does nothing on Neon. An app connecting as `neondb_owner` bypasses all policies regardless of `FORCE`. Verified empirically: applied `0008_enable_rls.sql`, then ran `SELECT COUNT(*) FROM income_entries` with no GUC set — got 432 real rows instead of the expected 0.
+
+**Fix:** create a new, minimally-privileged Postgres role `seder_app` that has `NOBYPASSRLS`, and have the app connect as `seder_app` instead of `neondb_owner`. `neondb_owner` retains `BYPASSRLS` and is still used for migrations and admin work (via a separate DATABASE_URL).
+
+Verified on the dev branch:
+- `seder_app` sees 0 rows on all 7 tables without a GUC (loud failure)
+- `seder_app` with `SET LOCAL app.user_id = 'X'` sees only user X's rows
+- `seder_app` with `SET LOCAL app.bypass_rls = 'on'` sees all rows
+- Cross-tenant INSERT is blocked by `WITH CHECK` (`ERROR: new row violates row-level security policy`)
+- Same-tenant INSERT succeeds
+
+**Role creation SQL (to run on each Neon branch that needs enforcement — dev, staging, prod):**
+
+```sql
+CREATE ROLE seder_app WITH LOGIN PASSWORD '<strong random>' NOBYPASSRLS NOSUPERUSER NOCREATEROLE NOCREATEDB;
+GRANT USAGE ON SCHEMA public TO seder_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO seder_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO seder_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO seder_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO seder_app;
+```
+
+`neondb_owner` has `CREATEROLE`, so this can be run via psql without needing Neon cloud_admin access.
+
+**Rollout implications:**
+1. Before deploying the code changes: create `seder_app` on production with a strong random password, build the connection string.
+2. Code + migration ship to production still using `neondb_owner` as DATABASE_URL. RLS is enabled by the migration but neondb_owner bypasses it → zero behavior change in prod. The deploy is safe even if wrappers are incomplete.
+3. **Enforcement toggle:** change `DATABASE_URL` in Vercel from the `neondb_owner` URL to the `seder_app` URL. Redeploy. RLS now actively enforces.
+4. **Rollback is an env var flip:** put the `neondb_owner` URL back in Vercel. Takes seconds. No SQL needed, no code redeploy needed — just one env var swap. This is simpler and faster than the SQL rollback script and should be the first resort.
+
+Keep `apps/web/drizzle/rollback_rls.sql` as a secondary rollback for the (unlikely) case where we want to fully disable RLS at the database level rather than just switch back to the bypass role.
+
+**New tasks added to the plan:**
+
+- **T17.5:** User temporarily points local `.env` at the `seder_app` test-branch URL to run the Task 17 smoke test with real enforcement. After the smoke test, they restore their original `.env`.
+- **T19.5:** Post-merge (not in the PR itself): create `seder_app` on the production database, add `SEDER_APP_DATABASE_URL` to Vercel, and flip `DATABASE_URL` to that value when ready to enforce.
+
+---
+
 ## File Structure
 
 **Created files:**
