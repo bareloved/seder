@@ -156,7 +156,11 @@ export type ExportOptions = {
     customEndDate?: string;
 };
 
-export async function exportUserData(options: ExportOptions) {
+type ExportResult =
+    | { success: true; csv: string }
+    | { success: false; error: string };
+
+export async function exportUserData(options: ExportOptions): Promise<ExportResult> {
     const session = await auth.api.getSession({
         headers: await headers(),
     });

@@ -52,7 +52,7 @@ export function DataSection() {
                 customEndDate: dateRange === "custom" ? customEndDate : undefined,
             });
 
-            if (result.success && result.csv) {
+            if (result.success) {
                 // Create and download the file
                 const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8" });
                 const url = URL.createObjectURL(blob);
