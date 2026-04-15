@@ -68,7 +68,10 @@ export async function withUser<T>(
   fn: (tx: DbTx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL app.user_id = ${userId}`);
+    // set_config(name, value, is_local=true) is equivalent to SET LOCAL
+    // but is a function call, so parameter binding works. Postgres rejects
+    // parameter placeholders in plain SET statements.
+    await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
     return fn(tx);
   });
 }
@@ -85,7 +88,7 @@ export async function withAdminBypass<T>(
   fn: (tx: DbTx) => Promise<T>
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL app.bypass_rls = 'on'`);
+    await tx.execute(sql`SELECT set_config('app.bypass_rls', 'on', true)`);
     return fn(tx);
   });
 }
