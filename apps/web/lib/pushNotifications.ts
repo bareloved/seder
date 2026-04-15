@@ -1,4 +1,4 @@
-import { db } from "@/db/client";
+import { withUser } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, importPKCS8 } from "jose";
@@ -125,44 +125,46 @@ export async function sendPushToUser(
   body: string,
   data?: Record<string, unknown>
 ) {
-  const tokens = await db
-    .select()
-    .from(deviceTokens)
-    .where(eq(deviceTokens.userId, userId));
+  return withUser(userId, async (tx) => {
+    const tokens = await tx
+      .select()
+      .from(deviceTokens)
+      .where(eq(deviceTokens.userId, userId));
 
-  console.log(
-    `[PUSH] Sending to user=${userId.slice(0, 8)}... tokens=${tokens.length}`
-  );
+    console.log(
+      `[PUSH] Sending to user=${userId.slice(0, 8)}... tokens=${tokens.length}`
+    );
 
-  if (tokens.length === 0) return;
+    if (tokens.length === 0) return;
 
-  const jwt = await getApnsJwt();
+    const jwt = await getApnsJwt();
 
-  const apnsPayload = {
-    aps: {
-      alert: { title, body },
-      sound: "default",
-      "content-available": 1,
-    },
-    ...data,
-  };
+    const apnsPayload = {
+      aps: {
+        alert: { title, body },
+        sound: "default",
+        "content-available": 1,
+      },
+      ...data,
+    };
 
-  const results = await Promise.allSettled(
-    tokens.map(async (t) => {
-      const result = await sendViaHttp2(t.token, jwt, apnsPayload);
+    const results = await Promise.allSettled(
+      tokens.map(async (t) => {
+        const result = await sendViaHttp2(t.token, jwt, apnsPayload);
 
-      if (result.status === 410) {
-        await db.delete(deviceTokens).where(eq(deviceTokens.token, t.token));
-        console.log(`[PUSH] Removed stale token=${t.token.slice(0, 10)}...`);
+        if (result.status === 410) {
+          await tx.delete(deviceTokens).where(eq(deviceTokens.token, t.token));
+          console.log(`[PUSH] Removed stale token=${t.token.slice(0, 10)}...`);
+        }
+
+        return result;
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === "rejected") {
+        console.error(`[PUSH] Promise rejected:`, r.reason);
       }
-
-      return result;
-    })
-  );
-
-  for (const r of results) {
-    if (r.status === "rejected") {
-      console.error(`[PUSH] Promise rejected:`, r.reason);
     }
-  }
+  });
 }
