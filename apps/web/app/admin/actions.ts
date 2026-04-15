@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { db } from "@/db/client";
+import { db, withAdminBypass } from "@/db/client";
 import { feedback, user, siteConfig, session, account, categories, clients, incomeEntries, userSettings, deviceTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail, escapeHtml } from "@/lib/email";
@@ -120,29 +120,35 @@ export async function deleteUser(userId: string) {
   }
 
   // Delete from tables without cascade (order matters for FK constraints)
-  await db.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
-  await db.delete(categories).where(eq(categories.userId, userId));
-  await db.delete(clients).where(eq(clients.userId, userId));
-  await db.delete(userSettings).where(eq(userSettings.userId, userId));
-  await db.delete(session).where(eq(session.userId, userId));
-  await db.delete(account).where(eq(account.userId, userId));
-  // Tables with onDelete cascade (feedback, deviceTokens, dismissedNudges) will auto-delete
-  await db.delete(user).where(eq(user.id, userId));
+  await withAdminBypass(async (tx) => {
+    await tx.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
+    await tx.delete(categories).where(eq(categories.userId, userId));
+    await tx.delete(clients).where(eq(clients.userId, userId));
+    await tx.delete(userSettings).where(eq(userSettings.userId, userId));
+    await tx.delete(session).where(eq(session.userId, userId));
+    await tx.delete(account).where(eq(account.userId, userId));
+    // Tables with onDelete cascade (feedback, deviceTokens, dismissedNudges) will auto-delete
+    await tx.delete(user).where(eq(user.id, userId));
+  });
 }
 
 // ===== FEEDBACK MANAGEMENT =====
 
 export async function deleteFeedback(feedbackId: string) {
   await requireAdmin();
-  await db.delete(feedback).where(eq(feedback.id, feedbackId));
+  await withAdminBypass(async (tx) => {
+    await tx.delete(feedback).where(eq(feedback.id, feedbackId));
+  });
 }
 
 export async function setFeedbackStatus(feedbackId: string, status: "unread" | "read" | "in_progress" | "done" | "replied") {
   await requireAdmin();
-  await db
-    .update(feedback)
-    .set({ status })
-    .where(eq(feedback.id, feedbackId));
+  await withAdminBypass(async (tx) => {
+    await tx
+      .update(feedback)
+      .set({ status })
+      .where(eq(feedback.id, feedbackId));
+  });
 }
 
 export async function replyToFeedback(feedbackId: string, reply: string) {
@@ -153,31 +159,36 @@ export async function replyToFeedback(feedbackId: string, reply: string) {
   }
 
   // Get the feedback and user info
-  const [fb] = await db
-    .select({
-      userId: feedback.userId,
-      message: feedback.message,
-      platform: feedback.platform,
-      userEmail: user.email,
-      userName: user.name,
-    })
-    .from(feedback)
-    .leftJoin(user, eq(feedback.userId, user.id))
-    .where(eq(feedback.id, feedbackId));
+  const fb = await withAdminBypass(async (tx) => {
+    const [row] = await tx
+      .select({
+        userId: feedback.userId,
+        message: feedback.message,
+        platform: feedback.platform,
+        userEmail: user.email,
+        userName: user.name,
+      })
+      .from(feedback)
+      .leftJoin(user, eq(feedback.userId, user.id))
+      .where(eq(feedback.id, feedbackId));
+    return row;
+  });
 
   if (!fb || !fb.userEmail) {
     throw new Error("Feedback not found");
   }
 
   // Update feedback status
-  await db
-    .update(feedback)
-    .set({
-      status: "replied",
-      adminReply: reply.trim(),
-      repliedAt: new Date(),
-    })
-    .where(eq(feedback.id, feedbackId));
+  await withAdminBypass(async (tx) => {
+    await tx
+      .update(feedback)
+      .set({
+        status: "replied",
+        adminReply: reply.trim(),
+        repliedAt: new Date(),
+      })
+      .where(eq(feedback.id, feedbackId));
+  });
 
   // Send reply email to user
   const safeReply = escapeHtml(reply);
@@ -270,10 +281,12 @@ export async function sendTestPush(preset: string | null, customTitle?: string, 
     throw new Error("משתמש הבדיקה לא נמצא");
   }
 
-  const tokens = await db
-    .select()
-    .from(deviceTokens)
-    .where(eq(deviceTokens.userId, testUser.id));
+  const tokens = await withAdminBypass(async (tx) =>
+    tx
+      .select()
+      .from(deviceTokens)
+      .where(eq(deviceTokens.userId, testUser.id))
+  );
 
   if (tokens.length === 0) {
     throw new Error("אין מכשיר רשום לקבלת התראות");
