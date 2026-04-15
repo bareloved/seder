@@ -1626,11 +1626,11 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getNudgesForUser(userId: string): Promise<Nudge[]> {
-  return withUser(userId, async () => {
+  return withUser(userId, async (tx) => {
     const [entries, dismissed, settings] = await Promise.all([
-      fetchNudgeableEntries(userId),
-      fetchDismissedNudges(userId),
-      getNudgeSettings(userId),
+      fetchNudgeableEntries(userId, tx),
+      fetchDismissedNudges(userId, tx),
+      getNudgeSettings(userId, tx),
     ]);
     return computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
   });
