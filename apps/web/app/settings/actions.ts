@@ -1,6 +1,6 @@
 "use server";
 
-import { db, withUser } from "@/db/client";
+import { withUser, withAdminBypass } from "@/db/client";
 import { userSettings, incomeEntries, categories, clients, session, account, user } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -369,8 +369,12 @@ export async function deleteUserAccount() {
     const userId = currentSession.user.id;
 
     try {
-        // Delete all user data in correct order (respecting foreign keys)
-        await db.transaction(async (tx) => {
+        // Delete all user data in correct order (respecting foreign keys).
+        // Use withAdminBypass because this spans user-scoped tables AND
+        // Better Auth tables (session, account, user). The eq(X.userId, userId)
+        // filters on each delete are critical — with bypass on, they're the
+        // only thing scoping the deletes to the target user.
+        await withAdminBypass(async (tx) => {
             // 1. Delete income entries (has FKs to categories, clients, user)
             await tx.delete(incomeEntries).where(eq(incomeEntries.userId, userId));
 
