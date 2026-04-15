@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db/client";
+import { db, withUser } from "@/db/client";
 import { userSettings, incomeEntries, categories, clients, session, account, user } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -20,31 +20,35 @@ export async function updateUserSettings(data: any) {
         return { success: false, error: "Unauthorized" };
     }
 
+    const userId = session.user.id;
+
     try {
-        const existingSettings = await db.select().from(userSettings).where(eq(userSettings.userId, session.user.id));
+        return await withUser(userId, async (tx) => {
+            const existingSettings = await tx.select().from(userSettings).where(eq(userSettings.userId, userId));
 
-        if (existingSettings.length > 0) {
-            await db.update(userSettings)
-                .set({
-                    language: data.language,
-                    timezone: data.timezone,
-                    defaultCurrency: data.defaultCurrency,
-                    calendarSettings: data.calendarSettings, // Careful with merging vs overwriting
-                    updatedAt: new Date()
-                })
-                .where(eq(userSettings.userId, session.user.id));
-        } else {
-            await db.insert(userSettings).values({
-                userId: session.user.id,
-                language: data.language || "he",
-                timezone: data.timezone || "Asia/Jerusalem",
-                defaultCurrency: data.defaultCurrency || "ILS",
-                calendarSettings: data.calendarSettings || {},
-            });
-        }
+            if (existingSettings.length > 0) {
+                await tx.update(userSettings)
+                    .set({
+                        language: data.language,
+                        timezone: data.timezone,
+                        defaultCurrency: data.defaultCurrency,
+                        calendarSettings: data.calendarSettings, // Careful with merging vs overwriting
+                        updatedAt: new Date()
+                    })
+                    .where(eq(userSettings.userId, userId));
+            } else {
+                await tx.insert(userSettings).values({
+                    userId: userId,
+                    language: data.language || "he",
+                    timezone: data.timezone || "Asia/Jerusalem",
+                    defaultCurrency: data.defaultCurrency || "ILS",
+                    calendarSettings: data.calendarSettings || {},
+                });
+            }
 
-        revalidatePath("/settings");
-        return { success: true };
+            revalidatePath("/settings");
+            return { success: true };
+        });
     } catch (error) {
         console.error("Failed to update settings:", error);
         return { success: false, error: "Failed to update settings" };
@@ -69,15 +73,18 @@ export async function updateNudgeSettings(data: {
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) throw new Error("Unauthorized");
+  const userId = session.user.id;
 
-  await db
-    .update(userSettings)
-    .set({
-      nudgeWeeklyDay: data.nudgeWeeklyDay,
-      nudgePushEnabled: data.nudgePushEnabled,
-      updatedAt: new Date(),
-    })
-    .where(eq(userSettings.userId, session.user.id));
+  await withUser(userId, async (tx) => {
+    await tx
+      .update(userSettings)
+      .set({
+        nudgeWeeklyDay: data.nudgeWeeklyDay,
+        nudgePushEnabled: data.nudgePushEnabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(userSettings.userId, userId));
+  });
 
   revalidatePath("/settings");
 }
@@ -97,38 +104,42 @@ export async function updateCalendarSettings(data: {
         return { success: false, error: "Unauthorized" };
     }
 
+    const userId = session.user.id;
+
     try {
-        const existingSettings = await db
-            .select()
-            .from(userSettings)
-            .where(eq(userSettings.userId, session.user.id));
+        return await withUser(userId, async (tx) => {
+            const existingSettings = await tx
+                .select()
+                .from(userSettings)
+                .where(eq(userSettings.userId, userId));
 
-        const currentCalendarSettings = existingSettings[0]?.calendarSettings || {};
+            const currentCalendarSettings = existingSettings[0]?.calendarSettings || {};
 
-        // Merge new settings with existing ones
-        const mergedCalendarSettings = {
-            ...currentCalendarSettings,
-            ...(data.autoSyncEnabled !== undefined && { autoSyncEnabled: data.autoSyncEnabled }),
-            ...(data.selectedCalendarIds !== undefined && { selectedCalendarIds: data.selectedCalendarIds }),
-            ...(data.rules !== undefined && { rules: data.rules }),
-        };
+            // Merge new settings with existing ones
+            const mergedCalendarSettings = {
+                ...currentCalendarSettings,
+                ...(data.autoSyncEnabled !== undefined && { autoSyncEnabled: data.autoSyncEnabled }),
+                ...(data.selectedCalendarIds !== undefined && { selectedCalendarIds: data.selectedCalendarIds }),
+                ...(data.rules !== undefined && { rules: data.rules }),
+            };
 
-        if (existingSettings.length > 0) {
-            await db.update(userSettings)
-                .set({
+            if (existingSettings.length > 0) {
+                await tx.update(userSettings)
+                    .set({
+                        calendarSettings: mergedCalendarSettings,
+                        updatedAt: new Date()
+                    })
+                    .where(eq(userSettings.userId, userId));
+            } else {
+                await tx.insert(userSettings).values({
+                    userId: userId,
                     calendarSettings: mergedCalendarSettings,
-                    updatedAt: new Date()
-                })
-                .where(eq(userSettings.userId, session.user.id));
-        } else {
-            await db.insert(userSettings).values({
-                userId: session.user.id,
-                calendarSettings: mergedCalendarSettings,
-            });
-        }
+                });
+            }
 
-        revalidatePath("/settings");
-        return { success: true };
+            revalidatePath("/settings");
+            return { success: true };
+        });
     } catch (error) {
         console.error("Failed to update calendar settings:", error);
         return { success: false, error: "Failed to update calendar settings" };
@@ -154,96 +165,100 @@ export async function exportUserData(options: ExportOptions) {
         return { success: false, error: "Unauthorized" };
     }
 
+    const userId = session.user.id;
+
     try {
-        const csvParts: string[] = [];
+        return await withUser(userId, async (tx) => {
+            const csvParts: string[] = [];
 
-        // Export income entries
-        if (options.includeIncomeEntries) {
-            let dateConditions = [eq(incomeEntries.userId, session.user.id)];
+            // Export income entries
+            if (options.includeIncomeEntries) {
+                let dateConditions = [eq(incomeEntries.userId, userId)];
 
-            // Apply date filters
-            if (options.dateRange === "thisYear") {
-                const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
-                dateConditions.push(gte(incomeEntries.date, startOfYear));
-            } else if (options.dateRange === "thisMonth") {
-                const now = new Date();
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-                dateConditions.push(gte(incomeEntries.date, startOfMonth));
-            } else if (options.dateRange === "custom" && options.customStartDate && options.customEndDate) {
-                dateConditions.push(gte(incomeEntries.date, options.customStartDate));
-                dateConditions.push(lte(incomeEntries.date, options.customEndDate));
+                // Apply date filters
+                if (options.dateRange === "thisYear") {
+                    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
+                    dateConditions.push(gte(incomeEntries.date, startOfYear));
+                } else if (options.dateRange === "thisMonth") {
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+                    dateConditions.push(gte(incomeEntries.date, startOfMonth));
+                } else if (options.dateRange === "custom" && options.customStartDate && options.customEndDate) {
+                    dateConditions.push(gte(incomeEntries.date, options.customStartDate));
+                    dateConditions.push(lte(incomeEntries.date, options.customEndDate));
+                }
+
+                const entries = await tx
+                    .select()
+                    .from(incomeEntries)
+                    .where(and(...dateConditions));
+
+                if (entries.length > 0) {
+                    const incomeHeaders = [
+                        "תאריך",
+                        "תיאור",
+                        "לקוח",
+                        "סכום ברוטו",
+                        "סכום ששולם",
+                        "אחוז מעמ",
+                        "כולל מעמ",
+                        "סטטוס חשבונית",
+                        "סטטוס תשלום",
+                        "הערות",
+                    ];
+                    const incomeRows = entries.map((e) => [
+                        e.date,
+                        `"${e.description.replace(/"/g, '""')}"`,
+                        `"${e.clientName.replace(/"/g, '""')}"`,
+                        e.amountGross,
+                        e.amountPaid,
+                        e.vatRate,
+                        e.includesVat ? "כן" : "לא",
+                        e.invoiceStatus,
+                        e.paymentStatus,
+                        `"${(e.notes || "").replace(/"/g, '""')}"`,
+                    ]);
+
+                    csvParts.push("# הכנסות");
+                    csvParts.push(incomeHeaders.join(","));
+                    csvParts.push(...incomeRows.map((r) => r.join(",")));
+                }
             }
 
-            const entries = await db
-                .select()
-                .from(incomeEntries)
-                .where(and(...dateConditions));
+            // Export categories
+            if (options.includeCategories) {
+                const userCategories = await tx
+                    .select()
+                    .from(categories)
+                    .where(eq(categories.userId, userId));
 
-            if (entries.length > 0) {
-                const incomeHeaders = [
-                    "תאריך",
-                    "תיאור",
-                    "לקוח",
-                    "סכום ברוטו",
-                    "סכום ששולם",
-                    "אחוז מעמ",
-                    "כולל מעמ",
-                    "סטטוס חשבונית",
-                    "סטטוס תשלום",
-                    "הערות",
-                ];
-                const incomeRows = entries.map((e) => [
-                    e.date,
-                    `"${e.description.replace(/"/g, '""')}"`,
-                    `"${e.clientName.replace(/"/g, '""')}"`,
-                    e.amountGross,
-                    e.amountPaid,
-                    e.vatRate,
-                    e.includesVat ? "כן" : "לא",
-                    e.invoiceStatus,
-                    e.paymentStatus,
-                    `"${(e.notes || "").replace(/"/g, '""')}"`,
-                ]);
+                if (userCategories.length > 0) {
+                    if (csvParts.length > 0) csvParts.push(""); // Empty line separator
 
-                csvParts.push("# הכנסות");
-                csvParts.push(incomeHeaders.join(","));
-                csvParts.push(...incomeRows.map((r) => r.join(",")));
+                    const categoryHeaders = ["שם", "צבע", "אייקון", "מאורכב"];
+                    const categoryRows = userCategories.map((c) => [
+                        `"${c.name.replace(/"/g, '""')}"`,
+                        c.color,
+                        c.icon,
+                        c.isArchived ? "כן" : "לא",
+                    ]);
+
+                    csvParts.push("# קטגוריות");
+                    csvParts.push(categoryHeaders.join(","));
+                    csvParts.push(...categoryRows.map((r) => r.join(",")));
+                }
             }
-        }
 
-        // Export categories
-        if (options.includeCategories) {
-            const userCategories = await db
-                .select()
-                .from(categories)
-                .where(eq(categories.userId, session.user.id));
-
-            if (userCategories.length > 0) {
-                if (csvParts.length > 0) csvParts.push(""); // Empty line separator
-
-                const categoryHeaders = ["שם", "צבע", "אייקון", "מאורכב"];
-                const categoryRows = userCategories.map((c) => [
-                    `"${c.name.replace(/"/g, '""')}"`,
-                    c.color,
-                    c.icon,
-                    c.isArchived ? "כן" : "לא",
-                ]);
-
-                csvParts.push("# קטגוריות");
-                csvParts.push(categoryHeaders.join(","));
-                csvParts.push(...categoryRows.map((r) => r.join(",")));
+            if (csvParts.length === 0) {
+                return { success: false, error: "אין נתונים לייצוא" };
             }
-        }
 
-        if (csvParts.length === 0) {
-            return { success: false, error: "אין נתונים לייצוא" };
-        }
+            // Add BOM for Excel Hebrew support
+            const bom = "\uFEFF";
+            const csvContent = bom + csvParts.join("\n");
 
-        // Add BOM for Excel Hebrew support
-        const bom = "\uFEFF";
-        const csvContent = bom + csvParts.join("\n");
-
-        return { success: true, csv: csvContent };
+            return { success: true, csv: csvContent };
+        });
     } catch (error) {
         console.error("Export failed:", error);
         return { success: false, error: "הייצוא נכשל" };
@@ -261,30 +276,34 @@ export async function completeOnboarding() {
         return { success: false, error: "Unauthorized" };
     }
 
-    try {
-        const existingSettings = await db
-            .select()
-            .from(userSettings)
-            .where(eq(userSettings.userId, session.user.id));
+    const userId = session.user.id;
 
-        if (existingSettings.length > 0) {
-            await db.update(userSettings)
-                .set({
+    try {
+        return await withUser(userId, async (tx) => {
+            const existingSettings = await tx
+                .select()
+                .from(userSettings)
+                .where(eq(userSettings.userId, userId));
+
+            if (existingSettings.length > 0) {
+                await tx.update(userSettings)
+                    .set({
+                        onboardingCompleted: true,
+                        onboardingCompletedAt: new Date(),
+                        updatedAt: new Date()
+                    })
+                    .where(eq(userSettings.userId, userId));
+            } else {
+                await tx.insert(userSettings).values({
+                    userId: userId,
                     onboardingCompleted: true,
                     onboardingCompletedAt: new Date(),
-                    updatedAt: new Date()
-                })
-                .where(eq(userSettings.userId, session.user.id));
-        } else {
-            await db.insert(userSettings).values({
-                userId: session.user.id,
-                onboardingCompleted: true,
-                onboardingCompletedAt: new Date(),
-            });
-        }
+                });
+            }
 
-        revalidatePath("/income");
-        return { success: true };
+            revalidatePath("/income");
+            return { success: true };
+        });
     } catch (error) {
         console.error("Failed to complete onboarding:", error);
         return { success: false, error: "Failed to complete onboarding" };
@@ -324,12 +343,16 @@ export async function hasCredentialAccount() {
         return false;
     }
 
-    const accounts = await db
-        .select({ providerId: account.providerId })
-        .from(account)
-        .where(eq(account.userId, currentSession.user.id));
+    const userId = currentSession.user.id;
 
-    return accounts.some((a) => a.providerId === "credential");
+    return await withUser(userId, async (tx) => {
+        const accounts = await tx
+            .select({ providerId: account.providerId })
+            .from(account)
+            .where(eq(account.userId, userId));
+
+        return accounts.some((a) => a.providerId === "credential");
+    });
 }
 
 // --- Danger Actions ---
