@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer, emailOTP } from "better-auth/plugins";
 import { OAuth2Client } from "google-auth-library";
-import { db } from "@/db/client";
+import { db, withUser } from "@/db/client";
 import * as schema from "@/db/schema";
 import {
   sendEmail,
@@ -106,12 +106,14 @@ export const auth = betterAuth({
             { name: "קטגוריה 3", color: "slate", icon: "Circle", displayOrder: "3" },
           ];
 
-          await db.insert(schema.categories).values(
-            defaults.map((cat) => ({
-              userId: user.id,
-              ...cat,
-            }))
-          );
+          await withUser(user.id, async (tx) => {
+            await tx.insert(schema.categories).values(
+              defaults.map((cat) => ({
+                userId: user.id,
+                ...cat,
+              }))
+            );
+          });
 
           // Google OAuth users have emailVerified=true at creation — send welcome email immediately
           if (user.emailVerified) {
