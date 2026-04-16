@@ -46,16 +46,35 @@ nonisolated enum StringOrInt: Codable, Sendable {
 
 nonisolated struct NudgePushPreferences: Codable, Sendable {
     var overdue: Bool
+    var day_after_gig: Bool
     var weekly_uninvoiced: Bool
     var calendar_sync: Bool
     var unpaid_check: Bool
 
     static let defaults = NudgePushPreferences(
         overdue: true,
+        day_after_gig: true,
         weekly_uninvoiced: true,
         calendar_sync: true,
         unpaid_check: true
     )
+
+    init(overdue: Bool = true, day_after_gig: Bool = true, weekly_uninvoiced: Bool = true, calendar_sync: Bool = true, unpaid_check: Bool = true) {
+        self.overdue = overdue
+        self.day_after_gig = day_after_gig
+        self.weekly_uninvoiced = weekly_uninvoiced
+        self.calendar_sync = calendar_sync
+        self.unpaid_check = unpaid_check
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        overdue = try container.decodeIfPresent(Bool.self, forKey: .overdue) ?? true
+        day_after_gig = try container.decodeIfPresent(Bool.self, forKey: .day_after_gig) ?? true
+        weekly_uninvoiced = try container.decodeIfPresent(Bool.self, forKey: .weekly_uninvoiced) ?? true
+        calendar_sync = try container.decodeIfPresent(Bool.self, forKey: .calendar_sync) ?? true
+        unpaid_check = try container.decodeIfPresent(Bool.self, forKey: .unpaid_check) ?? true
+    }
 }
 
 nonisolated struct UpdateSettingsRequest: Encodable, Sendable {

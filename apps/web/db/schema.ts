@@ -222,6 +222,7 @@ export const userSettings = pgTable("user_settings", {
   nudgeWeeklyDay: integer("nudge_weekly_day").default(5), // 0=Sun, 5=Fri
   nudgePushEnabled: json("nudge_push_enabled").$type<{
     overdue: boolean;
+    day_after_gig: boolean;
     weekly_uninvoiced: boolean;
     calendar_sync: boolean;
     unpaid_check: boolean;
