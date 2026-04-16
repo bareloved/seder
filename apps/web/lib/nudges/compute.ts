@@ -27,9 +27,10 @@ interface DismissedState {
 
 const PRIORITY: Record<NudgeType, number> = {
   overdue: 1,
-  weekly_uninvoiced: 2,
-  calendar_sync: 3,
-  unpaid_check: 4,
+  day_after_gig: 2,
+  weekly_uninvoiced: 3,
+  calendar_sync: 4,
+  unpaid_check: 5,
 };
 
 function daysBetween(dateStr: string | Date, now: Date): number {
@@ -108,6 +109,40 @@ function computeOverdue(entries: NudgeEntry[], dismissed: DismissedState[], now:
   return nudges;
 }
 
+function computeDayAfterGig(entries: NudgeEntry[], dismissed: DismissedState[], now: Date): Nudge[] {
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+
+  const nudges: Nudge[] = [];
+
+  for (const entry of entries) {
+    if (entry.invoiceStatus !== "draft") continue;
+    if (entry.date !== yesterdayStr) continue;
+    // Only manually-created entries (not rolling jobs)
+    if (entry.rollingJobId) continue;
+
+    if (!isDismissed(dismissed, "day_after_gig", entry.id, null, now)) {
+      nudges.push({
+        id: `day_after_gig:${entry.id}`,
+        nudgeType: "day_after_gig",
+        entryId: entry.id,
+        periodKey: null,
+        priority: PRIORITY.day_after_gig,
+        title: "שלחת חשבונית על אתמול?",
+        description: entry.description,
+        actionType: "mark_sent",
+        entryDate: entry.date,
+        entryDescription: entry.description,
+        clientName: entry.clientName,
+        amountGross: Number(entry.amountGross),
+      });
+    }
+  }
+
+  return nudges;
+}
+
 function computeWeeklyUninvoiced(
   entries: NudgeEntry[],
   dismissed: DismissedState[],
@@ -166,6 +201,7 @@ export function computeNudges(
 
   const nudges = [
     ...computeOverdue(filtered, dismissed, now),
+    ...computeDayAfterGig(filtered, dismissed, now),
     ...computeWeeklyUninvoiced(filtered, dismissed, now, weeklyDay),
   ];
 

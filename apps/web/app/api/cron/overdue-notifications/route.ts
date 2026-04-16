@@ -11,6 +11,7 @@ const MAX_PUSH_PER_USER = 2;
 
 const DEDUP_MS: Record<NudgeType, number> = {
   overdue: 7 * 24 * 60 * 60 * 1000,
+  day_after_gig: 1 * 24 * 60 * 60 * 1000,
   weekly_uninvoiced: 7 * 24 * 60 * 60 * 1000,
   calendar_sync: 28 * 24 * 60 * 60 * 1000,
   unpaid_check: 28 * 24 * 60 * 60 * 1000,
@@ -68,7 +69,39 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // --- 2. Weekly uninvoiced (user's chosen day) ---
+      // --- 2. Day after gig (daily) ---
+      if (settings.nudgePushEnabled.day_after_gig) {
+        if (sent < MAX_PUSH_PER_USER) {
+          const [entries, dismissed] = await Promise.all([
+            fetchNudgeableEntries(u.id),
+            fetchDismissedNudges(u.id),
+          ]);
+
+          const nudges = computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
+          const dayAfterNudges = nudges.filter((n) => n.nudgeType === "day_after_gig");
+
+          for (const n of dayAfterNudges) {
+            if (sent >= MAX_PUSH_PER_USER) break;
+
+            const alreadyPushed = dismissed.some(
+              (d) => d.nudgeType === "day_after_gig" && d.entryId === n.entryId &&
+                d.lastPushedAt && now.getTime() - new Date(d.lastPushedAt).getTime() < DEDUP_MS.day_after_gig
+            );
+            if (alreadyPushed) continue;
+
+            await sendPushToUser(u.id,
+              "שלחת חשבונית על אתמול?",
+              n.entryDescription || n.description,
+              { type: "nudge", nudgeType: "day_after_gig" }
+            );
+            await markNudgePushed(u.id, "day_after_gig", n.entryId, null);
+            sent++;
+            notificationsSent++;
+          }
+        }
+      }
+
+      // --- 3. Weekly uninvoiced (user's chosen day) ---
       if (settings.nudgePushEnabled.weekly_uninvoiced && dayOfWeek === settings.nudgeWeeklyDay) {
         if (sent < MAX_PUSH_PER_USER) {
           const [entries, dismissed] = await Promise.all([
@@ -99,7 +132,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // --- 3. Calendar sync (1st of month) ---
+      // --- 4. Calendar sync (1st of month) ---
       if (settings.nudgePushEnabled.calendar_sync && isFirstOfMonth) {
         if (sent < MAX_PUSH_PER_USER) {
           const dismissed = await fetchDismissedNudges(u.id);
@@ -121,7 +154,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // --- 4. Unpaid check (last day of month) ---
+      // --- 5. Unpaid check (last day of month) ---
       if (settings.nudgePushEnabled.unpaid_check && isLastOfMonth) {
         if (sent < MAX_PUSH_PER_USER) {
           const dismissed = await fetchDismissedNudges(u.id);

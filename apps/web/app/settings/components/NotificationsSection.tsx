@@ -18,6 +18,7 @@ interface NotificationsSectionProps {
 
 const pushLabels: Record<keyof NudgePushPreferences, string> = {
   overdue: "חשבוניות שלא שולמו (30+ יום)",
+  day_after_gig: "תזכורת יום אחרי עבודה",
   weekly_uninvoiced: "תזכורת שבועית לחשבוניות",
   calendar_sync: "סנכרון יומן (תחילת חודש)",
   unpaid_check: "בדיקת תשלומים (סוף חודש)",

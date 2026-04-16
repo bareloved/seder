@@ -1,5 +1,6 @@
 export const nudgeTypes = [
   "overdue",
+  "day_after_gig",
   "weekly_uninvoiced",
   "calendar_sync",
   "unpaid_check",
@@ -25,6 +26,7 @@ export interface Nudge {
 
 export interface NudgePushPreferences {
   overdue: boolean;
+  day_after_gig: boolean;
   weekly_uninvoiced: boolean;
   calendar_sync: boolean;
   unpaid_check: boolean;
@@ -32,6 +34,7 @@ export interface NudgePushPreferences {
 
 export const DEFAULT_NUDGE_PUSH_PREFS: NudgePushPreferences = {
   overdue: true,
+  day_after_gig: true,
   weekly_uninvoiced: true,
   calendar_sync: true,
   unpaid_check: true,

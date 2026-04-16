@@ -253,8 +253,8 @@ export async function getEnhancedTrends({
       }
     }
 
-    const results = await Promise.all(
-      months.map(async ({ year, month }) => {
+    const results = [];
+    for (const { year, month } of months) {
         const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
         const endDate =
           month === 12
@@ -287,9 +287,8 @@ export async function getEnhancedTrends({
           status = unpaidCount > 0 ? "has-unpaid" : "all-paid";
         }
 
-        return { month, year, status, totalGross, totalPaid, jobsCount };
-      })
-    );
+        results.push({ month, year, status, totalGross, totalPaid, jobsCount });
+    }
 
     return results;
   });
@@ -299,8 +298,8 @@ export async function getYearTrends({ year, userId }: { year: number; userId: st
   return withUser(userId, async (tx) => {
     const months = Array.from({ length: 12 }, (_, i) => ({ year, month: i + 1 }));
 
-    const results = await Promise.all(
-      months.map(async ({ year: y, month }) => {
+    const results = [];
+    for (const { year: y, month } of months) {
         const startDate = `${y}-${String(month).padStart(2, "0")}-01`;
         const endDate =
           month === 12
@@ -333,9 +332,8 @@ export async function getYearTrends({ year, userId }: { year: number; userId: st
           status = unpaidCount > 0 ? "has-unpaid" : "all-paid";
         }
 
-        return { month, year: y, status, totalGross, totalPaid, jobsCount };
-      })
-    );
+        results.push({ month, year: y, status, totalGross, totalPaid, jobsCount });
+    }
 
     return results;
   });
@@ -731,16 +729,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
       const prevYear = m === 1 ? y - 1 : y;
       const { startDate: prevStart, endDate: prevEnd } = getMonthBounds(prevYear, prevMonth);
 
-      const [
-        monthStatsResult,
-        vatTotalResult,
-        outstandingStatsResult,
-        readyToInvoiceStatsResult,
-        overdueStatsResult,
-        prevMonthStatsResult
-      ] = await Promise.all([
-        // 1. Current Month Aggregates
-        tx
+      // Run queries sequentially — a Drizzle tx is a single pg Client,
+      // and pg@8 deprecated concurrent queries on the same client.
+      const monthStatsResult = await tx
           .select({
             totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
             totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
@@ -753,10 +744,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               gte(incomeEntries.date, startDate),
               lte(incomeEntries.date, endDate)
             )
-          ),
+          );
 
-        // 2. VAT Total
-        tx
+      const vatTotalResult = await tx
           .select({
             vatTotal: sql<string>`sum(
               CASE
@@ -774,10 +764,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               gte(incomeEntries.date, startDate),
               lte(incomeEntries.date, endDate)
             )
-          ),
+          );
 
-        // 3. Outstanding (scoped to current month)
-        tx
+      const outstandingStatsResult = await tx
           .select({
             totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
             totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
@@ -792,10 +781,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               eq(incomeEntries.invoiceStatus, "sent"),
               sql`${incomeEntries.paymentStatus} != 'paid'`
             )
-          ),
+          );
 
-        // 4. Ready to Invoice (scoped to current month)
-        tx
+      const readyToInvoiceStatsResult = await tx
           .select({
             total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
             count: count(),
@@ -809,10 +797,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               eq(incomeEntries.invoiceStatus, "draft"),
               lt(incomeEntries.date, today)
             )
-          ),
+          );
 
-        // 5. Overdue Count (scoped to current month)
-        tx
+      const overdueStatsResult = await tx
           .select({ count: count() })
           .from(incomeEntries)
           .where(
@@ -824,10 +811,9 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               sql`${incomeEntries.paymentStatus} != 'paid'`,
               sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
             )
-          ),
+          );
 
-        // 6. Previous Month Paid
-        tx
+      const prevMonthStatsResult = await tx
           .select({
             totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
           })
@@ -839,8 +825,7 @@ export async function getIncomeAggregatesForMonth({ year, month, userId }: Month
               lte(incomeEntries.date, prevEnd),
               eq(incomeEntries.paymentStatus, "paid")
             )
-          )
-      ]);
+          );
 
       const monthStats = monthStatsResult[0];
       const outstandingStats = outstandingStatsResult[0];
@@ -903,16 +888,8 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
       ? `${year - 1}-${String(compMonth + 1).padStart(2, "0")}-01`
       : `${year}-01-01`;
 
-    const [
-      yearStatsResult,
-      vatTotalResult,
-      outstandingStatsResult,
-      readyToInvoiceStatsResult,
-      overdueStatsResult,
-      prevPeriodStatsResult
-    ] = await Promise.all([
-      // 1. Year Aggregates
-      tx
+    // Sequential queries — pg@8 deprecated concurrent queries on the same client
+    const yearStatsResult = await tx
         .select({
           totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
           totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
@@ -925,10 +902,9 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             gte(incomeEntries.date, startDate),
             lt(incomeEntries.date, endDate)
           )
-        ),
+        );
 
-      // 2. VAT Total
-      tx
+    const vatTotalResult = await tx
         .select({
           vatTotal: sql<string>`sum(
             CASE
@@ -946,10 +922,9 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             gte(incomeEntries.date, startDate),
             lt(incomeEntries.date, endDate)
           )
-        ),
+        );
 
-      // 3. Outstanding (invoiced but not paid)
-      tx
+    const outstandingStatsResult = await tx
         .select({
           totalGross: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
           totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
@@ -964,10 +939,9 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             eq(incomeEntries.invoiceStatus, "sent"),
             sql`${incomeEntries.paymentStatus} != 'paid'`
           )
-        ),
+        );
 
-      // 4. Ready to Invoice
-      tx
+    const readyToInvoiceStatsResult = await tx
         .select({
           total: sql<string>`sum(${incomeEntries.amountGross})`.mapWith(Number),
           count: count(),
@@ -981,10 +955,9 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             eq(incomeEntries.invoiceStatus, "draft"),
             lt(incomeEntries.date, today)
           )
-        ),
+        );
 
-      // 5. Overdue Count
-      tx
+    const overdueStatsResult = await tx
         .select({ count: count() })
         .from(incomeEntries)
         .where(
@@ -996,10 +969,9 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             sql`${incomeEntries.paymentStatus} != 'paid'`,
             sql`${incomeEntries.invoiceSentDate} < CURRENT_DATE - INTERVAL '30 days'`
           )
-        ),
+        );
 
-      // 6. Previous period paid (for trend)
-      tx
+    const prevPeriodStatsResult = await tx
         .select({
           totalPaid: sql<string>`sum(${incomeEntries.amountPaid})`.mapWith(Number),
         })
@@ -1011,8 +983,7 @@ export async function getIncomeAggregatesForYear({ year, userId }: { year: numbe
             lt(incomeEntries.date, prevEnd),
             eq(incomeEntries.paymentStatus, "paid")
           )
-        )
-    ]);
+        );
 
     const yearStats = yearStatsResult[0];
     const outstandingStats = outstandingStatsResult[0];
@@ -1627,11 +1598,9 @@ export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
 
 export async function getNudgesForUser(userId: string): Promise<Nudge[]> {
   return withUser(userId, async (tx) => {
-    const [entries, dismissed, settings] = await Promise.all([
-      fetchNudgeableEntries(userId, tx),
-      fetchDismissedNudges(userId, tx),
-      getNudgeSettings(userId, tx),
-    ]);
+    const entries = await fetchNudgeableEntries(userId, tx);
+    const dismissed = await fetchDismissedNudges(userId, tx);
+    const settings = await getNudgeSettings(userId, tx);
     return computeNudges(entries, dismissed, settings.nudgeWeeklyDay);
   });
 }

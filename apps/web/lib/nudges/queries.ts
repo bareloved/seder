@@ -49,7 +49,7 @@ export async function getNudgeSettings(userId: string, tx?: DbTx) {
 
     return {
       nudgeWeeklyDay: settings?.nudgeWeeklyDay ?? DEFAULT_NUDGE_WEEKLY_DAY,
-      nudgePushEnabled: (settings?.nudgePushEnabled ?? DEFAULT_NUDGE_PUSH_PREFS) as NudgePushPreferences,
+      nudgePushEnabled: { ...DEFAULT_NUDGE_PUSH_PREFS, ...settings?.nudgePushEnabled } as NudgePushPreferences,
     };
   };
   return tx ? run(tx) : withUser(userId, run);

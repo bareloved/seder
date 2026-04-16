@@ -493,6 +493,8 @@ struct NotificationsSettingsSection: View {
                 Divider().padding(.horizontal, 16)
                 pushToggle(label: "חשבוניות שלא שולמו (30+ יום)", icon: "exclamationmark.triangle", isOn: $viewModel.nudgePushPrefs.overdue)
                 Divider().padding(.horizontal, 16)
+                pushToggle(label: "תזכורת יום אחרי עבודה", icon: "clock.arrow.circlepath", isOn: $viewModel.nudgePushPrefs.day_after_gig)
+                Divider().padding(.horizontal, 16)
                 pushToggle(label: "תזכורת שבועית לחשבוניות", icon: "doc.on.doc", isOn: $viewModel.nudgePushPrefs.weekly_uninvoiced)
                 Divider().padding(.horizontal, 16)
                 pushToggle(label: "סנכרון יומן (תחילת חודש)", icon: "calendar", isOn: $viewModel.nudgePushPrefs.calendar_sync)
