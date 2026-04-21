@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -18,6 +18,13 @@ export const metadata: Metadata = {
     locale: "he_IL",
     type: "website",
   },
+};
+
+// Render the landing page on a fixed 1024px virtual canvas and let the browser
+// scale it down to the device viewport — Instagram-style uniform shrinking.
+export const viewport: Viewport = {
+  width: 1024,
+  initialScale: 1,
 };
 
 export default async function Home() {
