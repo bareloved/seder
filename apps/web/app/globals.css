@@ -74,9 +74,11 @@
   html {
     scrollbar-gutter: stable;
     font-size: 120%;
+    overflow-x: hidden;
   }
 
   body {
+    overflow-x: hidden;
     @apply bg-background text-foreground;
   }
 
