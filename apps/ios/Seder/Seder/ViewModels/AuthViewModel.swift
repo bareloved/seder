@@ -9,6 +9,14 @@ class AuthViewModel: ObservableObject {
     @Published var user: User?
     @Published var errorMessage: String?
     @Published var avatarImage: UIImage?
+    /// True when the authenticated user has not accepted the current TERMS_VERSION.
+    /// Drives the non-dismissable ConsentSheet in SederApp.
+    @Published var needsConsent = false
+
+    /// Captured during sign-up before the account exists. Submitted to
+    /// /api/v1/me/consent immediately after signUp/signInWithGoogle succeeds,
+    /// so the legal record is tied to the same moment as account creation.
+    private var pendingMarketingOptIn: Bool? = nil
 
     private let api = APIClient.shared
 
@@ -20,6 +28,12 @@ class AuthViewModel: ObservableObject {
         } else {
             isLoading = false
         }
+    }
+
+    /// Set before calling signUp / signInWithGoogle so consent is recorded for
+    /// the new account at creation time.
+    func stagePendingConsent(marketingOptIn: Bool) {
+        pendingMarketingOptIn = marketingOptIn
     }
 
     private struct SessionResponse: Codable {
@@ -37,11 +51,54 @@ class AuthViewModel: ObservableObject {
                 SentryService.setUser(id: user.id)
             }
             await loadAvatarImage()
+            await refreshConsentStatus()
         } catch {
             // Token might be expired — clear auth state
             api.token = nil
             isAuthenticated = false
         }
+    }
+
+    /// GETs /api/v1/me/consent-status and updates needsConsent. Called on every
+    /// auth state transition so existing users (and OAuth new users) hit the
+    /// gate immediately after sign-in.
+    func refreshConsentStatus() async {
+        do {
+            let status: ConsentStatus = try await api.request(endpoint: "/api/v1/me/consent-status")
+            needsConsent = !status.termsAccepted
+        } catch {
+            // On failure, fail-open (don't block the user). The web middleware
+            // gate is the ground truth; this is a UX nicety.
+            needsConsent = false
+        }
+    }
+
+    /// Submits consent for the authenticated user. Called from ConsentSheet
+    /// (post-auth gate) and folded in automatically after signUp /
+    /// signInWithGoogle when stagePendingConsent was called first.
+    func submitConsent(marketingOptIn: Bool, source: String = "consent_banner") async -> Bool {
+        do {
+            let body = SubmitConsentBody(
+                termsAccepted: true,
+                marketingOptIn: marketingOptIn,
+                source: source
+            )
+            let _: ConsentStatus = try await api.request(
+                endpoint: "/api/v1/me/consent",
+                method: "POST",
+                body: body
+            )
+            needsConsent = false
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func submitPendingConsentIfAny(source: String) async {
+        guard let marketingOptIn = pendingMarketingOptIn else { return }
+        pendingMarketingOptIn = nil
+        _ = await submitConsent(marketingOptIn: marketingOptIn, source: source)
     }
 
     func signIn(email: String, password: String) async {
@@ -69,6 +126,7 @@ class AuthViewModel: ObservableObject {
             }
             NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
+            await refreshConsentStatus()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -97,6 +155,11 @@ class AuthViewModel: ObservableObject {
             isAuthenticated = true
             NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
+            // Sign-up specifically: drain the pending consent the user ticked
+            // on the form into the legal record. If nothing was staged (e.g.
+            // future code paths bypass the form) the consent gate catches it.
+            await submitPendingConsentIfAny(source: "signup_email")
+            await refreshConsentStatus()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -129,6 +192,12 @@ class AuthViewModel: ObservableObject {
             }
             NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
+            // For new sign-ups via Google, the SignUpView stages pending consent
+            // before calling this. Returning users have no staged consent — they
+            // pass through and the consent gate handles them if their account
+            // pre-dates the consent log.
+            await submitPendingConsentIfAny(source: "signup_google")
+            await refreshConsentStatus()
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch let error as NSError where error.domain == "com.google.GIDSignIn" && error.code == -5 {
