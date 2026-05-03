@@ -32,6 +32,11 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
+  // Israeli-law-compliant consent tracking
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  termsVersion: text("terms_version"),
+  marketingOptIn: boolean("marketing_opt_in").default(false).notNull(),
+  marketingOptInAt: timestamp("marketing_opt_in_at"),
 });
 
 export const session = pgTable("session", {
@@ -295,3 +300,26 @@ export const siteConfig = pgTable("site_config", {
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Immutable consent audit log for Israeli law compliance (תיקון 40 לחוק התקשורת)
+// Never UPDATE — only INSERT new rows for every consent event
+export const userConsent = pgTable("user_consent", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  consentType: varchar("consent_type", { length: 30 })
+    .$type<"terms" | "marketing_opt_in" | "marketing_opt_out">()
+    .notNull(),
+  termsVersion: text("terms_version"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  source: varchar("source", { length: 30 })
+    .$type<"signup_email" | "signup_google" | "consent_banner" | "settings">()
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("user_consent_user_idx").on(table.userId),
+  userTypeIdx: index("user_consent_user_type_idx").on(table.userId, table.consentType),
+}));
+
+export type UserConsent = typeof userConsent.$inferSelect;
+export type NewUserConsent = typeof userConsent.$inferInsert;

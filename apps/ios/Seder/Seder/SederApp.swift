@@ -60,6 +60,11 @@ struct SederApp: App {
                         .onAppear {
                             NotificationService.shared.requestPermission()
                         }
+                        .fullScreenCover(isPresented: $authViewModel.needsConsent) {
+                            ConsentSheet()
+                                .environmentObject(authViewModel)
+                                .environment(\.layoutDirection, .rightToLeft)
+                        }
                 } else if authViewModel.isLoading {
                     LoadingView()
                 } else {

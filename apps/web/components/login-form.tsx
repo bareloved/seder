@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { authClient } from "@/lib/auth-client"
 import { useState } from "react"
 import { Loader2, ChevronDown, Check, Circle, Eye, EyeOff } from "lucide-react"
@@ -35,6 +36,8 @@ export function LoginForm({
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
 
   // Password validation for signup
   const passwordChecks = {
@@ -45,6 +48,25 @@ export function LoginForm({
   const isPasswordValid = Object.values(passwordChecks).every(Boolean)
 
   const handleGoogleSignIn = async () => {
+    // For new sign-ups via Google, require terms acceptance up-front so consent is
+    // captured at the same moment as for email sign-up. Existing returning users
+    // (toggle in "sign in" mode) skip this gate and rely on the post-auth
+    // /auth/consent interstitial if their account predates the consent log.
+    if (isSignUp && !termsAccepted) {
+      setError("יש לאשר את תנאי השימוש ומדיניות הפרטיות.")
+      return
+    }
+    if (isSignUp) {
+      try {
+        sessionStorage.setItem(
+          "seder.pending_consent",
+          JSON.stringify({ marketingOptIn, source: "signup_google" })
+        )
+      } catch {
+        // sessionStorage unavailable (private mode) — interstitial will still
+        // catch them since termsAcceptedAt will be null on the new user row.
+      }
+    }
     setIsGoogleLoading(true)
     setError("")
     try {
@@ -115,6 +137,11 @@ export function LoginForm({
     setError("")
     try {
       if (isSignUp) {
+        if (!termsAccepted) {
+          setError("יש לאשר את תנאי השימוש ומדיניות הפרטיות.")
+          setIsLoading(false)
+          return
+        }
         const { error: signUpError } = await authClient.signUp.email({
           email,
           password,
@@ -123,6 +150,26 @@ export function LoginForm({
         })
         if (signUpError) {
           throw new Error(signUpError.message)
+        }
+        // Persist consent immediately after account creation. The endpoint stamps
+        // termsAcceptedAt/marketingOptIn on the user row and writes an immutable
+        // audit row to user_consent (with IP + user-agent captured server-side).
+        try {
+          await fetch("/api/v1/me/consent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              termsAccepted: true,
+              marketingOptIn,
+              source: "signup_email",
+            }),
+          })
+        } catch (consentErr) {
+          // Non-fatal: the consent gate at /auth/consent will catch them on next
+          // load. We don't want to block the signup happy path on a transient
+          // network blip here.
+          console.error("Failed to record consent", consentErr)
         }
       } else {
         const { error: signInError } = await authClient.signIn.email({
@@ -314,10 +361,58 @@ export function LoginForm({
               )}
             </div>
 
+            {isSignUp && (
+              <div className="space-y-3 pt-1">
+                <label className="flex items-start gap-2 cursor-pointer text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <Checkbox
+                    checked={termsAccepted}
+                    onCheckedChange={(v) => setTermsAccepted(v === true)}
+                    className="mt-0.5"
+                    aria-required="true"
+                  />
+                  <span>
+                    אני מאשר/ת את{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-[#2ecc71]"
+                    >
+                      תנאי השימוש
+                    </a>
+                    {" "}ו
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-[#2ecc71]"
+                    >
+                      מדיניות הפרטיות
+                    </a>
+                    <span className="text-red-500 ms-1">*</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <Checkbox
+                    checked={marketingOptIn}
+                    onCheckedChange={(v) => setMarketingOptIn(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    אני מסכים/ה לקבל עדכונים שיווקיים ודיוור במייל. ניתן להסיר בכל עת.
+                  </span>
+                </label>
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full h-11 bg-[#2ecc71] hover:bg-[#27ae60] text-white font-medium"
-              disabled={isLoading || isGoogleLoading || (isSignUp && !isPasswordValid)}
+              disabled={
+                isLoading ||
+                isGoogleLoading ||
+                (isSignUp && (!isPasswordValid || !termsAccepted))
+              }
             >
               {isLoading && <Loader2 className="ms-2 h-4 w-4 animate-spin" />}
               {isSignUp ? "יצירת חשבון" : "התחברות"}
@@ -342,14 +437,24 @@ export function LoginForm({
         </button>
       </div>
 
-      {/* Legal */}
+      {/* Legal — informational link only. Active consent for sign-up is captured
+          via the checkboxes above; existing users hit the consent interstitial. */}
       <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-8 leading-relaxed">
-        בהמשך, אתם מסכימים{" "}
-        <a href="#" className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-          לתנאי השימוש
+        <a
+          href="/terms"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+        >
+          תנאי השימוש
         </a>
-        {" "}ו
-        <a href="#" className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+        {" · "}
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+        >
           מדיניות הפרטיות
         </a>
       </p>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { toNextJsHandler } from "better-auth/next-js";
 import { auth } from "@/lib/auth";
 import { authRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip";
 
 const authHandler = toNextJsHandler(auth);
 
@@ -21,8 +22,7 @@ async function withRateLimit(
   const shouldLimit = RATE_LIMITED_PATHS.some((p) => pathname.startsWith(p));
 
   if (shouldLimit && authRatelimit) {
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    const ip = getClientIp(req);
     const { success } = await authRatelimit.limit(ip);
     if (!success) {
       return NextResponse.json(

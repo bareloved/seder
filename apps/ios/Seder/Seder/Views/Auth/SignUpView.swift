@@ -8,6 +8,8 @@ struct SignUpView: View {
     @State private var password = ""
     @State private var showEmailForm = false
     @State private var showPassword = false
+    @State private var termsAccepted = false
+    @State private var marketingOptIn = false
 
     private let bgTop = Color(red: 0.106, green: 0.263, blue: 0.196)
     private let bgBottom = Color(red: 0.059, green: 0.169, blue: 0.122)
@@ -109,6 +111,11 @@ struct SignUpView: View {
 
                             // Google
                             Button {
+                                guard termsAccepted else {
+                                    auth.errorMessage = "יש לאשר את תנאי השימוש ומדיניות הפרטיות"
+                                    return
+                                }
+                                auth.stagePendingConsent(marketingOptIn: marketingOptIn)
                                 Task {
                                     await auth.signInWithGoogle()
                                     if auth.isAuthenticated { dismiss() }
@@ -226,8 +233,22 @@ struct SignUpView: View {
                                         PasswordCheck(label: "לפחות 8 תווים", passed: password.count >= 8)
                                     }
 
+                                    // Consent checkboxes — required by Israeli law
+                                    consentCheckbox(
+                                        isOn: $termsAccepted,
+                                        text: "אני מאשר/ת את תנאי השימוש ומדיניות הפרטיות *",
+                                        showLink: true
+                                    )
+                                    consentCheckbox(
+                                        isOn: $marketingOptIn,
+                                        text: "אני מסכים/ה לקבל עדכונים שיווקיים ודיוור במייל. ניתן להסיר בכל עת.",
+                                        showLink: false
+                                    )
+
                                     // CTA
                                     Button {
+                                        guard termsAccepted else { return }
+                                        auth.stagePendingConsent(marketingOptIn: marketingOptIn)
                                         Task {
                                             await auth.signUp(name: name, email: email, password: password)
                                             if auth.isAuthenticated { dismiss() }
@@ -248,14 +269,14 @@ struct SignUpView: View {
                                         .background(
                                             RoundedRectangle(cornerRadius: 14)
                                                 .fill(
-                                                    name.isEmpty || email.isEmpty || password.count < 8 || auth.isLoading
+                                                    name.isEmpty || email.isEmpty || password.count < 8 || !termsAccepted || auth.isLoading
                                                         ? accentGreen.opacity(0.4)
                                                         : accentGreen
                                                 )
                                         )
                                     }
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
-                                    .disabled(name.isEmpty || email.isEmpty || password.count < 8 || auth.isLoading)
+                                    .disabled(name.isEmpty || email.isEmpty || password.count < 8 || !termsAccepted || auth.isLoading)
                                 }
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                             }
@@ -274,10 +295,16 @@ struct SignUpView: View {
                                     .foregroundStyle(accentGreen)
                             }
 
-                            Text("בהמשך, אתם מסכימים לתנאי השימוש ומדיניות הפרטיות")
-                                .font(SederTheme.ploni(11))
-                                .foregroundStyle(Color.white.opacity(0.2))
-                                .multilineTextAlignment(.center)
+                            HStack(spacing: 8) {
+                                Link("תנאי השימוש", destination: URL(string: "https://sedder.app/terms")!)
+                                    .font(SederTheme.ploni(11, weight: .medium))
+                                    .foregroundStyle(Color.white.opacity(0.4))
+                                Text("·")
+                                    .foregroundStyle(Color.white.opacity(0.25))
+                                Link("מדיניות הפרטיות", destination: URL(string: "https://sedder.app/privacy")!)
+                                    .font(SederTheme.ploni(11, weight: .medium))
+                                    .foregroundStyle(Color.white.opacity(0.4))
+                            }
                         }
                         .padding(.bottom, 40)
                     }
@@ -296,6 +323,37 @@ struct SignUpView: View {
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    @ViewBuilder
+    private func consentCheckbox(isOn: Binding<Bool>, text: String, showLink: Bool) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: isOn.wrappedValue ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isOn.wrappedValue ? accentGreen : Color.white.opacity(0.45))
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(text)
+                        .font(SederTheme.ploni(12))
+                        .foregroundStyle(Color.white.opacity(0.7))
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if showLink {
+                        HStack(spacing: 6) {
+                            Link("תנאים", destination: URL(string: "https://sedder.app/terms")!)
+                            Text("·").foregroundStyle(Color.white.opacity(0.3))
+                            Link("פרטיות", destination: URL(string: "https://sedder.app/privacy")!)
+                        }
+                        .font(SederTheme.ploni(11, weight: .medium))
+                        .foregroundStyle(accentGreen)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private func iconInput<Content: View>(icon: String, @ViewBuilder content: () -> Content) -> some View {
