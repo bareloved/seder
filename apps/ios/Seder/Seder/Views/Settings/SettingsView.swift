@@ -68,8 +68,10 @@ struct SettingsView: View {
             }
             .confirmationDialog("האם להתנתק?", isPresented: $showSignOutConfirm) {
                 Button("התנתקות", role: .destructive) {
-                    auth.signOut()
-                    dismiss()
+                    Task {
+                        await auth.signOut()
+                        dismiss()
+                    }
                 }
                 Button("ביטול", role: .cancel) {}
             }
@@ -91,7 +93,7 @@ struct SettingsView: View {
                     guard deleteConfirmText == "DELETE" else { return }
                     Task {
                         if await viewModel.deleteAccount() {
-                            auth.signOut()
+                            await auth.signOut()
                             dismiss()
                         }
                     }

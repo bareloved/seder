@@ -6,8 +6,9 @@ import {
   enforceUserRateLimit,
   deviceRegisterRatelimit,
 } from "@/lib/ratelimit";
-import { withUser } from "@/db/client";
+import { withAdminBypass } from "@/db/client";
 import { deviceTokens } from "@/db/schema";
+import { and, eq, ne } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,15 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("platform must be 'ios' or 'android'");
     }
 
-    await withUser(userId, async (tx) => {
+    // Claim the device token for this user. A physical device only ever
+    // belongs to one logged-in user at a time — drop any prior owner so
+    // they stop receiving pushes meant for them on this device.
+    await withAdminBypass(async (tx) => {
+      await tx
+        .delete(deviceTokens)
+        .where(
+          and(eq(deviceTokens.token, token), ne(deviceTokens.userId, userId))
+        );
       await tx
         .insert(deviceTokens)
         .values({ userId, token, platform })

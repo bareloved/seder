@@ -67,6 +67,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
+            NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -94,6 +95,7 @@ class AuthViewModel: ObservableObject {
             api.token = token
             user = response.user
             isAuthenticated = true
+            NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -125,6 +127,7 @@ class AuthViewModel: ObservableObject {
             if let user = response.user {
                 SentryService.setUser(id: user.id)
             }
+            NotificationService.shared.registerCachedTokenIfAvailable()
             await loadAvatarImage()
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -135,7 +138,10 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    func signOut() {
+    func signOut() async {
+        // Unregister this device's APNs token *before* dropping the auth header,
+        // so the request authenticates as the outgoing user.
+        await NotificationService.shared.unregisterCachedToken()
         api.token = nil
         user = nil
         avatarImage = nil
